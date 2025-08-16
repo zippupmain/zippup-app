@@ -21,6 +21,9 @@ import 'package:zippup/features/orders/presentation/track_order_screen.dart';
 import 'package:zippup/features/transport/presentation/ride_track_screen.dart';
 import 'package:zippup/features/transport/presentation/courier_dashboard_screen.dart';
 import 'package:zippup/features/search/presentation/search_results_screen.dart';
+import 'package:zippup/features/food/presentation/vendor_detail_screen.dart';
+import 'package:zippup/features/marketplace/presentation/product_detail_screen.dart';
+import 'package:zippup/features/profile/presentation/provider_detail_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -119,6 +122,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/search',
 				name: 'search',
 				builder: (context, state) => SearchResultsScreen(query: state.uri.queryParameters['q'] ?? ''),
+			),
+			GoRoute(
+				path: '/vendor',
+				name: 'vendorDetail',
+				builder: (context, state) => VendorDetailScreen(vendorId: state.uri.queryParameters['vendorId'] ?? ''),
+			),
+			GoRoute(
+				path: '/provider',
+				name: 'providerDetail',
+				builder: (context, state) => ProviderDetailScreen(providerId: state.uri.queryParameters['providerId'] ?? ''),
+			),
+			GoRoute(
+				path: '/listing',
+				name: 'productDetail',
+				builder: (context, state) => ProductDetailScreen(productId: state.uri.queryParameters['productId'] ?? ''),
 			),
     ],
   );

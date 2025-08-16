@@ -27,7 +27,7 @@ class VendorListScreen extends StatelessWidget {
 								subtitle: Text((v['rating'] ?? 0).toString()),
 								trailing: Wrap(spacing: 8, children: [
 									IconButton(onPressed: () => context.pushNamed('chat', pathParameters: {'threadId': 'vendor_$vid'}, queryParameters: {'title': v['name'] ?? 'Chat'}), icon: const Icon(Icons.chat_bubble_outline)),
-									TextButton(onPressed: () {}, child: const Text('View')),
+									TextButton(onPressed: () => context.push('/vendor?vendorId=$vid'), child: const Text('View')),
 								]),
 							);
 						},

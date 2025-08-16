@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class FoodScreen extends StatelessWidget {
 	const FoodScreen({super.key});
@@ -10,6 +11,19 @@ class FoodScreen extends StatelessWidget {
 		context.push('/search?q=${Uri.encodeComponent(query)}');
 	}
 
+	Future<void> _voiceSearch(BuildContext context, TextEditingController controller) async {
+		final speech = stt.SpeechToText();
+		final available = await speech.initialize(options: [stt.SpeechToText.androidIntentLookup]);
+		if (!available) return;
+		speech.listen(onResult: (res) {
+			if (res.finalResult) {
+				controller.text = res.recognizedWords;
+				_goSearch(context, controller.text);
+				speech.stop();
+			}
+		});
+	}
+
 	@override
 	Widget build(BuildContext context) {
 		final controller = TextEditingController();
@@ -17,7 +31,7 @@ class FoodScreen extends StatelessWidget {
 			appBar: AppBar(
 				title: const Text('Food'),
 				actions: [
-					IconButton(onPressed: () => _goSearch(context, controller.text), icon: const Icon(Icons.mic_none)),
+					IconButton(onPressed: () => _voiceSearch(context, controller), icon: const Icon(Icons.mic_none)),
 				],
 				bottom: PreferredSize(
 					preferredSize: const Size.fromHeight(56),
