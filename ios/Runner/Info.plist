@@ -55,5 +55,16 @@
 		<string>Microphone may be used during emergency verification.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.529547739475-40p3i0g74io2unbna9eb3c4ck9b1t3b4</string>
+				</array>
+				<key>CFBundleURLName</key>
+				<string>com.zippup.zippup</string>
+			</dict>
+		</array>
 	</dict>
 </plist>
