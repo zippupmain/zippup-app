@@ -35,6 +35,12 @@ class HomeScreen extends StatelessWidget {
 							),
 						),
 					),
+					SliverToBoxAdapter(
+						child: Padding(
+							padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+							child: _HomeSearchBar(),
+						),
+					),
 					SliverToBoxAdapter(child: _EmergencySection()),
 					SliverToBoxAdapter(child: _QuickActions()),
 					SliverToBoxAdapter(child: _Promotions()),
@@ -155,6 +161,34 @@ class _DynamicCard extends StatelessWidget {
 					height: 56,
 					fit: BoxFit.cover,
 				),
+			),
+		);
+	}
+}
+
+class _HomeSearchBar extends StatefulWidget {
+	@override
+	State<_HomeSearchBar> createState() => _HomeSearchBarState();
+}
+
+class _HomeSearchBarState extends State<_HomeSearchBar> {
+	final controller = TextEditingController();
+	void _go() {
+		final q = controller.text.trim();
+		if (q.isEmpty) return;
+		context.push('/search?q=${Uri.encodeComponent(q)}');
+	}
+	@override
+	Widget build(BuildContext context) {
+		return TextField(
+			controller: controller,
+			textInputAction: TextInputAction.search,
+			onSubmitted: (_) => _go(),
+			decoration: InputDecoration(
+				filled: true,
+				hintText: 'Search services, vendors, items...',
+				prefixIcon: IconButton(icon: const Icon(Icons.search), onPressed: _go),
+				border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
 			),
 		);
 	}

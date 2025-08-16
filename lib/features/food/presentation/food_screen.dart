@@ -4,19 +4,29 @@ import 'package:go_router/go_router.dart';
 class FoodScreen extends StatelessWidget {
 	const FoodScreen({super.key});
 
+	void _goSearch(BuildContext context, String q) {
+		final query = q.trim();
+		if (query.isEmpty) return;
+		context.push('/search?q=${Uri.encodeComponent(query)}');
+	}
+
 	@override
 	Widget build(BuildContext context) {
+		final controller = TextEditingController();
 		return Scaffold(
 			appBar: AppBar(
 				title: const Text('Food'),
 				actions: [
-					IconButton(onPressed: () {}, icon: const Icon(Icons.mic_none)),
+					IconButton(onPressed: () => _goSearch(context, controller.text), icon: const Icon(Icons.mic_none)),
 				],
 				bottom: PreferredSize(
 					preferredSize: const Size.fromHeight(56),
 					child: Padding(
 						padding: const EdgeInsets.all(8.0),
 						child: TextField(
+							controller: controller,
+							textInputAction: TextInputAction.search,
+							onSubmitted: (v) => _goSearch(context, v),
 							decoration: InputDecoration(
 								filled: true,
 								hintText: 'Search food, vendors...',

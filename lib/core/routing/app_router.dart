@@ -19,6 +19,8 @@ import 'package:zippup/features/admin/presentation/admin_applications_screen.dar
 import 'package:zippup/features/orders/presentation/my_bookings_screen.dart';
 import 'package:zippup/features/orders/presentation/track_order_screen.dart';
 import 'package:zippup/features/transport/presentation/ride_track_screen.dart';
+import 'package:zippup/features/transport/presentation/courier_dashboard_screen.dart';
+import 'package:zippup/features/search/presentation/search_results_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -68,6 +70,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				name: 'digital',
 				builder: (context, state) => const DigitalScreen(),
 			),
+			GoRoute(
+				path: '/courier',
+				name: 'courierDashboard',
+				builder: (context, state) => const CourierDashboardScreen(),
+			),
       			GoRoute(
 				path: '/profile',
 				name: 'profile',
@@ -107,6 +114,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/track/ride',
 				name: 'trackRide',
 				builder: (context, state) => RideTrackScreen(rideId: state.uri.queryParameters['rideId'] ?? ''),
+			),
+			GoRoute(
+				path: '/search',
+				name: 'search',
+				builder: (context, state) => SearchResultsScreen(query: state.uri.queryParameters['q'] ?? ''),
 			),
     ],
   );
