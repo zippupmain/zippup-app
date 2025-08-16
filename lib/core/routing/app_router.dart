@@ -18,6 +18,7 @@ import 'package:zippup/features/profile/presentation/apply_provider_screen.dart'
 import 'package:zippup/features/admin/presentation/admin_applications_screen.dart';
 import 'package:zippup/features/orders/presentation/my_bookings_screen.dart';
 import 'package:zippup/features/orders/presentation/track_order_screen.dart';
+import 'package:zippup/features/transport/presentation/ride_track_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -101,6 +102,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/track',
 				name: 'trackOrder',
 				builder: (context, state) => TrackOrderScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
+			),
+			GoRoute(
+				path: '/track/ride',
+				name: 'trackRide',
+				builder: (context, state) => RideTrackScreen(rideId: state.uri.queryParameters['rideId'] ?? ''),
 			),
     ],
   );
