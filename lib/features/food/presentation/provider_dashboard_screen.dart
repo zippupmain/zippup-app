@@ -58,7 +58,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 									return ListTile(
 										title: Text('Order ${o.id.substring(0, 6)} • ${o.category.name}'),
 										subtitle: Text('Status: ${o.status.name}'),
-										trailing: Wrap(spacing: 8, children: _actionsFor(o, _service)),
+										trailing: Wrap(spacing: 8, children: _actionsFor(context, o, _service)),
 									);
 								},
 							);
@@ -93,18 +93,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 		);
 	}
 
-	List<Widget> _actionsFor(Order o, OrderService service) {
+	List<Widget> _actionsFor(BuildContext context, Order o, OrderService service) {
 		switch (o.category) {
 			case OrderCategory.food:
-				return _foodActions(o, service);
+				return _foodActions(context, o, service);
 			case OrderCategory.groceries:
-				return _groceryActions(o, service);
+				return _groceryActions(context, o, service);
 			default:
 				return _commonActions(o, service);
 		}
 	}
 
-	List<Widget> _foodActions(Order o, OrderService s) {
+	List<Widget> _foodActions(BuildContext context, Order o, OrderService s) {
 		return [
 			if (o.status == OrderStatus.preparing)
 				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.dispatched), child: const Text('Dispatch')),
@@ -113,17 +113,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 			if (o.status == OrderStatus.assigned)
 				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.enroute), child: const Text('Enroute')),
 			if (o.status == OrderStatus.enroute)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.delivered), child: const Text('Delivered')),
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.arrived), child: const Text('Arrived')),
+			if (o.status == OrderStatus.arrived)
+				FilledButton(onPressed: () => _promptAndComplete(context, o, s), child: const Text('Enter code')),
 		];
 	}
 
-	List<Widget> _groceryActions(Order o, OrderService s) {
+	List<Widget> _groceryActions(BuildContext context, Order o, OrderService s) {
 		return [
 			if (o.status == OrderStatus.preparing)
 				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.sorting), child: const Text('Sorting')),
 			if (o.status == OrderStatus.sorting)
 				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.dispatched), child: const Text('Dispatch')),
-			..._foodActions(o, s),
+			..._foodActions(context, o, s),
 		];
 	}
 
@@ -134,5 +136,31 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 			if (o.status == OrderStatus.pending)
 				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.rejected), child: const Text('Reject')),
 		];
+	}
+
+	Future<void> _promptAndComplete(BuildContext context, Order o, OrderService s) async {
+		final controller = TextEditingController();
+		final code = await showDialog<String>(
+			context: context,
+			builder: (context) => AlertDialog(
+				title: const Text('Enter delivery code'),
+				content: TextField(controller: controller, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: '6-digit code')),
+				actions: [
+					TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+					FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Submit')),
+				],
+			),
+		);
+		if (code == null) return;
+		if (o.deliveryCode != null && o.deliveryCode != code) {
+			if (context.mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid code')));
+			}
+			return;
+		}
+		await s.updateStatus(orderId: o.id, status: OrderStatus.delivered, extra: {'deliveryCodeEntered': code});
+		if (context.mounted) {
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delivery completed')));
+		}
 	}
 }
