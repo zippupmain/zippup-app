@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/common/models/order.dart';
+import 'package:zippup/features/food/providers/order_service.dart';
 
 class MyBookingsScreen extends StatelessWidget {
 	const MyBookingsScreen({super.key});
@@ -44,7 +45,7 @@ class MyBookingsScreen extends StatelessWidget {
 								subtitle: Text(o.id),
 								trailing: Wrap(spacing: 8, children: [
 									TextButton(onPressed: () => context.pushNamed('trackOrder', queryParameters: {'orderId': o.id}), child: const Text('Track')),
-									if (_canCancel(o)) TextButton(onPressed: () => _cancel(context, o.id), child: const Text('Cancel')),
+									if (_canCancel(o)) TextButton(onPressed: () => _promptCancel(context, o), child: const Text('Cancel')),
 									IconButton(onPressed: () => context.pushNamed('chat', pathParameters: {'threadId': 'order_${o.id}'}, queryParameters: {'title': 'Order Chat'}), icon: const Icon(Icons.chat_bubble_outline)),
 								]),
 							);
@@ -55,8 +56,45 @@ class MyBookingsScreen extends StatelessWidget {
 		);
 	}
 
-	Future<void> _cancel(BuildContext context, String orderId) async {
-		await FirebaseFirestore.instance.collection('orders').doc(orderId).update({'status': 'cancelled'});
-		if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cancelled')));
+	Future<void> _promptCancel(BuildContext context, Order o) async {
+		final reasons = <String>[
+			'Change of plans',
+			'Found cheaper elsewhere',
+			'Booked by mistake',
+			'Provider taking too long',
+			'Other',
+		];
+		String? selected = reasons.first;
+		final controller = TextEditingController();
+		final confirmed = await showDialog<bool>(
+			context: context,
+			builder: (context) => AlertDialog(
+				title: const Text('Cancel booking'),
+				content: Column(
+					mainAxisSize: MainAxisSize.min,
+					children: [
+						DropdownButtonFormField<String>(
+							value: selected,
+							items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+							onChanged: (v) => selected = v,
+							decoration: const InputDecoration(labelText: 'Reason'),
+						),
+						TextField(
+							controller: controller,
+							maxLines: 3,
+							decoration: const InputDecoration(labelText: 'Details (optional)'),
+						),
+					],
+				),
+				actions: [
+					TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep')),
+					FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Cancel booking')),
+				],
+			),
+		);
+		if (confirmed != true) return;
+		final reason = selected == 'Other' && controller.text.trim().isNotEmpty ? controller.text.trim() : selected ?? 'Cancelled';
+		await OrderService().cancel(orderId: o.id, reason: reason, cancelledBy: FirebaseAuth.instance.currentUser?.uid ?? 'buyer');
+		if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking cancelled')));
 	}
 }

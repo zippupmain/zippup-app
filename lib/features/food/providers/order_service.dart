@@ -39,4 +39,13 @@ class OrderService {
 			return Order.fromJson(doc.id, data);
 		});
 	}
+
+	Future<void> cancel({required String orderId, required String reason, String? cancelledBy}) async {
+		await _db.collection('orders').doc(orderId).set({
+			'status': OrderStatus.cancelled.name,
+			'cancelReason': reason,
+			'cancelledBy': cancelledBy ?? _auth.currentUser?.uid ?? 'buyer',
+			'cancelledAt': FieldValue.serverTimestamp(),
+		}, SetOptions(merge: true));
+	}
 }

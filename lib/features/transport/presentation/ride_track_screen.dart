@@ -5,6 +5,7 @@ import 'package:google_maps_flutter_platform_interface/src/types/utils/patterns.
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart' show MapsObjectId;
 import 'package:zippup/common/models/ride.dart';
 import 'package:zippup/features/orders/widgets/status_timeline.dart';
+import 'package:zippup/features/transport/providers/ride_service.dart';
 import 'package:zippup/services/location/distance_service.dart';
 
 class RideTrackScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class RideTrackScreen extends StatefulWidget {
 
 class _RideTrackScreenState extends State<RideTrackScreen> {
 	final _distance = DistanceService();
+	final _rideService = RideService();
 	Set<Polyline> _polylines = {};
 
 	List<String> _stepsFor(RideType type) => const ['Accepted', 'Arriving', 'Arrived', 'Enroute', 'Completed'];
@@ -71,6 +73,43 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 			coordinates.add(LatLng(lat / 1E5, lng / 1E5));
 		}
 		return coordinates;
+	}
+
+	Future<void> _cancel(BuildContext context, String rideId) async {
+		final reasons = <String>['Change of plans', 'Booked by mistake', 'Driver taking too long', 'Other'];
+		String? selected = reasons.first;
+		final controller = TextEditingController();
+		final confirmed = await showDialog<bool>(
+			context: context,
+			builder: (context) => AlertDialog(
+				title: const Text('Cancel ride'),
+				content: Column(
+					mainAxisSize: MainAxisSize.min,
+					children: [
+						DropdownButtonFormField<String>(
+							value: selected,
+							items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+							onChanged: (v) => selected = v,
+							decoration: const InputDecoration(labelText: 'Reason'),
+						),
+						TextField(controller: controller, maxLines: 3, decoration: const InputDecoration(labelText: 'Details (optional)')),
+					],
+				),
+				actions: [
+					TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep')),
+					FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Cancel ride')),
+				],
+			),
+		);
+		if (confirmed == true) {
+			final reason = selected == 'Other' && controller.text.trim().isNotEmpty ? controller.text.trim() : selected ?? 'Cancelled';
+			await _rideService.cancel(rideId, reason: reason, cancelledBy: 'rider');
+			if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride cancelled')));
+		}
+	}
+
+	bool _rideCancelable(RideStatus s) {
+		return s == RideStatus.requested || s == RideStatus.accepted || s == RideStatus.arriving || s == RideStatus.arrived;
 	}
 
 	@override
@@ -132,7 +171,15 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 							),
 							Padding(
 								padding: const EdgeInsets.all(16),
-								child: StatusTimeline(steps: steps, currentIndex: idx),
+								child: Column(
+									children: [
+										StatusTimeline(steps: steps, currentIndex: idx),
+										if (_rideCancelable(ride.status)) Align(
+											alignment: Alignment.centerRight,
+											child: TextButton.icon(onPressed: () => _cancel(context, widget.rideId), icon: const Icon(Icons.cancel_outlined), label: const Text('Cancel ride')),
+										),
+									],
+								),
 							),
 						],
 					);

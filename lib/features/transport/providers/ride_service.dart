@@ -18,4 +18,14 @@ class RideService {
 	Future<void> updateDriverLocation(String rideId, {required double lat, required double lng}) async {
 		await _db.collection('rides').doc(rideId).set({'driverLat': lat, 'driverLng': lng}, SetOptions(merge: true));
 	}
+
+	Future<void> cancel(String rideId, {required String reason, String? cancelledBy}) async {
+		final uid = _auth.currentUser?.uid;
+		await _db.collection('rides').doc(rideId).set({
+			'status': RideStatus.cancelled.name,
+			'cancelReason': reason,
+			'cancelledBy': cancelledBy ?? uid ?? 'rider',
+			'cancelledAt': FieldValue.serverTimestamp(),
+		}, SetOptions(merge: true));
+	}
 }
