@@ -16,6 +16,11 @@ class ProfileScreen extends StatelessWidget {
 						subtitle: const Text('Get verified to sell and accept bookings'),
 						onTap: () => context.push('/profile/apply-provider'),
 					),
+					ListTile(
+						leading: const Icon(Icons.admin_panel_settings),
+						title: const Text('Admin: Applications'),
+						onTap: () => context.push('/admin/applications'),
+					),
 				],
 			),
 		);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zippup/services/location/location_service.dart';
 
 class TransportScreen extends StatefulWidget {
 	const TransportScreen({super.key});
@@ -16,6 +17,20 @@ class _TransportScreenState extends State<TransportScreen> {
 	double _fare = 0;
 	int _eta = 0;
 	String _status = 'idle';
+
+	@override
+	void initState() {
+		super.initState();
+		_initPickup();
+	}
+
+	Future<void> _initPickup() async {
+		final pos = await LocationService.getCurrentPosition();
+		if (pos == null) return;
+		final addr = await LocationService.reverseGeocode(pos);
+		if (!mounted) return;
+		_pickup.text = addr ?? 'Current location';
+	}
 
 	void _addStop() {
 		if (_stops.length < 5) setState(() => _stops.add(TextEditingController()));
