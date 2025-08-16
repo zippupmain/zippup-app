@@ -60,6 +60,26 @@ exports.scheduledReminders = functions.pubsub.schedule('every 5 minutes').onRun(
 	return null;
 });
 
+exports.onOrderStatusChange = functions.firestore.document('orders/{orderId}').onUpdate(async (change, context) => {
+	const before = change.before.data();
+	const after = change.after.data();
+	if (before.status === after.status) return null;
+	const title = 'Order update';
+	const body = `Status: ${after.status}`;
+	await notifyParties([after.buyerId, after.providerId], { title, body }, { type: 'order', orderId: context.params.orderId, status: after.status });
+	return null;
+});
+
+exports.onRideStatusChange = functions.firestore.document('rides/{rideId}').onUpdate(async (change, context) => {
+	const before = change.before.data();
+	const after = change.after.data();
+	if (before.status === after.status) return null;
+	const title = 'Ride update';
+	const body = `Status: ${after.status}`;
+	await notifyParties([after.riderId, after.driverId], { title, body }, { type: 'ride', rideId: context.params.rideId, status: after.status });
+	return null;
+});
+
 async function notifyUsersFor(threadId, minutesLeft) {
 	const tokens = []; // TODO: collect rider/driver device tokens from users collection
 	const payload = {
@@ -71,4 +91,16 @@ async function notifyUsersFor(threadId, minutesLeft) {
 		data: { threadId: `${threadId}`, type: 'schedule_reminder', minutes: `${minutesLeft}` }
 	};
 	if (tokens.length > 0) await admin.messaging().sendToDevice(tokens, payload);
+}
+
+async function notifyParties(userIds, notif, data) {
+	const tokens = [];
+	for (const uid of userIds.filter(Boolean)) {
+		const doc = await admin.firestore().collection('users').doc(uid).get();
+		const token = doc.get('fcmToken');
+		if (token) tokens.push(token);
+	}
+	if (tokens.length === 0) return;
+	const payload = { notification: { title: notif.title, body: notif.body, sound: 'default' }, data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) };
+	await admin.messaging().sendToDevice(tokens, payload);
 }

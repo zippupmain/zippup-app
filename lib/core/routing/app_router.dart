@@ -13,6 +13,9 @@ import 'package:zippup/features/food/presentation/vendor_list_screen.dart';
 import 'package:zippup/features/auth/presentation/auth_gate.dart';
 import 'package:zippup/features/cart/presentation/cart_screen.dart';
 import 'package:zippup/features/chat/presentation/chat_screen.dart';
+import 'package:zippup/features/profile/presentation/profile_screen.dart';
+import 'package:zippup/features/profile/presentation/apply_provider_screen.dart';
+import 'package:zippup/features/admin/presentation/admin_applications_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -65,7 +68,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       			GoRoute(
 				path: '/profile',
 				name: 'profile',
-				builder: (context, state) => const Placeholder(),
+				builder: (context, state) => const ProfileScreen(),
+			),
+			GoRoute(
+				path: '/profile/apply-provider',
+				name: 'applyProvider',
+				builder: (context, state) => const ApplyProviderScreen(),
+			),
+			GoRoute(
+				path: '/admin/applications',
+				name: 'adminApplications',
+				builder: (context, state) => const AdminApplicationsScreen(),
 			),
 			GoRoute(
 				path: '/chat/:threadId',

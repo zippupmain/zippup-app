@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class VendorListScreen extends StatelessWidget {
 	const VendorListScreen({super.key, required this.category});
@@ -20,10 +21,14 @@ class VendorListScreen extends StatelessWidget {
 						separatorBuilder: (_, __) => const Divider(height: 1),
 						itemBuilder: (context, i) {
 							final v = docs[i].data();
+							final vid = docs[i].id;
 							return ListTile(
 								title: Text(v['name'] ?? 'Vendor'),
 								subtitle: Text((v['rating'] ?? 0).toString()),
-								trailing: TextButton(onPressed: () {}, child: const Text('View')),
+								trailing: Wrap(spacing: 8, children: [
+									IconButton(onPressed: () => context.pushNamed('chat', pathParameters: {'threadId': 'vendor_$vid'}, queryParameters: {'title': v['name'] ?? 'Chat'}), icon: const Icon(Icons.chat_bubble_outline)),
+									TextButton(onPressed: () {}, child: const Text('View')),
+								]),
 							);
 						},
 					);
