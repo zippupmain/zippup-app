@@ -80,6 +80,27 @@ exports.onRideStatusChange = functions.firestore.document('rides/{rideId}').onUp
 	return null;
 });
 
+exports.onOrderCreate = functions.firestore.document('orders/{orderId}').onCreate(async (snap, context) => {
+	const data = snap.data();
+	if (['food', 'groceries'].includes(data.category)) {
+		const code = Math.floor(100000 + Math.random() * 900000).toString();
+		await snap.ref.update({ deliveryCode: code });
+	}
+	return null;
+});
+
+exports.onOrderDeliveredValidate = functions.firestore.document('orders/{orderId}').onUpdate(async (change, context) => {
+	const before = change.before.data();
+	const after = change.after.data();
+	if (before.status !== 'arrived' && after.status === 'delivered') {
+		// Require deliveryCode match
+		if (!after.deliveryCodeEntered || after.deliveryCodeEntered !== after.deliveryCode) {
+			throw new functions.https.HttpsError('failed-precondition', 'Delivery code invalid');
+		}
+	}
+	return null;
+});
+
 async function notifyUsersFor(threadId, minutesLeft) {
 	const tokens = []; // TODO: collect rider/driver device tokens from users collection
 	const payload = {

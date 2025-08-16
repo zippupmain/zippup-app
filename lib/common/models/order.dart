@@ -11,6 +11,7 @@ enum OrderStatus {
 	dispatched,
 	assigned,
 	enroute,
+	arrived,
 	delivered,
 	cancelled,
 }

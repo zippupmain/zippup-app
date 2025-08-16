@@ -16,6 +16,8 @@ import 'package:zippup/features/chat/presentation/chat_screen.dart';
 import 'package:zippup/features/profile/presentation/profile_screen.dart';
 import 'package:zippup/features/profile/presentation/apply_provider_screen.dart';
 import 'package:zippup/features/admin/presentation/admin_applications_screen.dart';
+import 'package:zippup/features/orders/presentation/my_bookings_screen.dart';
+import 'package:zippup/features/orders/presentation/track_order_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -89,6 +91,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/food/vendors/:category',
 				name: 'foodVendors',
 				builder: (context, state) => VendorListScreen(category: state.pathParameters['category'] ?? 'fast_food'),
+			),
+			GoRoute(
+				path: '/bookings',
+				name: 'myBookings',
+				builder: (context, state) => const MyBookingsScreen(),
+			),
+			GoRoute(
+				path: '/track',
+				name: 'trackOrder',
+				builder: (context, state) => TrackOrderScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
 			),
     ],
   );
