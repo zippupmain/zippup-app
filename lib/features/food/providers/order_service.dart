@@ -21,12 +21,14 @@ class OrderService {
 		return ref.id;
 	}
 
-	Future<void> updateStatus({required String orderId, required OrderStatus status, String? deliveryId, String? deliveryCode}) async {
-		await _db.collection('orders').doc(orderId).update({
+	Future<void> updateStatus({required String orderId, required OrderStatus status, String? deliveryId, String? deliveryCode, Map<String, dynamic>? extra}) async {
+		final data = {
 			'status': status.name,
 			'deliveryId': deliveryId,
 			'deliveryCode': deliveryCode,
-		});
+			...?(extra ?? {}),
+		};
+		await _db.collection('orders').doc(orderId).update(data);
 	}
 
 	Stream<Order> watchOrder(String orderId) {
