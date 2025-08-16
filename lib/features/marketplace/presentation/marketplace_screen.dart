@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:zippup/features/marketplace/models/product.dart';
 
 class MarketplaceScreen extends StatelessWidget {
@@ -23,6 +24,13 @@ class MarketplaceScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(title: const Text('Marketplace')),
+			floatingActionButton: FloatingActionButton.extended(
+				onPressed: () async {
+					await context.pushNamed('addListing');
+				},
+				label: const Text('Add'),
+				icon: const Icon(Icons.add),
+			),
 			body: StreamBuilder<List<Product>>(
 				stream: _streamProducts(),
 				builder: (context, snapshot) {
