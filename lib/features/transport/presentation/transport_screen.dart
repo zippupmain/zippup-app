@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart' as gc;
+import 'package:zippup/services/location/distance_service.dart';
 import 'package:zippup/services/location/location_service.dart';
 
 class TransportScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class _TransportScreenState extends State<TransportScreen> {
 	double _fare = 0;
 	int _eta = 0;
 	String _status = 'idle';
+	final _distanceService = DistanceService();
 
 	@override
 	void initState() {
@@ -40,11 +43,52 @@ class _TransportScreenState extends State<TransportScreen> {
 		if (_stops.length > 1) setState(() => _stops.removeAt(index));
 	}
 
-	void _estimate() {
-		setState(() {
-			_fare = 1500 + (_stops.length - 1) * 500;
-			_eta = 8 + (_stops.length - 1) * 3;
-		});
+	Future<void> _estimate() async {
+		final originAddress = _pickup.text.trim();
+		final destAddresses = _stops.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList();
+		if (originAddress.isEmpty || destAddresses.isEmpty) {
+			setState(() {
+				_fare = 0;
+				_eta = 0;
+			});
+			return;
+		}
+		try {
+			final originLocs = await gc.locationFromAddress(originAddress);
+			if (originLocs.isEmpty) return;
+			final origin = '${originLocs.first.latitude},${originLocs.first.longitude}';
+			final dests = <String>[];
+			for (final d in destAddresses) {
+				final locs = await gc.locationFromAddress(d);
+				if (locs.isNotEmpty) dests.add('${locs.first.latitude},${locs.first.longitude}');
+			}
+			if (dests.isEmpty) return;
+			final matrix = await _distanceService.getMatrix(origin: origin, destinations: dests);
+			final elements = (matrix['rows'][0]['elements'] as List);
+			double meters = 0;
+			int seconds = 0;
+			for (final el in elements) {
+				if (el['status'] == 'OK') {
+					meters += (el['distance']['value'] as num).toDouble();
+					seconds += (el['duration']['value'] as num).toInt();
+				}
+			}
+			final km = meters / 1000.0;
+			final mins = (seconds / 60).round();
+			// Simple fare: base + per km + per minute (adjust per type)
+			final base = _type == 'bike' ? 300.0 : _type == 'truck' ? 1500.0 : 700.0;
+			final perKm = _type == 'bike' ? 100.0 : _type == 'truck' ? 350.0 : 200.0;
+			final perMin = 15.0;
+			setState(() {
+				_fare = base + km * perKm + mins * perMin;
+				_eta = mins;
+			});
+		} catch (_) {
+			setState(() {
+				_fare = 0;
+				_eta = 0;
+			});
+		}
 	}
 
 	Future<void> _requestRide() async {
