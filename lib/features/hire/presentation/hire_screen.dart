@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:zippup/features/profile/presentation/provider_profile_screen.dart';
 
 class HireScreen extends StatefulWidget {
 	const HireScreen({super.key});
@@ -39,12 +40,13 @@ class _HireScreenState extends State<HireScreen> {
 									separatorBuilder: (_, __) => const Divider(height: 1),
 									itemBuilder: (context, i) {
 										final p = docs[i].data();
+										final pid = docs[i].id;
 										return ListTile(
 											title: Text(p['name'] ?? 'Provider'),
 											subtitle: Text('Rating: ${(p['rating'] ?? 0).toString()} • Fee: ₦${(p['fee'] ?? 0).toString()}'),
 											trailing: Wrap(spacing: 8, children: [
-												TextButton(onPressed: () {}, child: const Text('Profile')),
-												FilledButton(onPressed: () {}, child: const Text('Book')),
+												TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Profile')),
+												FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Book')),
 											]),
 										);
 									},

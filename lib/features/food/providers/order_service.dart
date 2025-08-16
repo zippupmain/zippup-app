@@ -6,18 +6,20 @@ class OrderService {
 	final FirebaseFirestore _db = FirebaseFirestore.instance;
 	final FirebaseAuth _auth = FirebaseAuth.instance;
 
-	Future<String> createOrder({required OrderCategory category, required String providerId}) async {
+	Future<String> createOrder({required OrderCategory category, required String providerId, Map<String, dynamic>? extra}) async {
 		final now = DateTime.now();
 		final isTransport = category == OrderCategory.transport;
 		final estimated = isTransport ? null : now.add(const Duration(minutes: 10));
-		final ref = await _db.collection('orders').add({
+		final data = {
 			'buyerId': _auth.currentUser?.uid ?? 'anonymous',
 			'providerId': providerId,
 			'category': category.name,
 			'status': isTransport ? OrderStatus.pending.name : OrderStatus.preparing.name,
 			'createdAt': now.toIso8601String(),
 			'estimatedPreparedAt': estimated?.toIso8601String(),
-		});
+			...?(extra ?? {}),
+		};
+		final ref = await _db.collection('orders').add(data);
 		return ref.id;
 	}
 
