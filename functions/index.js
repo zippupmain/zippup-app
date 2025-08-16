@@ -112,6 +112,18 @@ exports.distanceMatrix = functions.https.onCall(async (data, context) => {
 	return res.data;
 });
 
+exports.directions = functions.https.onCall(async (data, context) => {
+	const origin = data.origin; // "lat,lng"
+	const destination = data.destination; // "lat,lng"
+	if (!origin || !destination) throw new functions.https.HttpsError('invalid-argument', 'Missing origin/destination');
+	const key = (await admin.firestore().doc('_config/maps').get()).get('key') || process.env.MAPS_KEY || (functions.config().maps && functions.config().maps.key);
+	if (!key) throw new functions.https.HttpsError('failed-precondition', 'Maps key not configured');
+	const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${key}`;
+	const res = await axios.get(url);
+	const route = res.data.routes && res.data.routes[0];
+	return { polyline: route && route.overview_polyline && route.overview_polyline.points };
+});
+
 async function notifyUsersFor(threadId, minutesLeft) {
 	const tokens = []; // TODO: collect rider/driver device tokens from users collection
 	const payload = {

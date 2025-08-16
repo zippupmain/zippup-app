@@ -8,4 +8,11 @@ class DistanceService {
 		final res = await callable.call({'origin': origin, 'destinations': destinations});
 		return Map<String, dynamic>.from(res.data as Map);
 	}
+
+	Future<String?> getDirectionsPolyline({required String origin, required String destination}) async {
+		final callable = _functions.httpsCallable('directions');
+		final res = await callable.call({'origin': origin, 'destination': destination});
+		final data = Map<String, dynamic>.from(res.data as Map);
+		return data['polyline'] as String?;
+	}
 }
