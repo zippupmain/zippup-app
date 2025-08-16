@@ -1,69 +1,50 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:zippup/features/marketplace/models/product.dart';
-import 'package:zippup/services/api/marketplace_api.dart';
 
-class MarketplaceScreen extends StatefulWidget {
+class MarketplaceScreen extends StatelessWidget {
 	const MarketplaceScreen({super.key});
 
-	@override
-	State<MarketplaceScreen> createState() => _MarketplaceScreenState();
-}
-
-class _MarketplaceScreenState extends State<MarketplaceScreen> {
-	final MarketplaceApi _api = MarketplaceApi();
-	List<Product> _products = const [];
-	bool _loading = true;
-	String? _error;
-
-	@override
-	void initState() {
-		super.initState();
-		_load();
-	}
-
-	Future<void> _load() async {
-		setState(() {
-			_loading = true;
-			_error = null;
-		});
-		try {
-			final items = await _api.fetchProducts();
-			setState(() {
-				_products = items;
-			});
-		} catch (e) {
-			setState(() {
-				_error = 'Failed to load products. Showing offline cache if available.';
-				_products = _products; // keep existing in-memory cache
-			});
-		} finally {
-			setState(() {
-				_loading = false;
-			});
-		}
+	Stream<List<Product>> _streamProducts() {
+		return FirebaseFirestore.instance
+			.collection('listings')
+			.orderBy('createdAt', descending: true)
+			.snapshots()
+			.map((snap) => snap.docs.map((d) {
+				final data = d.data();
+				return Product.fromJson({
+					'id': d.id,
+					...data,
+				});
+			}).toList());
 	}
 
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(title: const Text('Marketplace')),
-			body: RefreshIndicator(
-				onRefresh: _load,
-				child: _loading
-						? const Center(child: CircularProgressIndicator())
-						: _products.isEmpty
-								? ListView(children: const [SizedBox(height: 120), Center(child: Text('No products'))])
-								: ListView.separated(
-									itemCount: _products.length,
-									separatorBuilder: (_, __) => const Divider(height: 1),
-									itemBuilder: (context, i) {
-										final p = _products[i];
-										return ListTile(
-											title: Text(p.title),
-											subtitle: Text('${p.category} • ${p.price.toStringAsFixed(2)}'),
-										);
-									},
-								),
+			body: StreamBuilder<List<Product>>(
+				stream: _streamProducts(),
+				builder: (context, snapshot) {
+					if (snapshot.connectionState == ConnectionState.waiting) {
+						return const Center(child: CircularProgressIndicator());
+					}
+					final products = snapshot.data ?? const <Product>[];
+					if (products.isEmpty) {
+						return ListView(children: const [SizedBox(height: 120), Center(child: Text('No products'))]);
+					}
+					return ListView.separated(
+						itemCount: products.length,
+						separatorBuilder: (_, __) => const Divider(height: 1),
+						itemBuilder: (context, i) {
+							final p = products[i];
+							return ListTile(
+								title: Text(p.title),
+								subtitle: Text('${p.category} • ${p.price.toStringAsFixed(2)}'),
+							);
+						},
+					);
+				},
 			),
 		);
 	}

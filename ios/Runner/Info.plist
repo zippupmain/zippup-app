@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>GMSApiKey</key>
+	<string>YOUR_GOOGLE_MAPS_API_KEY</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your location is used to show nearby services and for emergency alerts.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera may be used for verification.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone may be used during emergency verification.</string>
 </dict>
 </plist>
