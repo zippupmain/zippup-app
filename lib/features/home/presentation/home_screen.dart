@@ -34,6 +34,7 @@ class HomeScreen extends StatelessWidget {
 								),
 							),
 						),
+					),
 					SliverToBoxAdapter(child: _EmergencySection()),
 					SliverToBoxAdapter(child: _QuickActions()),
 					SliverToBoxAdapter(child: _Promotions()),
