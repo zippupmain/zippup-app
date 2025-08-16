@@ -60,11 +60,27 @@ exports.scheduledReminders = functions.pubsub.schedule('every 5 minutes').onRun(
 	return null;
 });
 
+function statusTitle(entity, status) {
+	switch (status) {
+		case 'accepted': return `${entity} accepted`;
+		case 'arriving': return `${entity} arriving`;
+		case 'arrived': return `${entity} arrived`;
+		case 'enroute': return `${entity} en route`;
+		case 'preparing': return `Order preparing`;
+		case 'dispatched': return `Order dispatched`;
+		case 'assigned': return `Courier assigned`;
+		case 'delivered': return `Order delivered`;
+		case 'completed': return `${entity} completed`;
+		case 'cancelled': return `${entity} cancelled`;
+		default: return `${entity} update`;
+	}
+}
+
 exports.onOrderStatusChange = functions.firestore.document('orders/{orderId}').onUpdate(async (change, context) => {
 	const before = change.before.data();
 	const after = change.after.data();
 	if (before.status === after.status) return null;
-	const title = 'Order update';
+	const title = statusTitle('Order', after.status);
 	const body = `Status: ${after.status}`;
 	await notifyParties([after.buyerId, after.providerId], { title, body }, { type: 'order', orderId: context.params.orderId, status: after.status });
 	return null;
@@ -74,7 +90,7 @@ exports.onRideStatusChange = functions.firestore.document('rides/{rideId}').onUp
 	const before = change.before.data();
 	const after = change.after.data();
 	if (before.status === after.status) return null;
-	const title = 'Ride update';
+	const title = statusTitle('Ride', after.status);
 	const body = `Status: ${after.status}`;
 	await notifyParties([after.riderId, after.driverId], { title, body }, { type: 'ride', rideId: context.params.rideId, status: after.status });
 	return null;
