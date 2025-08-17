@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/location/location_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class HomeScreen extends StatefulWidget {
@@ -16,13 +17,26 @@ class _HomeScreenState extends State<HomeScreen> {
 	int _tab = 0;
 	String _locationText = 'Detecting location…';
 	String _greet = '';
+	bool _isPlatformAdmin = false;
 
 	@override
 	void initState() {
 		super.initState();
 		_fetchLocation();
 		_setGreeting();
-		FirebaseAuth.instance.authStateChanges().listen((_) => _setGreeting());
+		_checkAdmin();
+		FirebaseAuth.instance.authStateChanges().listen((_) {
+			_setGreeting();
+			_checkAdmin();
+		});
+	}
+
+	Future<void> _checkAdmin() async {
+		final uid = FirebaseAuth.instance.currentUser?.uid;
+		if (uid == null) return;
+		final snap = await FirebaseFirestore.instance.collection('_config').doc('admins').collection('users').doc(uid).get();
+		if (!mounted) return;
+		setState(() => _isPlatformAdmin = snap.exists);
 	}
 
 	void _setGreeting() {
@@ -59,7 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
 						itemBuilder: (context) => <PopupMenuEntry>[
 							PopupMenuItem(child: const Text('Profile'), onTap: () => context.push('/profile')),
 							PopupMenuItem(child: const Text('Bookings'), onTap: () => context.push('/bookings')),
-							PopupMenuItem(child: const Text('Wallet'), onTap: () => context.push('/profile')),
+							PopupMenuItem(child: const Text('Wallet'), onTap: () => context.push('/wallet')),
+							if (_isPlatformAdmin) PopupMenuItem(child: const Text('Platform Admin'), onTap: () => context.push('/admin/platform')),
 							const PopupMenuDivider(),
 							PopupMenuItem(
 								child: const Text('Logout'),
@@ -98,7 +113,6 @@ class _HomeScreenState extends State<HomeScreen> {
 								),
 							),
 						),
-					),
 					SliverToBoxAdapter(
 						child: Padding(
 							padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
