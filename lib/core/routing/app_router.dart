@@ -35,6 +35,10 @@ import 'package:zippup/features/wallet/presentation/wallet_screen.dart';
 import 'package:zippup/features/settings/presentation/languages_screen.dart';
 import 'package:zippup/features/profile/presentation/business_profile_screen.dart';
 import 'package:zippup/features/support/presentation/support_screen.dart';
+import 'package:zippup/features/profile/presentation/manage_accounts_screen.dart';
+import 'package:zippup/features/legal/presentation/privacy_screen.dart';
+import 'package:zippup/features/legal/presentation/terms_screen.dart';
+import 'package:zippup/features/ratings/presentation/rate_app_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -208,6 +212,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/support',
         name: 'support',
         builder: (context, state) => const SupportScreen(),
+      ),
+      GoRoute(
+        path: '/manage-accounts',
+        name: 'manageAccounts',
+        builder: (context, state) => const ManageAccountsScreen(),
+      ),
+      GoRoute(
+        path: '/privacy',
+        name: 'privacy',
+        builder: (context, state) => const PrivacyScreen(),
+      ),
+      GoRoute(
+        path: '/terms',
+        name: 'terms',
+        builder: (context, state) => const TermsScreen(),
+      ),
+      GoRoute(
+        path: '/rate',
+        name: 'rate',
+        builder: (context, state) => const RateAppScreen(),
       ),
     ],
   );
