@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart' as gc;
 import 'package:zippup/services/location/distance_service.dart';
 import 'package:zippup/services/location/location_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 
 class TransportScreen extends StatefulWidget {
 	const TransportScreen({super.key});
@@ -13,6 +16,7 @@ class TransportScreen extends StatefulWidget {
 class _TransportScreenState extends State<TransportScreen> {
 	final _pickup = TextEditingController();
 	final List<TextEditingController> _stops = [TextEditingController()];
+	final _scheduleMsg = TextEditingController();
 	bool _scheduled = false;
 	DateTime? _scheduledAt;
 	String _type = 'taxi';
@@ -75,7 +79,6 @@ class _TransportScreenState extends State<TransportScreen> {
 			}
 			final km = meters / 1000.0;
 			final mins = (seconds / 60).round();
-			// Simple fare: base + per km + per minute (adjust per type)
 			final base = _type == 'bike' ? 300.0 : _type == 'truck' ? 1500.0 : 700.0;
 			final perKm = _type == 'bike' ? 100.0 : _type == 'truck' ? 350.0 : 200.0;
 			final perMin = 15.0;
@@ -92,11 +95,44 @@ class _TransportScreenState extends State<TransportScreen> {
 	}
 
 	Future<void> _requestRide() async {
+		final origin = _pickup.text.trim();
+		final dests = _stops.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList();
+		if (origin.isEmpty || dests.isEmpty) {
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a destination')));
+			return;
+		}
 		setState(() => _status = 'requesting');
-		await Future.delayed(const Duration(seconds: 2));
-		setState(() => _status = 'waiting_driver');
-		await Future.delayed(const Duration(seconds: 3));
-		setState(() => _status = 'driver_accepted');
+		try {
+			final oLoc = await gc.locationFromAddress(origin);
+			final dLoc = await gc.locationFromAddress(dests.first);
+			if (oLoc.isEmpty || dLoc.isEmpty) throw Exception('Geocode failed');
+			final db = FirebaseFirestore.instance;
+			final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+			final doc = await db.collection('rides').add({
+				'riderId': uid,
+				'type': _type,
+				'isScheduled': _scheduled,
+				'scheduledAt': _scheduledAt?.toIso8601String(),
+				'pickupAddress': origin,
+				'destinationAddresses': dests,
+				'pickupLat': oLoc.first.latitude,
+				'pickupLng': oLoc.first.longitude,
+				'destLat': dLoc.first.latitude,
+				'destLng': dLoc.first.longitude,
+				'createdAt': DateTime.now().toIso8601String(),
+				'fareEstimate': _fare,
+				'etaMinutes': _eta,
+				'notes': _scheduled ? _scheduleMsg.text.trim() : null,
+				'status': 'requested',
+			});
+			if (!mounted) return;
+			context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
+			setState(() => _status = 'driver_accepted');
+		} catch (e) {
+			setState(() => _status = 'idle');
+			if (!mounted) return;
+			ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Request failed: $e')));
+		}
 	}
 
 	@override
@@ -134,12 +170,14 @@ class _TransportScreenState extends State<TransportScreen> {
 								setState(() => _scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
 							},
 						),
+					if (_scheduled)
+						TextField(controller: _scheduleMsg, decoration: const InputDecoration(labelText: 'Message / reason (optional)')),
 					TextField(controller: _pickup, decoration: const InputDecoration(labelText: 'Pickup address')),
 					const SizedBox(height: 8),
 					const Text('Stops (max 5):'),
 					for (int i = 0; i < _stops.length; i++)
 						Row(children: [
-							Expanded(child: TextField(controller: _stops[i], decoration: InputDecoration(labelText: 'Stop ${i + 1}'))),
+							Expanded(child: TextField(controller: _stops[i], decoration: InputDecoration(labelText: 'Stop ${i + 1} (destination)'))),
 							IconButton(onPressed: () => _removeStop(i), icon: const Icon(Icons.remove_circle_outline)),
 						]),
 					TextButton.icon(onPressed: _addStop, icon: const Icon(Icons.add), label: const Text('Add stop')),

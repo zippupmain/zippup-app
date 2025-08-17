@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:zippup/services/location/location_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
 	const HomeScreen({super.key});
@@ -10,12 +12,35 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 	int _tab = 0;
+	String _locationText = 'Detecting location…';
+	String _greet = '';
 
-	String _greeting() {
+	@override
+	void initState() {
+		super.initState();
+		_fetchLocation();
+		_setGreeting();
+		FirebaseAuth.instance.authStateChanges().listen((_) => _setGreeting());
+	}
+
+	void _setGreeting() {
 		final h = DateTime.now().hour;
-		if (h < 12) return 'Good morning';
-		if (h < 17) return 'Good afternoon';
-		return 'Good evening';
+		final prefix = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+		final u = FirebaseAuth.instance.currentUser;
+		final name = (u?.displayName?.trim().isNotEmpty == true)
+			? u!.displayName!.trim()
+			: (u?.email != null ? u!.email!.split('@').first : 'User');
+		setState(() => _greet = '$prefix $name');
+	}
+
+	Future<void> _fetchLocation() async {
+		try {
+			final pos = await LocationService.getCurrentPosition();
+			if (pos == null) return;
+			final addr = await LocationService.reverseGeocode(pos);
+			if (!mounted) return;
+			setState(() => _locationText = addr ?? '${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}');
+		} catch (_) {}
 	}
 
 	@override
@@ -40,16 +65,10 @@ class _HomeScreenState extends State<HomeScreen> {
 					SliverAppBar(
 						pinned: true,
 						expandedHeight: 160,
-						flexibleSpace: FlexibleSpaceBar(
-							titlePadding: const EdgeInsetsDirectional.only(start: 16, bottom: 12),
-							title: Column(
-								mainAxisSize: MainAxisSize.min,
-								crossAxisAlignment: CrossAxisAlignment.start,
-								children: [
-									const Text('One Tap. All Services.', style: TextStyle(fontSize: 11)),
-								],
-							),
-							background: const DecoratedBox(
+						flexibleSpace: const FlexibleSpaceBar(
+							titlePadding: EdgeInsetsDirectional.only(start: 16, bottom: 12),
+							title: Text('One Tap. All Services.', style: TextStyle(fontSize: 11)),
+							background: DecoratedBox(
 								decoration: BoxDecoration(
 									gradient: LinearGradient(
 										colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
@@ -57,6 +76,19 @@ class _HomeScreenState extends State<HomeScreen> {
 										end: Alignment.bottomRight,
 									),
 								),
+							),
+						),
+					SliverToBoxAdapter(
+						child: Padding(
+							padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+							child: Row(
+								children: [
+									const Icon(Icons.location_on_outlined, size: 18, color: Colors.redAccent),
+									const SizedBox(width: 6),
+									Expanded(child: Text(_locationText, overflow: TextOverflow.ellipsis, maxLines: 1, style: const TextStyle(fontSize: 12))),
+									const SizedBox(width: 8),
+									Text(_greet, style: const TextStyle(fontSize: 12)),
+								],
 							),
 						),
 					),
@@ -67,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
 						),
 					),
 					SliverToBoxAdapter(child: _QuickActions()),
+					SliverToBoxAdapter(child: _EmergencyActions()),
 					SliverToBoxAdapter(child: _Promotions()),
 					SliverList(
 						delegate: SliverChildBuilderDelegate(
@@ -99,28 +132,14 @@ class _HomeScreenState extends State<HomeScreen> {
 	}
 }
 
-class _EmergencySection extends StatelessWidget {
-	@override
-	Widget build(BuildContext context) {
-		return const SizedBox.shrink();
-	}
-}
-
 class _QuickActions extends StatelessWidget {
 	final List<_QuickAction> actions = const [
-		_QuickAction('Ride', Icons.local_taxi, 'transport', Color(0xFFFFEDD5)),
-		_QuickAction('Food', Icons.fastfood, 'food', Color(0xFFE0F2FE)),
-		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFEDE9FE)),
-		_QuickAction('Marketplace', Icons.store_mall_directory, 'marketplace', Color(0xFFE6F4EA)),
-		_QuickAction('Digital', Icons.phone_android, 'digital', Color(0xFFFFE4E6)),
-		_QuickAction('Ambulance', Icons.health_and_safety, 'panic', Color(0xFFFFE4E6)),
-		_QuickAction('Fire', Icons.local_fire_department, 'panic', Color(0xFFFFCDD2)),
-		_QuickAction('Towing', Icons.local_shipping, 'panic', Color(0xFFE0F7FA)),
-		_QuickAction('Security', Icons.shield_outlined, 'panic', Color(0xFFE8F5E9)),
-		_QuickAction('Events', Icons.event, 'hire', Color(0xFFF3E8FF)),
-		_QuickAction('Tickets', Icons.confirmation_number, 'digital', Color(0xFFFEF3C7)),
-		_QuickAction('Tutors', Icons.school, 'hire', Color(0xFFE0F2FE)),
-		_QuickAction('Roadside', Icons.build_circle, 'transport', Color(0xFFFFF3E0)),
+		_QuickAction('Ride', Icons.directions_car_filled, 'transport', Color(0xFFFFE5E5), Colors.red),
+		_QuickAction('Food', Icons.local_fire_department, 'food', Color(0xFFE8F5E9), Colors.green),
+		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFFFF7E0), Colors.amber),
+		_QuickAction('Marketplace', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.pink),
+		_QuickAction('Digital', Icons.devices_other, 'digital', Color(0xFFE8F5E9), Colors.green),
+		_QuickAction('Others', Icons.sports_archery, 'hire', Color(0xFFFFE5E5), Colors.red),
 	];
 
 	@override
@@ -132,8 +151,10 @@ class _QuickActions extends StatelessWidget {
 				shrinkWrap: true,
 				physics: const NeverScrollableScrollPhysics(),
 				gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-					crossAxisCount: 5,
-					childAspectRatio: .8,
+					crossAxisCount: 4,
+					childAspectRatio: .9,
+					mainAxisSpacing: 10,
+					crossAxisSpacing: 10,
 				),
 				itemBuilder: (context, i) {
 					final a = actions[i];
@@ -144,7 +165,7 @@ class _QuickActions extends StatelessWidget {
 								Container(
 									decoration: BoxDecoration(color: a.bg, shape: BoxShape.circle),
 									padding: const EdgeInsets.all(12),
-									child: Icon(a.icon, color: Colors.black87),
+									child: Icon(a.icon, color: a.iconColor),
 								),
 								const SizedBox(height: 6),
 								Text(a.title, style: const TextStyle(fontSize: 12)),
@@ -157,12 +178,52 @@ class _QuickActions extends StatelessWidget {
 	}
 }
 
+class _EmergencyActions extends StatelessWidget {
+	final List<_QuickAction> items = const [
+		_QuickAction('Ambulance', Icons.medical_services, 'panic', Color(0xFFFFE5E5), Colors.red),
+		_QuickAction('Fire', Icons.local_fire_department, 'panic', Color(0xFFFFE5E5), Colors.red),
+		_QuickAction('Towing', Icons.local_shipping, 'panic', Color(0xFFE0F7FA), Colors.blueGrey),
+		_QuickAction('Security', Icons.shield_outlined, 'panic', Color(0xFFE8F5E9), Colors.green),
+		_QuickAction('Roadside', Icons.build_circle, 'transport', Color(0xFFFFF7E0), Colors.amber),
+	];
+	@override
+	Widget build(BuildContext context) {
+		return Padding(
+			padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+			child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+				const Padding(
+					padding: EdgeInsets.only(bottom: 8),
+					child: Text('Emergency Services', style: TextStyle(fontWeight: FontWeight.w600)),
+				),
+				GridView.builder(
+					itemCount: items.length,
+					shrinkWrap: true,
+					physics: const NeverScrollableScrollPhysics(),
+					gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, childAspectRatio: .9, mainAxisSpacing: 10, crossAxisSpacing: 10),
+					itemBuilder: (context, i) {
+						final a = items[i];
+						return InkWell(
+							onTap: () => context.pushNamed(a.routeName),
+							child: Column(children: [
+								Container(decoration: BoxDecoration(color: a.bg, shape: BoxShape.circle), padding: const EdgeInsets.all(12), child: Icon(a.icon, color: a.iconColor)),
+								const SizedBox(height: 6),
+								Text(a.title, style: const TextStyle(fontSize: 12)),
+							]),
+						);
+					},
+				),
+			]),
+		);
+	}
+}
+
 class _QuickAction {
 	final String title;
 	final IconData icon;
 	final String routeName;
 	final Color bg;
-	const _QuickAction(this.title, this.icon, this.routeName, this.bg);
+	final Color iconColor;
+	const _QuickAction(this.title, this.icon, this.routeName, this.bg, this.iconColor);
 }
 
 class _Promotions extends StatelessWidget {
@@ -176,11 +237,12 @@ class _Promotions extends StatelessWidget {
 				itemBuilder: (context, index) => Container(
 					width: 260,
 					decoration: BoxDecoration(
-						color: index.isEven ? const Color(0xFFFEF3C7) : const Color(0xFFF3E8FF),
+						color: Colors.white,
 						borderRadius: BorderRadius.circular(12),
+						border: Border.all(color: Colors.black12),
 					),
 					padding: const EdgeInsets.all(12),
-					child: Text(index.isEven ? '🚑 Emergency services 24/7' : '🍔 10% off first food order', style: const TextStyle(fontWeight: FontWeight.w600)),
+					child: Text(index.isEven ? '10% off first food order' : 'Taxi & truck booking', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
 				),
 				separatorBuilder: (_, __) => const SizedBox(width: 12),
 				itemCount: 6,
