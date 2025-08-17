@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -236,26 +237,73 @@ class _QuickAction {
 	const _QuickAction(this.title, this.icon, this.routeName, this.bg, this.iconColor);
 }
 
-class _Promotions extends StatelessWidget {
+class _Promotions extends StatefulWidget {
+	@override
+	State<_Promotions> createState() => _PromotionsState();
+}
+
+class _PromotionsState extends State<_Promotions> {
+	final _ctrl = ScrollController();
+	Timer? _ticker;
+	final List<String> _items = const [
+		'🍔 10% off first food order',
+		'🚗 Taxi & truck booking',
+		'🛠️ Hire verified providers',
+		'💳 Pay securely',
+		'🛍️ Marketplace deals',
+		'🎁 Refer friends, earn coupons',
+	];
+
+	@override
+	void initState() {
+		super.initState();
+		_ticker = Timer.periodic(const Duration(milliseconds: 25), (_) {
+			if (!_ctrl.hasClients) return;
+			final max = _ctrl.position.maxScrollExtent;
+			final next = _ctrl.offset + 1;
+			if (next >= max) {
+				_ctrl.jumpTo(0);
+			} else {
+				_ctrl.jumpTo(next);
+			}
+		});
+	}
+
+	@override
+	void dispose() {
+		_ticker?.cancel();
+		_ctrl.dispose();
+		super.dispose();
+	}
+
 	@override
 	Widget build(BuildContext context) {
+		final data = [..._items, ..._items]; // duplicate to simulate loop
 		return SizedBox(
 			height: 140,
-			child: ListView.separated(
-				padding: const EdgeInsets.all(16),
-				scrollDirection: Axis.horizontal,
-				itemBuilder: (context, index) => Container(
-					width: 260,
-					decoration: BoxDecoration(
-						color: Colors.white,
-						borderRadius: BorderRadius.circular(12),
-						border: Border.all(color: Colors.black12),
+			child: Container(
+				color: Colors.white,
+				child: ListView.separated(
+					controller: _ctrl,
+					scrollDirection: Axis.horizontal,
+					physics: const NeverScrollableScrollPhysics(),
+					padding: const EdgeInsets.all(16),
+					itemBuilder: (context, index) => Container(
+						width: 260,
+						decoration: BoxDecoration(
+							color: Colors.white,
+							borderRadius: BorderRadius.circular(12),
+							border: Border.all(color: Colors.black12),
+						),
+						padding: const EdgeInsets.all(12),
+						child: Text(
+							data[index % data.length],
+							style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
+						),
 					),
-					padding: const EdgeInsets.all(12),
-					child: Text(index.isEven ? '10% off first food order' : 'Taxi & truck booking', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
+					separatorBuilder: (_, __) => const SizedBox(width: 12),
+					itemCount: data.length,
 				),
-				separatorBuilder: (_, __) => const SizedBox(width: 12),
-				itemCount: 6,
 			),
 		);
 	}
