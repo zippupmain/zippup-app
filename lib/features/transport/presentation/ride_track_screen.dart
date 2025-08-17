@@ -116,7 +116,7 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(title: const Text('Track Ride')),
-			body: StreamBuilder<DocumentSnapshot<Map<String, dynamic}}>(
+			body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
 				stream: FirebaseFirestore.instance.collection('rides').doc(widget.rideId).snapshots(),
 				builder: (context, snap) {
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());

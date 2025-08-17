@@ -8,7 +8,7 @@ class VendorDetailScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(title: const Text('Vendor')), 
-			body: FutureBuilder<DocumentSnapshot<Map<String, dynamic}}>(
+			body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
 				future: FirebaseFirestore.instance.collection('vendors').doc(vendorId).get(),
 				builder: (context, snap) {
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());

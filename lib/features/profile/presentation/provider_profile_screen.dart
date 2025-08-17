@@ -11,7 +11,7 @@ class ProviderProfileScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(title: const Text('Provider')),
-			body: FutureBuilder<DocumentSnapshot<Map<String, dynamic}}>(
+			body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
 				future: FirebaseFirestore.instance.collection('providers').doc(providerId).get(),
 				builder: (context, snap) {
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
@@ -29,7 +29,7 @@ class ProviderProfileScreen extends StatelessWidget {
 							Text('Category: ${p['category'] ?? ''}'),
 							Text('Fee: ₦${(p['fee'] ?? 0).toString()}'),
 							const Spacer(),
-							FilledButton(onPressed: () => _openBookingSheet(context), child: const Text('Book')),
+							FilledButton(onPressed: () => _openBookingSheet(context), child: const Text('Book')), 
 						]),
 					);
 				},

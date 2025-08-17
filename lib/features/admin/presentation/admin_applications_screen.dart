@@ -26,7 +26,7 @@ class AdminApplicationsScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(title: const Text('Admin • Applications')),
-			body: StreamBuilder<QuerySnapshot<Map<String, dynamic}}>(
+			body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
 				stream: FirebaseFirestore.instance.collection('applications').orderBy('createdAt', descending: true).snapshots(),
 				builder: (context, snap) {
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());

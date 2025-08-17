@@ -29,7 +29,7 @@ class _HireScreenState extends State<HireScreen> {
 						]),
 					),
 					Expanded(
-						child: StreamBuilder<QuerySnapshot<Map<String, dynamic}}>(
+						child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
 							stream: FirebaseFirestore.instance.collection('providers').where('category', isEqualTo: _filter).snapshots(),
 							builder: (context, snap) {
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());

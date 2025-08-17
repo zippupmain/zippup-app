@@ -8,7 +8,7 @@ class ProductDetailScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(title: const Text('Listing')),
-			body: FutureBuilder<DocumentSnapshot<Map<String, dynamic}}>(
+			body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
 				future: FirebaseFirestore.instance.collection('listings').doc(productId).get(),
 				builder: (context, snap) {
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());

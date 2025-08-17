@@ -148,7 +148,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
 					_buildActiveRideCard(),
 					Expanded(
 						child: _online
-								? StreamBuilder<List<Map<String, dynamic}}>(
+								? StreamBuilder<List<Map<String, dynamic>>>(
 									stream: _waitingRides(),
 									builder: (context, snap) {
 										if (!snap.hasData) return const Center(child: CircularProgressIndicator());
