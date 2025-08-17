@@ -42,6 +42,7 @@ import 'package:zippup/features/ratings/presentation/rate_app_screen.dart';
 import 'package:zippup/features/promos/presentation/promos_screen.dart';
 import 'package:zippup/features/profile/presentation/emergency_contacts_screen.dart';
 import 'package:zippup/features/others/presentation/others_search_screen.dart';
+import 'package:zippup/features/admin/presentation/platform_admin_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -261,6 +262,37 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'promos',
         builder: (context, state) => const PromosScreen(),
       ),
+      GoRoute(
+        path: '/admin/platform',
+        name: 'platformAdmin',
+        builder: (context, state) => const PlatformAdminScreen(),
+      ),
+      GoRoute(
+        path: '/admin/promos',
+        name: 'adminPromos',
+        builder: (context, state) => const _AdminPromosPlaceholder(),
+      ),
+      GoRoute(
+        path: '/admin/emergency-config',
+        name: 'emergencyConfig',
+        builder: (context, state) => const _AdminEmergencyConfigPlaceholder(),
+      ),
     ],
   );
 });
+
+class _AdminPromosPlaceholder extends StatelessWidget {
+  const _AdminPromosPlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(title: const Text('Manage Promos & Vouchers')), body: const Center(child: Text('Admin placeholder: add/edit promos in Firestore collection "promos"')));
+  }
+}
+
+class _AdminEmergencyConfigPlaceholder extends StatelessWidget {
+  const _AdminEmergencyConfigPlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(title: const Text('Emergency config')), body: const Padding(padding: EdgeInsets.all(16), child: Text('Admin placeholder: set default lines per country in _config/emergency document (e.g., { "NG": "+23411223344" })')));
+  }
+}
