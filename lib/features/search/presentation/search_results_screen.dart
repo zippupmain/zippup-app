@@ -87,7 +87,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 								return ListView(
 									children: [
 										for (final section in filtered) ...[
-											if (section.$2.isNotEmpty) Padding(padding: const EdgeInsets.fromLTRB(16, 16, 16, 8), child: Text(section.$1, style: Theme.of(context).textTheme.titleMedium)),
+											if (section.$2.isNotEmpty)
+												Padding(
+													padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+													child: Text(section.$1, style: Theme.of(context).textTheme.titleMedium),
+												),
 											for (final item in section.$2)
 												ListTile(
 													title: Text(item['name'] ?? item['title'] ?? 'Item'),
@@ -102,12 +106,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 														}
 													},
 												),
-										if (section.$2.length >= _limit) Center(
-											child: Padding(
-												padding: const EdgeInsets.all(12.0),
-												child: OutlinedButton(onPressed: () => setState(() => _limit += 20), child: const Text('Load more')),
-											),
-										),
+											if (section.$2.length >= _limit)
+												Center(
+													child: Padding(
+														padding: const EdgeInsets.all(12.0),
+														child: OutlinedButton(onPressed: () => setState(() => _limit += 20), child: const Text('Load more')),
+													),
+												),
+										],
 									],
 								);
 							},
