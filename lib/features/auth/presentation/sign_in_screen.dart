@@ -13,6 +13,7 @@ class _SignInScreenState extends State<SignInScreen> {
 	final TextEditingController _emailController = TextEditingController();
 	final TextEditingController _passwordController = TextEditingController();
 	final TextEditingController _phoneController = TextEditingController();
+	final TextEditingController _smsController = TextEditingController();
 	String? _verificationId;
 	bool _loading = false;
 	bool _isSignUp = false;
@@ -152,10 +153,21 @@ class _SignInScreenState extends State<SignInScreen> {
 		if (_verificationId == null) return const SizedBox.shrink();
 		return Padding(
 			padding: const EdgeInsets.only(top: 8.0),
-			child: TextField(
-				keyboardType: TextInputType.number,
-				decoration: const InputDecoration(labelText: 'SMS code'),
-				onSubmitted: (code) => _verifyCode(code.trim()),
+			child: Column(
+				crossAxisAlignment: CrossAxisAlignment.stretch,
+				children: [
+					TextField(
+						controller: _smsController,
+						keyboardType: TextInputType.number,
+						decoration: const InputDecoration(labelText: 'SMS code'),
+						onSubmitted: (code) => _verifyCode(code.trim()),
+					),
+					const SizedBox(height: 8),
+					FilledButton(
+						onPressed: _loading ? null : () => _verifyCode(_smsController.text.trim()),
+						child: const Text('Verify & sign in'),
+					),
+				],
 			),
 		);
 	}
