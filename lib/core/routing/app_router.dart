@@ -41,6 +41,7 @@ import 'package:zippup/features/legal/presentation/terms_screen.dart';
 import 'package:zippup/features/ratings/presentation/rate_app_screen.dart';
 import 'package:zippup/features/promos/presentation/promos_screen.dart';
 import 'package:zippup/features/profile/presentation/emergency_contacts_screen.dart';
+import 'package:zippup/features/others/presentation/others_search_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -169,6 +170,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/others',
 				name: 'others',
 				builder: (context, state) => const OthersScreen(),
+			),
+			GoRoute(
+				path: '/others/events',
+				name: 'othersEvents',
+				builder: (context, state) => const OthersSearchScreen(kind: 'events'),
+			),
+			GoRoute(
+				path: '/others/tickets',
+				name: 'othersTickets',
+				builder: (context, state) => const OthersSearchScreen(kind: 'tickets'),
+			),
+			GoRoute(
+				path: '/others/tutors',
+				name: 'othersTutors',
+				builder: (context, state) => const OthersSearchScreen(kind: 'tutors'),
 			),
 			GoRoute(
 				path: '/vendor',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class OthersScreen extends StatelessWidget {
 	const OthersScreen({super.key});
@@ -6,9 +7,9 @@ class OthersScreen extends StatelessWidget {
 	@override
 	Widget build(BuildContext context) {
 		final items = [
-			(const Icon(Icons.event), 'Events planning'),
-			(const Icon(Icons.confirmation_number), 'Live event tickets'),
-			(const Icon(Icons.school), 'Tutors'),
+			(const Icon(Icons.event), 'Events planning', '/others/events'),
+			(const Icon(Icons.confirmation_number), 'Live event tickets', '/others/tickets'),
+			(const Icon(Icons.school), 'Tutors', '/others/tutors'),
 		];
 		return Scaffold(
 			appBar: AppBar(title: const Text('Others')),
@@ -17,11 +18,11 @@ class OthersScreen extends StatelessWidget {
 				itemCount: items.length,
 				separatorBuilder: (_, __) => const Divider(height: 1),
 				itemBuilder: (context, i) {
-					final (icon, title) = items[i];
+					final (icon, title, route) = items[i];
 					return ListTile(
 						leading: icon,
 						title: Text(title),
-						onTap: () {},
+						onTap: () => context.push(route),
 					);
 				},
 			),
