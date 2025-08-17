@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:zippup/common/widgets/address_field.dart';
 
 class ApplyProviderScreen extends StatefulWidget {
 	const ApplyProviderScreen({super.key});
@@ -72,7 +73,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				padding: const EdgeInsets.all(16),
 				children: [
 					TextField(controller: _name, decoration: const InputDecoration(labelText: 'Full name (as on ID/passport)')),
-					TextField(controller: _address, decoration: const InputDecoration(labelText: 'Address')),
+					AddressField(controller: _address, label: 'Address'),
 					DropdownButtonFormField(value: _category, items: const [
 						DropdownMenuItem(value: 'transport', child: Text('Transport')),
 						DropdownMenuItem(value: 'food', child: Text('Food')),

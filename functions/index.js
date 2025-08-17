@@ -140,6 +140,19 @@ exports.directions = functions.https.onCall(async (data, context) => {
 	return { polyline: route && route.overview_polyline && route.overview_polyline.points };
 });
 
+exports.placesAutocomplete = functions.https.onCall(async (data, context) => {
+	const input = (data && data.input) || '';
+	const sessiontoken = data && data.sessiontoken;
+	if (!input || input.length < 3) return { predictions: [] };
+	const key = (await admin.firestore().doc('_config/maps').get()).get('key') || process.env.MAPS_KEY || (functions.config().maps && functions.config().maps.key);
+	if (!key) throw new functions.https.HttpsError('failed-precondition', 'Maps key not configured');
+	let url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=geocode&key=${key}`;
+	if (sessiontoken) url += `&sessiontoken=${encodeURIComponent(sessiontoken)}`;
+	const res = await axios.get(url);
+	const preds = (res.data && res.data.predictions) || [];
+	return { predictions: preds.map(p => ({ description: p.description, place_id: p.place_id })) };
+});
+
 async function notifyUsersFor(threadId, minutesLeft) {
 	const tokens = []; // TODO: collect rider/driver device tokens from users collection
 	const payload = {

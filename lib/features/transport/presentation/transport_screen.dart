@@ -5,6 +5,7 @@ import 'package:zippup/services/location/location_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:zippup/common/widgets/address_field.dart';
 
 class TransportScreen extends StatefulWidget {
 	const TransportScreen({super.key});
@@ -172,12 +173,12 @@ class _TransportScreenState extends State<TransportScreen> {
 						),
 					if (_scheduled)
 						TextField(controller: _scheduleMsg, decoration: const InputDecoration(labelText: 'Message / reason (optional)')),
-					TextField(controller: _pickup, decoration: const InputDecoration(labelText: 'Pickup address')),
+					AddressField(controller: _pickup, label: 'Pickup address'),
 					const SizedBox(height: 8),
 					const Text('Stops (max 5):'),
 					for (int i = 0; i < _stops.length; i++)
 						Row(children: [
-							Expanded(child: TextField(controller: _stops[i], decoration: InputDecoration(labelText: 'Stop ${i + 1} (destination)'))),
+							Expanded(child: AddressField(controller: _stops[i], label: 'Stop ${i + 1} (destination)')),
 							IconButton(onPressed: () => _removeStop(i), icon: const Icon(Icons.remove_circle_outline)),
 						]),
 					TextButton.icon(onPressed: _addStop, icon: const Icon(Icons.add), label: const Text('Add stop')),
