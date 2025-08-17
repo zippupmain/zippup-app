@@ -78,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
 								),
 							),
 						),
+					),
 					SliverToBoxAdapter(
 						child: Padding(
 							padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -139,7 +140,7 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFFFF7E0), Colors.amber),
 		_QuickAction('Marketplace', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.pink),
 		_QuickAction('Digital', Icons.devices_other, 'digital', Color(0xFFE8F5E9), Colors.green),
-		_QuickAction('Others', Icons.sports_archery, 'hire', Color(0xFFFFE5E5), Colors.red),
+		_QuickAction('Others', Icons.category, 'hire', Color(0xFFFFE5E5), Colors.red),
 	];
 
 	@override
