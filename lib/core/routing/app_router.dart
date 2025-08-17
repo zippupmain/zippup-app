@@ -31,11 +31,15 @@ import 'package:zippup/features/emergency/presentation/emergency_providers_scree
 import 'package:zippup/features/profile/presentation/profile_settings_screen.dart';
 import 'package:zippup/features/admin/presentation/vendor_admin_screen.dart';
 import 'package:zippup/features/admin/presentation/driver_delivery_screen.dart';
+import 'package:zippup/features/wallet/presentation/wallet_screen.dart';
+import 'package:zippup/features/settings/presentation/languages_screen.dart';
+import 'package:zippup/features/profile/presentation/business_profile_screen.dart';
+import 'package:zippup/features/support/presentation/support_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     routes: <RouteBase>[
-       				GoRoute(
+      				GoRoute(
 				path: '/',
 				name: 'home',
 				builder: (context, state) => const AuthGate(child: HomeScreen()),
@@ -45,22 +49,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'panic',
         builder: (context, state) => const PanicScreen(),
       ),
-       				GoRoute(
+      				GoRoute(
 				path: '/transport',
 				name: 'transport',
 				builder: (context, state) => const TransportScreen(),
 			),
-       				GoRoute(
+      				GoRoute(
 				path: '/food',
 				name: 'food',
 				builder: (context, state) => const FoodScreen(),
 			),
-       				GoRoute(
+      				GoRoute(
 				path: '/hire',
 				name: 'hire',
 				builder: (context, state) => const HireScreen(),
 			),
-       				GoRoute(
+      				GoRoute(
 				path: '/marketplace',
 				name: 'marketplace',
 				builder: (context, state) => const MarketplaceScreen(),
@@ -75,7 +79,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				name: 'addListing',
 				builder: (context, state) => const AddListingScreen(),
 			),
-       				GoRoute(
+      				GoRoute(
 				path: '/digital',
 				name: 'digital',
 				builder: (context, state) => const DigitalScreen(),
@@ -85,7 +89,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				name: 'courierDashboard',
 				builder: (context, state) => const CourierDashboardScreen(),
 			),
-       				GoRoute(
+      				GoRoute(
 				path: '/profile',
 				name: 'profile',
 				builder: (context, state) => const ProfileScreen(),
@@ -105,16 +109,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				name: 'adminApplications',
 				builder: (context, state) => const AdminApplicationsScreen(),
 			),
-			GoRoute(
-				path: '/admin/dashboard',
-				name: 'vendorAdmin',
-				builder: (context, state) => const VendorAdminScreen(),
-			),
-			GoRoute(
-				path: '/driver/delivery',
-				name: 'driverDelivery',
-				builder: (context, state) => DriverDeliveryScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
-			),
+      GoRoute(
+        path: '/admin/dashboard',
+        name: 'vendorAdmin',
+        builder: (context, state) => const VendorAdminScreen(),
+      ),
+      GoRoute(
+        path: '/driver/delivery',
+        name: 'driverDelivery',
+        builder: (context, state) => DriverDeliveryScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
+      ),
 			GoRoute(
 				path: '/chat/:threadId',
 				name: 'chat',
@@ -170,11 +174,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				name: 'productDetail',
 				builder: (context, state) => ProductDetailScreen(productId: state.uri.queryParameters['productId'] ?? ''),
 			),
-			GoRoute(
-				path: '/personal',
-				name: 'personal',
-				builder: (context, state) => const PersonalScreen(),
-			),
+      GoRoute(
+        path: '/personal',
+        name: 'personal',
+        builder: (context, state) => const PersonalScreen(),
+      ),
       GoRoute(
         path: '/emergency/roadside',
         name: 'roadside',
@@ -184,6 +188,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/emergency/providers/:type',
         name: 'emergencyProviders',
         builder: (context, state) => EmergencyProvidersScreen(type: state.pathParameters['type'] ?? 'ambulance'),
+      ),
+      GoRoute(
+        path: '/wallet',
+        name: 'wallet',
+        builder: (context, state) => const WalletScreen(),
+      ),
+      GoRoute(
+        path: '/languages',
+        name: 'languages',
+        builder: (context, state) => const LanguagesScreen(),
+      ),
+      GoRoute(
+        path: '/business',
+        name: 'businessProfile',
+        builder: (context, state) => const BusinessProfileScreen(),
+      ),
+      GoRoute(
+        path: '/support',
+        name: 'support',
+        builder: (context, state) => const SupportScreen(),
       ),
     ],
   );
