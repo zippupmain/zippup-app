@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
 					IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none)),
 					PopupMenuButton(
 						icon: const CircleAvatar(child: Icon(Icons.person_outline)),
-						itemBuilder: (context) => [
+						itemBuilder: (context) => <PopupMenuEntry>[
 							PopupMenuItem(child: const Text('Profile'), onTap: () => context.push('/profile')),
 							PopupMenuItem(child: const Text('Bookings'), onTap: () => context.push('/bookings')),
 							PopupMenuItem(child: const Text('Wallet'), onTap: () => context.push('/profile')),
