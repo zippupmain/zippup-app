@@ -46,8 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
 								mainAxisSize: MainAxisSize.min,
 								crossAxisAlignment: CrossAxisAlignment.start,
 								children: [
-									const Text('ZippUp! One Tap. All Services.', style: TextStyle(fontSize: 11)),
-									Text('${_greeting()} 👋', style: const TextStyle(fontSize: 11)),
+									const Text('One Tap. All Services.', style: TextStyle(fontSize: 11)),
 								],
 							),
 							background: const DecoratedBox(
@@ -114,6 +113,14 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFEDE9FE)),
 		_QuickAction('Marketplace', Icons.store_mall_directory, 'marketplace', Color(0xFFE6F4EA)),
 		_QuickAction('Digital', Icons.phone_android, 'digital', Color(0xFFFFE4E6)),
+		_QuickAction('Ambulance', Icons.health_and_safety, 'panic', Color(0xFFFFE4E6)),
+		_QuickAction('Fire', Icons.local_fire_department, 'panic', Color(0xFFFFCDD2)),
+		_QuickAction('Towing', Icons.local_shipping, 'panic', Color(0xFFE0F7FA)),
+		_QuickAction('Security', Icons.shield_outlined, 'panic', Color(0xFFE8F5E9)),
+		_QuickAction('Events', Icons.event, 'hire', Color(0xFFF3E8FF)),
+		_QuickAction('Tickets', Icons.confirmation_number, 'digital', Color(0xFFFEF3C7)),
+		_QuickAction('Tutors', Icons.school, 'hire', Color(0xFFE0F2FE)),
+		_QuickAction('Roadside', Icons.build_circle, 'transport', Color(0xFFFFF3E0)),
 	];
 
 	@override

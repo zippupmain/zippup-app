@@ -72,9 +72,12 @@ class MarketplaceScreen extends StatelessWidget {
 						separatorBuilder: (_, __) => const Divider(height: 1),
 						itemBuilder: (context, i) {
 							final p = products[i];
+							final firstImage = (p.toJson()['imageUrls'] as List?)?.cast<String>().firstOrNull;
 							return ListTile(
+								leading: firstImage != null ? ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(firstImage, width: 56, height: 56, fit: BoxFit.cover)) : const Icon(Icons.image_not_supported),
 								title: Text(p.title),
 								subtitle: Text('${p.category} • ${p.price.toStringAsFixed(2)}'),
+								trailing: TextButton(onPressed: () { /* TODO: edit listing if owner */ }, child: const Text('Edit')),
 							);
 						},
 					);
