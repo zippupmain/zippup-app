@@ -48,7 +48,6 @@ class LocationService {
 			longitude: 3.39467,
 			accuracy: 0,
 			altitude: 0,
-			helping: 0,
 			heading: 0,
 			speed: 0,
 			speedAccuracy: 0,
