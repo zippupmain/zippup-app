@@ -83,6 +83,41 @@ class _SignInScreenState extends State<SignInScreen> {
 		if (mounted) setState(() => _loading = false);
 	}
 
+	Future<void> _forgotPassword() async {
+		final initialEmail = _emailController.text.trim();
+		String email = initialEmail;
+		if (email.isEmpty) {
+			final controller = TextEditingController();
+			final ok = await showDialog<bool>(
+				context: context,
+				builder: (context) => AlertDialog(
+					title: const Text('Reset password'),
+					content: TextField(controller: controller, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Enter your email')),
+					actions: [
+						TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+						FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Send link')),
+					],
+				),
+			);
+			if (ok != true) return;
+			email = controller.text.trim();
+		}
+		if (email.isEmpty) {
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please provide your email')));
+			return;
+		}
+		try {
+			await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password reset email sent')));
+			}
+		} on FirebaseAuthException catch (e) {
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Failed to send reset email')));
+			}
+		}
+	}
+
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
@@ -116,7 +151,10 @@ class _SignInScreenState extends State<SignInScreen> {
 							obscureText: true,
 							decoration: const InputDecoration(labelText: 'Password'),
 						),
-						const SizedBox(height: 8),
+						Align(
+							alignment: Alignment.centerRight,
+							child: TextButton(onPressed: _loading ? null : _forgotPassword, child: const Text('Forgot password?')),
+						),
 						FilledButton(
 							onPressed: _loading ? null : _emailAuth,
 							child: Text(_isSignUp ? 'Sign up with email' : 'Sign in with email'),
