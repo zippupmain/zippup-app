@@ -37,6 +37,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 		setState(() => _available = v);
 	}
 
+	void _comingSoon(String title) {
+		ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title is coming soon')));
+	}
+
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
@@ -49,16 +53,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 							value: _available,
 							onChanged: _toggleAvailable,
 						),
-					ListTile(leading: const Icon(Icons.person), title: const Text('Profile'), onTap: () {}),
-					ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Wallet'), onTap: () => context.push('/wallet')),
-					ListTile(leading: const Icon(Icons.local_activity), title: const Text('Promo & vouchers'), onTap: () => context.push('/profile/promos')),
-					ListTile(leading: const Icon(Icons.language), title: const Text('Languages'), onTap: () => context.push('/profile/languages')),
-					ListTile(leading: const Icon(Icons.business), title: const Text('Business profile'), onTap: () => context.push('/profile/business')),
-					ListTile(leading: const Icon(Icons.help_outline), title: const Text('Help / Report'), onTap: () => context.push('/profile/help')),
-					ListTile(leading: const Icon(Icons.manage_accounts), title: const Text('Manage account'), onTap: () => context.push('/profile/manage')),
-					ListTile(leading: const Icon(Icons.star_rate), title: const Text('Rate ZippUp'), onTap: () {}),
-					ListTile(leading: const Icon(Icons.privacy_tip), title: const Text('Privacy & policy'), onTap: () => context.push('/profile/privacy')),
-					ListTile(leading: const Icon(Icons.rule), title: const Text('Terms of service'), onTap: () => context.push('/profile/terms')),
+					ListTile(leading: const Icon(Icons.person), title: const Text('Profile'), onTap: () => _comingSoon('Profile')),
+					ListTile(leading: const Icon(Icons.assignment_outlined), title: const Text('My Bookings'), onTap: () => context.push('/bookings')),
+					ListTile(leading: const Icon(Icons.verified_user), title: const Text('Apply as Service Provider / Vendor'), onTap: () => context.push('/profile/apply-provider')),
+					ListTile(leading: const Icon(Icons.admin_panel_settings), title: const Text('Admin: Applications'), onTap: () => context.push('/admin/applications')),
+					ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Wallet'), onTap: () => _comingSoon('Wallet')),
+					ListTile(leading: const Icon(Icons.local_activity), title: const Text('Promo & vouchers'), onTap: () => _comingSoon('Promos')),
+					ListTile(leading: const Icon(Icons.language), title: const Text('Languages'), onTap: () => _comingSoon('Languages')),
+					ListTile(leading: const Icon(Icons.business), title: const Text('Business profile'), onTap: () => _comingSoon('Business profile')),
+					ListTile(leading: const Icon(Icons.help_outline), title: const Text('Help / Report'), onTap: () => _comingSoon('Help & Report')),
+					ListTile(leading: const Icon(Icons.manage_accounts), title: const Text('Manage account'), onTap: () => _comingSoon('Manage account')),
+					ListTile(leading: const Icon(Icons.star_rate), title: const Text('Rate ZippUp'), onTap: () => _comingSoon('Rate ZippUp')),
+					ListTile(leading: const Icon(Icons.privacy_tip), title: const Text('Privacy & policy'), onTap: () => _comingSoon('Privacy & policy')),
+					ListTile(leading: const Icon(Icons.rule), title: const Text('Terms of service'), onTap: () => _comingSoon('Terms of service')),
 					const Divider(),
 					ListTile(leading: const Icon(Icons.logout), title: const Text('Logout'), onTap: () async { await FirebaseAuth.instance.signOut(); if (context.mounted) context.go('/'); }),
 				],
