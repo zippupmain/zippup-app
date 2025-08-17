@@ -80,6 +80,9 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 						DropdownMenuItem(value: 'groceries', child: Text('Groceries')),
 						DropdownMenuItem(value: 'hire', child: Text('Hire')),
 						DropdownMenuItem(value: 'marketplace', child: Text('Marketplace')),
+						DropdownMenuItem(value: 'emergency', child: Text('Emergency')),
+						DropdownMenuItem(value: 'personal', child: Text('Personal')),
+						DropdownMenuItem(value: 'others', child: Text('Others')),
 					], onChanged: (v) => setState(() => _category = v as String), decoration: const InputDecoration(labelText: 'Service category')),
 					DropdownButtonFormField(value: _type, items: const [
 						DropdownMenuItem(value: 'individual', child: Text('Individual')),

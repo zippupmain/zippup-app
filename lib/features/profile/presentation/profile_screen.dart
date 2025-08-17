@@ -12,6 +12,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
 	bool _isProvider = false;
 	bool _available = false;
+	bool _approved = false;
 
 	@override
 	void initState() {
@@ -22,12 +23,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 	Future<void> _loadProviderState() async {
 		final uid = FirebaseAuth.instance.currentUser?.uid;
 		if (uid == null) return;
-		final doc = await FirebaseFirestore.instance.collection('vendors').doc(uid).get();
-		if (!doc.exists) return;
-		setState(() {
-			_isProvider = true;
-			_available = doc.get('available') == true;
-		});
+		final vendor = await FirebaseFirestore.instance.collection('vendors').doc(uid).get();
+		if (vendor.exists) {
+			setState(() {
+				_isProvider = true;
+				_available = vendor.get('available') == true;
+				_approved = true;
+			});
+		}
 	}
 
 	Future<void> _toggleAvailable(bool v) async {
@@ -53,10 +56,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 							value: _available,
 							onChanged: _toggleAvailable,
 						),
-					ListTile(leading: const Icon(Icons.person), title: const Text('Profile'), onTap: () => _comingSoon('Profile')),
+					ListTile(leading: const Icon(Icons.person), title: const Text('Profile settings'), onTap: () => context.push('/profile/settings')),
 					ListTile(leading: const Icon(Icons.assignment_outlined), title: const Text('My Bookings'), onTap: () => context.push('/bookings')),
 					ListTile(leading: const Icon(Icons.verified_user), title: const Text('Apply as Service Provider / Vendor'), onTap: () => context.push('/profile/apply-provider')),
-					ListTile(leading: const Icon(Icons.admin_panel_settings), title: const Text('Admin: Applications'), onTap: () => context.push('/admin/applications')),
+					if (_approved) ListTile(leading: const Icon(Icons.admin_panel_settings), title: const Text('Admin'), onTap: () => context.push('/admin/applications')),
 					ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Wallet'), onTap: () => _comingSoon('Wallet')),
 					ListTile(leading: const Icon(Icons.local_activity), title: const Text('Promo & vouchers'), onTap: () => _comingSoon('Promos')),
 					ListTile(leading: const Icon(Icons.language), title: const Text('Languages'), onTap: () => _comingSoon('Languages')),

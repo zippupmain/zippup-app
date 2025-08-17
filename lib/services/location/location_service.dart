@@ -14,6 +14,10 @@ class LocationService {
 		if (permission == LocationPermission.denied) {
 			permission = await Geolocator.requestPermission();
 		}
+		if (permission == LocationPermission.deniedForever) {
+			await Geolocator.openAppSettings();
+			return false;
+		}
 		return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
 	}
 

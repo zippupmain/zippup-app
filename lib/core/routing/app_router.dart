@@ -28,6 +28,7 @@ import 'package:zippup/features/marketplace/presentation/product_detail_screen.d
 import 'package:zippup/features/profile/presentation/provider_detail_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_providers_screen.dart';
+import 'package:zippup/features/profile/presentation/profile_settings_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -86,6 +87,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/profile',
 				name: 'profile',
 				builder: (context, state) => const ProfileScreen(),
+			),
+			GoRoute(
+				path: '/profile/settings',
+				name: 'profileSettings',
+				builder: (context, state) => const ProfileSettingsScreen(),
 			),
 			GoRoute(
 				path: '/profile/apply-provider',
