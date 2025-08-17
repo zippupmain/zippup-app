@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:zippup/features/profile/presentation/provider_profile_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:zippup/services/location/location_service.dart';
 
 class EmergencyProvidersScreen extends StatefulWidget {
 	const EmergencyProvidersScreen({super.key, required this.type});
@@ -12,6 +15,7 @@ class EmergencyProvidersScreen extends StatefulWidget {
 class _EmergencyProvidersScreenState extends State<EmergencyProvidersScreen> {
 	final _qController = TextEditingController();
 	String _q = '';
+	geo.Position? _me;
 	String get _title => switch (widget.type) {
 		'ambulance' => 'Ambulance',
 		'fire' => 'Fire Service',
@@ -19,6 +23,27 @@ class _EmergencyProvidersScreenState extends State<EmergencyProvidersScreen> {
 		'towing' => 'Towing',
 		_ => 'Emergency'
 	};
+
+	@override
+	void initState() {
+		super.initState();
+		_fetchLoc();
+	}
+
+	Future<void> _fetchLoc() async {
+		final p = await LocationService.getCurrentPosition();
+		if (!mounted) return;
+		setState(() => _me = p);
+	}
+
+	String _distanceText(Map<String, dynamic> p) {
+		final lat = (p['lat'] as num?)?.toDouble();
+		final lng = (p['lng'] as num?)?.toDouble();
+		if (_me == null || lat == null || lng == null) return '';
+		final meters = geo.Geolocator.distanceBetween(_me!.latitude, _me!.longitude, lat, lng);
+		final km = meters / 1000.0;
+		return '${km.toStringAsFixed(km < 10 ? 1 : 0)} km away';
+	}
 
 	@override
 	Widget build(BuildContext context) {
@@ -52,23 +77,59 @@ class _EmergencyProvidersScreenState extends State<EmergencyProvidersScreen> {
 						final title = (d.data()['title'] ?? '').toString().toLowerCase();
 						return name.contains(_q) || title.contains(_q);
 					}).toList();
+					// Map markers
+					final markers = <Marker>{};
+					LatLng? center;
+					if (_me != null) center = LatLng(_me!.latitude, _me!.longitude);
+					for (final d in docs) {
+						final p = d.data();
+						final lat = (p['lat'] as num?)?.toDouble();
+						final lng = (p['lng'] as num?)?.toDouble();
+						if (lat == null || lng == null) continue;
+						final dist = _distanceText(p);
+						markers.add(Marker(
+							markerId: MarkerId(d.id),
+							position: LatLng(lat, lng),
+							infoWindow: InfoWindow(title: p['name']?.toString() ?? 'Provider', snippet: dist.isEmpty ? null : dist),
+						));
+						center ??= LatLng(lat, lng);
+					}
 					if (docs.isEmpty) return Center(child: Text('No ${_title.toLowerCase()} providers found'));
-					return ListView.separated(
-						itemCount: docs.length,
-						separatorBuilder: (_, __) => const Divider(height: 1),
-						itemBuilder: (context, i) {
-							final p = docs[i].data();
-							final pid = docs[i].id;
-							return ListTile(
-								title: Text(p['name'] ?? 'Provider'),
-								subtitle: Text(p['title']?.toString() ?? ''),
-								trailing: FilledButton(
-									onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))),
-									child: const Text('View'),
-								),
-							);
-						},
-					);
+					return Column(children: [
+						SizedBox(
+							height: 220,
+							child: Builder(builder: (context) {
+								if (center == null) return const Center(child: Text('Map: no location yet'));
+								try {
+									return GoogleMap(
+										initialCameraPosition: CameraPosition(target: center!, zoom: 12),
+										markers: markers,
+										myLocationEnabled: false,
+										compassEnabled: false,
+									);
+								} catch (_) {
+									return const Center(child: Text('Map failed to load'));
+								}
+							}),
+						),
+						const Divider(height: 1),
+						Expanded(
+							child: ListView.separated(
+								itemCount: docs.length,
+								separatorBuilder: (_, __) => const Divider(height: 1),
+								itemBuilder: (context, i) {
+									final p = docs[i].data();
+									final id = docs[i].id;
+									final dist = _distanceText(p);
+									return ListTile(
+										title: Text(p['name'] ?? 'Provider'),
+										subtitle: Text([p['title']?.toString() ?? '', if (dist.isNotEmpty) dist].where((e) => e.isNotEmpty).join(' • ')),
+										trailing: FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: id))), child: const Text('View')),
+									);
+								},
+							),
+						),
+					]);
 				},
 			),
 		);

@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:zippup/services/location/location_service.dart';
 
 class VendorListScreen extends StatefulWidget {
 	const VendorListScreen({super.key, required this.category});
@@ -12,6 +15,29 @@ class VendorListScreen extends StatefulWidget {
 class _VendorListScreenState extends State<VendorListScreen> {
 	final _search = TextEditingController();
 	String _q = '';
+	geo.Position? _me;
+
+	@override
+	void initState() {
+		super.initState();
+		_fetchLoc();
+	}
+
+	Future<void> _fetchLoc() async {
+		final p = await LocationService.getCurrentPosition();
+		if (!mounted) return;
+		setState(() => _me = p);
+	}
+
+	String _dist(Map<String, dynamic> v) {
+		final lat = (v['lat'] as num?)?.toDouble();
+		final lng = (v['lng'] as num?)?.toDouble();
+		if (_me == null || lat == null || lng == null) return '';
+		final meters = geo.Geolocator.distanceBetween(_me!.latitude, _me!.longitude, lat, lng);
+		final km = meters / 1000.0;
+		return '${km.toStringAsFixed(km < 10 ? 1 : 0)} km away';
+	}
+
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
@@ -44,23 +70,53 @@ class _VendorListScreenState extends State<VendorListScreen> {
 						final name = (d.data()['name'] ?? '').toString().toLowerCase();
 						return name.contains(_q);
 					}).toList();
-					if (docs.isEmpty) return const Center(child: Text('No vendors nearby'));
-					return ListView.separated(
-						itemCount: docs.length,
-						separatorBuilder: (_, __) => const Divider(height: 1),
-						itemBuilder: (context, i) {
-							final v = docs[i].data();
-							final vid = docs[i].id;
-							return ListTile(
-								title: Text(v['name'] ?? 'Vendor'),
-								subtitle: Text((v['rating'] ?? 0).toString()),
-								trailing: Wrap(spacing: 8, children: [
-									IconButton(onPressed: () => context.pushNamed('chat', pathParameters: {'threadId': 'vendor_$vid'}, queryParameters: {'title': v['name'] ?? 'Chat'}), icon: const Icon(Icons.chat_bubble_outline)),
-									TextButton(onPressed: () => context.push('/vendor?vendorId=$vid'), child: const Text('View')),
-								]),
-							);
-						},
-					);
+
+					final markers = <Marker>{};
+					LatLng? center;
+					if (_me != null) center = LatLng(_me!.latitude, _me!.longitude);
+					for (final d in docs) {
+						final v = d.data();
+						final lat = (v['lat'] as num?)?.toDouble();
+						final lng = (v['lng'] as num?)?.toDouble();
+						if (lat != null && lng != null) {
+							final dist = _dist(v);
+							markers.add(Marker(markerId: MarkerId(d.id), position: LatLng(lat, lng), infoWindow: InfoWindow(title: v['name']?.toString() ?? 'Vendor', snippet: dist)));
+							center ??= LatLng(lat, lng);
+						}
+					}
+					return Column(children: [
+						SizedBox(
+							height: 220,
+							child: Builder(builder: (context) {
+								if (center == null) return const Center(child: Text('Map: no location yet'));
+								try {
+									return GoogleMap(initialCameraPosition: CameraPosition(target: center!, zoom: 12), markers: markers, myLocationEnabled: false, compassEnabled: false);
+								} catch (_) {
+									return const Center(child: Text('Map failed to load'));
+								}
+							}),
+						),
+						const Divider(height: 1),
+						Expanded(
+							child: ListView.separated(
+								itemCount: docs.length,
+								separatorBuilder: (_, __) => const Divider(height: 1),
+								itemBuilder: (context, i) {
+									final v = docs[i].data();
+									final vid = docs[i].id;
+									final dist = _dist(v);
+									return ListTile(
+										title: Text(v['name'] ?? 'Vendor'),
+										subtitle: Text([ (v['rating'] ?? 0).toString(), if (dist.isNotEmpty) dist ].join(' • ')),
+										trailing: Wrap(spacing: 8, children: [
+											IconButton(onPressed: () => context.pushNamed('chat', pathParameters: {'threadId': 'vendor_$vid'}, queryParameters: {'title': v['name'] ?? 'Chat'}), icon: const Icon(Icons.chat_bubble_outline)),
+											TextButton(onPressed: () => context.push('/vendor?vendorId=$vid'), child: const Text('View')),
+										]),
+									);
+								},
+							),
+						),
+					]);
 				},
 			),
 			bottomNavigationBar: SafeArea(
