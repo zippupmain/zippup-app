@@ -13,7 +13,10 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
 	Future<void> _save() async {
 		final uid = FirebaseAuth.instance.currentUser!.uid;
 		await FirebaseFirestore.instance.collection('users').doc(uid).set({'language': _lang}, SetOptions(merge: true));
-		if (mounted) Navigator.pop(context);
+		if (mounted) {
+			ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Language set to $_lang. Full translation coming soon.')));
+			Navigator.pop(context);
+		}
 	}
 	@override
 	Widget build(BuildContext context) {

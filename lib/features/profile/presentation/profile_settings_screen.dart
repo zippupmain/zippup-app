@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
 	const ProfileSettingsScreen({super.key});
@@ -12,6 +15,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 	final _name = TextEditingController();
 	final _phone = TextEditingController();
 	String? _photoUrl;
+	File? _photoFile;
 	bool _saving = false;
 
 	@override
@@ -23,14 +27,26 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 		_photoUrl = u?.photoURL;
 	}
 
+	Future<void> _pickPhoto() async {
+		final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+		if (x != null) setState(() => _photoFile = File(x.path));
+	}
+
 	Future<void> _save() async {
 		setState(() => _saving = true);
 		try {
 			final u = FirebaseAuth.instance.currentUser;
 			if (u == null) return;
+			String? url = _photoUrl;
+			if (_photoFile != null) {
+				final ref = FirebaseStorage.instance.ref('users/${u.uid}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg');
+				await ref.putFile(_photoFile!);
+				url = await ref.getDownloadURL();
+				await u.updatePhotoURL(url);
+			}
 			await u.updateDisplayName(_name.text.trim());
-			await FirebaseFirestore.instance.collection('users').doc(u.uid).set({'name': _name.text.trim(), 'phone': _phone.text.trim(), 'photoUrl': _photoUrl}, SetOptions(merge: true));
-			if (context.mounted) Navigator.pop(context);
+			await FirebaseFirestore.instance.collection('users').doc(u.uid).set({'name': _name.text.trim(), 'phone': _phone.text.trim(), 'photoUrl': url}, SetOptions(merge: true));
+			if (mounted) Navigator.pop(context);
 		} finally {
 			setState(() => _saving = false);
 		}
@@ -40,7 +56,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 		final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(title: const Text('Delete account'), content: const Text('This cannot be undone.'), actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Delete'))]));
 		if (ok != true) return;
 		final u = FirebaseAuth.instance.currentUser;
-		await FirebaseFirestore.instance.collection('users').doc(u!.uid).delete().catchError((_){});
+		await FirebaseFirestore.instance.collection('users').doc(u!.uid).delete().catchError((_){}) ;
 		await u.delete();
 	}
 
@@ -51,13 +67,19 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			body: ListView(
 				padding: const EdgeInsets.all(16),
 				children: [
-					CircleAvatar(radius: 36, backgroundImage: _photoUrl != null ? NetworkImage(_photoUrl!) : null, child: _photoUrl == null ? const Icon(Icons.person) : null),
+					GestureDetector(
+						onTap: _pickPhoto,
+						child: CircleAvatar(radius: 36, backgroundImage: _photoFile != null ? FileImage(_photoFile!) : (_photoUrl != null ? NetworkImage(_photoUrl!) : null) as ImageProvider?, child: (_photoUrl == null && _photoFile == null) ? const Icon(Icons.person) : null),
+					),
 					const SizedBox(height: 8),
 					TextField(controller: _name, decoration: const InputDecoration(labelText: 'Public name')),
 					TextField(controller: _phone, decoration: const InputDecoration(labelText: 'Phone number')),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _saving ? null : _save, child: const Text('Save')),
 					const SizedBox(height: 24),
+					const Divider(),
+					const Text('Danger zone', style: TextStyle(color: Colors.red)),
+					const SizedBox(height: 8),
 					TextButton(style: TextButton.styleFrom(foregroundColor: Colors.red), onPressed: _deleteAccount, child: const Text('Delete account')),
 				],
 			),

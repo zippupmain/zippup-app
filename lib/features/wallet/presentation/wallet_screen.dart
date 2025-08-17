@@ -14,9 +14,15 @@ class _WalletScreenState extends State<WalletScreen> {
 		return FirebaseFirestore.instance.collection('wallets').doc(uid).collection('tx').orderBy('createdAt', descending: true).limit(50).get();
 	}
 
-	void _addFunds() {}
-	void _send() {}
-	void _withdraw() {}
+	void _addFunds() {
+		ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add funds flow coming soon')));
+	}
+	void _send() {
+		ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Send to wallet coming soon')));
+	}
+	void _withdraw() {
+		ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Withdraw flow coming soon')));
+	}
 
 	@override
 	Widget build(BuildContext context) {

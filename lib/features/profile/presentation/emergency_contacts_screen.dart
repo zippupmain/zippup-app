@@ -60,7 +60,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 							child: Row(children: [
 								Expanded(child: TextField(controller: _newNumber, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone number'))),
 								const SizedBox(width: 8),
-								FilledButton(onPressed: _saving ? null : () => _add(contacts), child: const Text('Add')),
+								FilledButton(onPressed: _saving ? null : () async { await _add(contacts); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added'))); }, child: const Text('Add')),
 							]),
 						),
 						Expanded(
@@ -69,7 +69,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 								separatorBuilder: (_, __) => const Divider(height: 1),
 								itemBuilder: (context, i) => ListTile(
 									title: Text(contacts[i].toString()),
-									trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _remove(contacts, i)),
+									trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () async { await _remove(contacts, i); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Removed'))); }),
 								),
 							),
 						),

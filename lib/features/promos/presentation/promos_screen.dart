@@ -24,6 +24,7 @@ class PromosScreen extends StatelessWidget {
 								title: Text(d['title']?.toString() ?? 'Promo'),
 								subtitle: Text(d['description']?.toString() ?? ''),
 								trailing: Text(d['code']?.toString() ?? ''),
+								onTap: () => Navigator.of(context).pushNamed('/'),
 							);
 						},
 					);

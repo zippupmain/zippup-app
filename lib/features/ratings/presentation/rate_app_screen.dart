@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RateAppScreen extends StatefulWidget {
 	const RateAppScreen({super.key});
@@ -12,12 +13,20 @@ class _RateAppScreenState extends State<RateAppScreen> {
 	double _rating = 5;
 	final _note = TextEditingController();
 	Future<void> _submit() async {
-		await FirebaseFirestore.instance.collection('app_ratings').add({
-			'uid': FirebaseAuth.instance.currentUser?.uid,
-			'rating': _rating,
-			'note': _note.text.trim(),
-			'createdAt': DateTime.now().toIso8601String(),
-		});
+		final androidUrl = Uri.parse('market://details?id=com.zippup.zippup');
+		final iosUrl = Uri.parse('itms-apps://itunes.apple.com/app/id000000000?action=write-review');
+		final webUrl = Uri.parse('https://zippup.app');
+		try {
+			final ok = await launchUrl(androidUrl, mode: LaunchMode.externalApplication);
+			if (!ok) throw Exception('no android market');
+		} catch (_) {
+			try {
+				final ok = await launchUrl(iosUrl, mode: LaunchMode.externalApplication);
+				if (!ok) throw Exception('no ios');
+			} catch (_) {
+				await launchUrl(webUrl, mode: LaunchMode.externalApplication);
+			}
+		}
 		if (mounted) Navigator.pop(context);
 	}
 	@override

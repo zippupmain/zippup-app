@@ -59,7 +59,14 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'status': 'pending',
 				'createdAt': DateTime.now().toIso8601String(),
 			});
-			if (mounted) Navigator.pop(context);
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application submitted')));
+				Navigator.pop(context);
+			}
+		} catch (e) {
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submit failed: $e')));
+			}
 		} finally {
 			setState(() => _saving = false);
 		}

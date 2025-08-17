@@ -38,13 +38,19 @@ class _SupportScreenState extends State<SupportScreen> {
 			'reportedUserId': _reportUserId.text.trim(),
 			'createdAt': DateTime.now().toIso8601String(),
 		});
-		if (mounted) Navigator.pop(context);
+		if (mounted) {
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Submitted. We will get back to you.')));
+			Navigator.pop(context);
+		}
 	}
 
 	Future<void> _call() async {
 		if (_supportNumber.isEmpty) return;
 		final uri = Uri(scheme: 'tel', path: _supportNumber);
-		await launchUrl(uri);
+		final ok = await launchUrl(uri);
+		if (!ok && mounted) {
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to open dialer')));
+		}
 	}
 
 	@override
@@ -55,8 +61,8 @@ class _SupportScreenState extends State<SupportScreen> {
 				padding: const EdgeInsets.all(16),
 				children: [
 					const Text('Suggested help'),
-					const ListTile(title: Text('How to track my order?')),
-					const ListTile(title: Text('How to reset password?')),
+					ListTile(title: const Text('How to track my order?'), onTap: () => setState(() => _reason.text = 'How to track my order?')),
+					ListTile(title: const Text('How to reset password?'), onTap: () => setState(() => _reason.text = 'How to reset password?')),
 					const Divider(),
 					TextField(controller: _name, decoration: const InputDecoration(labelText: 'Name')),
 					TextField(controller: _phone, decoration: const InputDecoration(labelText: 'Phone number')),
@@ -65,8 +71,8 @@ class _SupportScreenState extends State<SupportScreen> {
 					TextField(controller: _reportUserId, decoration: const InputDecoration(labelText: 'Report user ID (optional)')),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _submit, child: const Text('Submit')),
-					const SizedBox(height: 24),
-					if (_supportNumber.isNotEmpty) OutlinedButton.icon(onPressed: _call, icon: const Icon(Icons.call), label: Text('Call support: $_supportNumber')),
+					const SizedBox(height: 12),
+					OutlinedButton.icon(onPressed: _call, icon: const Icon(Icons.call), label: Text(_supportNumber.isEmpty ? 'Call support' : 'Call support: $_supportNumber')),
 				],
 			),
 		);

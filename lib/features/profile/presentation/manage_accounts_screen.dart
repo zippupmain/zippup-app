@@ -37,16 +37,19 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
 			'createdAt': DateTime.now().toIso8601String(),
 		});
 		_name.clear(); _type.clear();
+		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile added')));
 	}
 
 	Future<void> _setActive(String id) async {
 		await FirebaseFirestore.instance.collection('users').doc(_uid).set({'activeProfileId': id}, SetOptions(merge: true));
 		setState(() => _activeId = id);
+		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Switched profile')));
 	}
 
 	Future<void> _delete(String id) async {
 		await FirebaseFirestore.instance.collection('users').doc(_uid).collection('profiles').doc(id).delete();
 		if (_activeId == id) await _setActive('');
+		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleted')));
 	}
 
 	@override
