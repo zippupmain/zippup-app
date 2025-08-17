@@ -158,15 +158,20 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 					return Column(
 						children: [
 							Expanded(
-								child: center == null
-										? const Center(child: Text('Waiting for location...'))
-										: GoogleMap(
+								child: Builder(builder: (context) {
+									if (center == null) return const Center(child: Text('Waiting for location...'));
+									try {
+										return GoogleMap(
 											initialCameraPosition: CameraPosition(target: center!, zoom: 14),
 											markers: markers,
 											polylines: _polylines,
 											myLocationEnabled: false,
 											compassEnabled: false,
-										),
+										);
+									} catch (_) {
+										return const Center(child: Text('Map failed to load. Check API key/config.'));
+									}
+								}),
 							),
 							Padding(
 								padding: const EdgeInsets.all(16),
