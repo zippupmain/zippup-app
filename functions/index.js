@@ -121,8 +121,7 @@ exports.distanceMatrix = functions.https.onCall(async (data, context) => {
 	const origin = data.origin; // "lat,lng"
 	const destinations = data.destinations; // ["lat,lng", ...]
 	if (!origin || !destinations || destinations.length === 0) throw new functions.https.HttpsError('invalid-argument', 'Missing origin/destinations');
-	const key = (await admin.firestore().doc('_config/maps').get()).get('key') || process.env.MAPS_KEY || (functions.config().maps && functions.config().maps.key);
-	if (!key) throw new functions.https.HttpsError('failed-precondition', 'Maps key not configured');
+	const key = 'AIzaSyDBCSRDaKqgEL5qha6GKqQVrU6ORrw0hnc';
 	const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destinations.join('|'))}&key=${key}`;
 	const res = await axios.get(url);
 	return res.data;
@@ -132,8 +131,7 @@ exports.directions = functions.https.onCall(async (data, context) => {
 	const origin = data.origin; // "lat,lng"
 	const destination = data.destination; // "lat,lng"
 	if (!origin || !destination) throw new functions.https.HttpsError('invalid-argument', 'Missing origin/destination');
-	const key = (await admin.firestore().doc('_config/maps').get()).get('key') || process.env.MAPS_KEY || (functions.config().maps && functions.config().maps.key);
-	if (!key) throw new functions.https.HttpsError('failed-precondition', 'Maps key not configured');
+	const key = 'AIzaSyDBCSRDaKqgEL5qha6GKqQVrU6ORrw0hnc';
 	const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${key}`;
 	const res = await axios.get(url);
 	const route = res.data.routes && res.data.routes[0];

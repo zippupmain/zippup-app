@@ -46,7 +46,7 @@
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>GMSApiKey</key>
-		<string>AIzaSyCRqI3-L4Ww4v70gMhJ_xJq-JN5bjQRWlA</string>
+		<string>AIzaSyDBCSRDaKqgEL5qha6GKqQVrU6ORrw0hnc</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Your location is used to show nearby services and for emergency alerts.</string>
 		<key>NSCameraUsageDescription</key>
