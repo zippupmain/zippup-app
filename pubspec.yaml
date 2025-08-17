@@ -72,7 +72,7 @@ dependencies:
   in_app_review: ^2.0.10
   share_plus: ^11.1.0
   pull_to_refresh: ^2.0.0
-  retrofit: ^4.7.1
+  # retrofit: ^4.7.1  # Not used; removed to avoid Dart >=3.8 constraint for CI
   logger: ^2.6.1
   webview_flutter: ^4.13.0
   flutter_inappwebview: ^6.1.5
