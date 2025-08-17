@@ -121,7 +121,7 @@ exports.distanceMatrix = functions.https.onCall(async (data, context) => {
 	const origin = data.origin; // "lat,lng"
 	const destinations = data.destinations; // ["lat,lng", ...]
 	if (!origin || !destinations || destinations.length === 0) throw new functions.https.HttpsError('invalid-argument', 'Missing origin/destinations');
-	const key = 'AIzaSyDBCSRDaKqgEL5qha6GKqQVrU6ORrw0hnc';
+	const key = 'AIzaSyAk22rv_OsFJVXUA-GK0PMdEVqBJcNYozI';
 	const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destinations.join('|'))}&key=${key}`;
 	const res = await axios.get(url);
 	return res.data;
@@ -131,7 +131,7 @@ exports.directions = functions.https.onCall(async (data, context) => {
 	const origin = data.origin; // "lat,lng"
 	const destination = data.destination; // "lat,lng"
 	if (!origin || !destination) throw new functions.https.HttpsError('invalid-argument', 'Missing origin/destination');
-	const key = 'AIzaSyDBCSRDaKqgEL5qha6GKqQVrU6ORrw0hnc';
+	const key = 'AIzaSyAk22rv_OsFJVXUA-GK0PMdEVqBJcNYozI';
 	const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${key}`;
 	const res = await axios.get(url);
 	const route = res.data.routes && res.data.routes[0];
@@ -180,7 +180,7 @@ exports.sendPanicAlert = functions.https.onCall(async (data, context) => {
 exports.geocode = functions.https.onCall(async (data, context) => {
 	const { lat, lng } = data || {};
 	if (typeof lat !== 'number' || typeof lng !== 'number') throw new functions.https.HttpsError('invalid-argument', 'lat,lng required');
-	const key = 'AIzaSyDBCSRDaKqgEL5qha6GKqQVrU6ORrw0hnc';
+	const key = 'AIzaSyAk22rv_OsFJVXUA-GK0PMdEVqBJcNYozI';
 	const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${key}`;
 	const res = await axios.get(url);
 	const results = res.data && res.data.results || [];
