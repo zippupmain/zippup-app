@@ -13,6 +13,7 @@ class _PlatformAdminScreenState extends State<PlatformAdminScreen> {
 	bool? _isAdmin;
 	int _adminsCount = 0;
 	bool _loading = true;
+	String? _error;
 
 	@override
 	void initState() {
@@ -21,14 +22,37 @@ class _PlatformAdminScreenState extends State<PlatformAdminScreen> {
 	}
 
 	Future<void> _init() async {
-		final uid = FirebaseAuth.instance.currentUser!.uid;
-		final admins = await FirebaseFirestore.instance.collection('_config').doc('admins').collection('users').get();
-		final me = admins.docs.where((d) => d.id == uid).isNotEmpty;
-		setState(() {
-			_isAdmin = me;
-			_adminsCount = admins.size;
-			_loading = false;
-		});
+		try {
+			final uid = FirebaseAuth.instance.currentUser?.uid;
+			if (uid == null) throw Exception('Not signed in');
+			final admins = await FirebaseFirestore.instance.collection('_config').doc('admins').collection('users').get();
+			final me = admins.docs.any((d) => d.id == uid);
+			setState(() {
+				_isAdmin = me;
+				_adminsCount = admins.size;
+				_loading = false;
+				_error = null;
+			});
+		} catch (e) {
+			// Fallback: check just my doc; mark adminsCount unknown (-1)
+			try {
+				final uid = FirebaseAuth.instance.currentUser?.uid;
+				final myDoc = await FirebaseFirestore.instance.collection('_config').doc('admins').collection('users').doc(uid).get();
+				setState(() {
+					_isAdmin = myDoc.exists;
+					_adminsCount = -1;
+					_loading = false;
+					_error = e.toString();
+				});
+			} catch (_) {
+				setState(() {
+					_isAdmin = false;
+					_adminsCount = -1;
+					_loading = false;
+					_error = e.toString();
+				});
+			}
+		}
 	}
 
 	Future<void> _claimAdmin() async {
@@ -46,16 +70,29 @@ class _PlatformAdminScreenState extends State<PlatformAdminScreen> {
 	@override
 	Widget build(BuildContext context) {
 		if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-		if (_adminsCount == 0 && _isAdmin != true) {
+		final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+		if ((_adminsCount == 0 || _adminsCount == -1) && _isAdmin != true) {
 			return Scaffold(
 				appBar: AppBar(title: const Text('Platform Admin')),
-				body: Center(child: FilledButton(onPressed: _claimAdmin, child: const Text('Claim platform admin'))),
+				body: Center(
+					child: Column(mainAxisSize: MainAxisSize.min, children: [
+						if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('Note: $_error', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12))),
+						Text('Your UID: $uid', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+						const SizedBox(height: 12),
+						FilledButton(onPressed: _claimAdmin, child: const Text('Claim platform admin')),
+					]),
+				),
 			);
 		}
 		if (_isAdmin != true) {
 			return Scaffold(
 				appBar: AppBar(title: const Text('Platform Admin')),
-				body: const Center(child: Text('Access denied. Contact a platform admin.')),
+				body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+					if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('Error: $_error', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12))),
+					Text('Your UID: $uid', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+					const SizedBox(height: 12),
+					const Text('Access denied. Contact a platform admin.'),
+				])),
 			);
 		}
 		return Scaffold(
