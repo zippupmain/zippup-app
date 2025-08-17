@@ -26,11 +26,12 @@ import 'package:zippup/features/others/presentation/others_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_detail_screen.dart';
 import 'package:zippup/features/marketplace/presentation/product_detail_screen.dart';
 import 'package:zippup/features/profile/presentation/provider_detail_screen.dart';
+import 'package:zippup/features/personal/presentation/personal_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     routes: <RouteBase>[
-      			GoRoute(
+       				GoRoute(
 				path: '/',
 				name: 'home',
 				builder: (context, state) => const AuthGate(child: HomeScreen()),
@@ -40,22 +41,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'panic',
         builder: (context, state) => const PanicScreen(),
       ),
-      			GoRoute(
+       				GoRoute(
 				path: '/transport',
 				name: 'transport',
 				builder: (context, state) => const TransportScreen(),
 			),
-      			GoRoute(
+       				GoRoute(
 				path: '/food',
 				name: 'food',
 				builder: (context, state) => const FoodScreen(),
 			),
-      			GoRoute(
+       				GoRoute(
 				path: '/hire',
 				name: 'hire',
 				builder: (context, state) => const HireScreen(),
 			),
-      			GoRoute(
+       				GoRoute(
 				path: '/marketplace',
 				name: 'marketplace',
 				builder: (context, state) => const MarketplaceScreen(),
@@ -70,7 +71,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				name: 'addListing',
 				builder: (context, state) => const AddListingScreen(),
 			),
-      			GoRoute(
+       				GoRoute(
 				path: '/digital',
 				name: 'digital',
 				builder: (context, state) => const DigitalScreen(),
@@ -80,7 +81,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				name: 'courierDashboard',
 				builder: (context, state) => const CourierDashboardScreen(),
 			),
-      			GoRoute(
+       				GoRoute(
 				path: '/profile',
 				name: 'profile',
 				builder: (context, state) => const ProfileScreen(),
@@ -149,6 +150,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/listing',
 				name: 'productDetail',
 				builder: (context, state) => ProductDetailScreen(productId: state.uri.queryParameters['productId'] ?? ''),
+			),
+			GoRoute(
+				path: '/personal',
+				name: 'personal',
+				builder: (context, state) => const PersonalScreen(),
 			),
     ],
   );

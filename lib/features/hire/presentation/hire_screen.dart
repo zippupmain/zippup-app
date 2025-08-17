@@ -23,7 +23,8 @@ class _HireScreenState extends State<HireScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Hire')),
+			appBar: AppBar(title: const Text('Hire'), backgroundColor: Colors.white, foregroundColor: Colors.black),
+			backgroundColor: Colors.white,
 			body: Column(
 				children: [
 					SingleChildScrollView(
@@ -53,7 +54,7 @@ class _HireScreenState extends State<HireScreen> {
 							builder: (context, snap) {
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
 								final docs = snap.data!.docs;
-								if (docs.isEmpty) return const Center(child: Text('No providers found'));
+								if (docs.isEmpty) return const Center(child: Text('No providers found', style: TextStyle(color: Colors.black)));
 								return ListView.separated(
 									itemCount: docs.length,
 									separatorBuilder: (_, __) => const Divider(height: 1),
@@ -61,13 +62,13 @@ class _HireScreenState extends State<HireScreen> {
 										final p = docs[i].data();
 										final pid = docs[i].id;
 										return ListTile(
-											title: Text(p['name'] ?? 'Provider'),
-											subtitle: Text('Rating: ${(p['rating'] ?? 0).toString()} • Fee: ₦${(p['fee'] ?? 0).toString()}'),
+											title: Text(p['name'] ?? 'Provider', style: const TextStyle(color: Colors.black)),
+											subtitle: Text('Rating: ${(p['rating'] ?? 0).toString()} • Fee: ₦${(p['fee'] ?? 0).toString()}', style: const TextStyle(color: Colors.black54)),
 											trailing: Wrap(spacing: 8, children: [
 												TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Profile')),
 												FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Book')),
 											]),
-									);
+										);
 								},
 							);
 						},

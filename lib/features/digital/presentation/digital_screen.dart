@@ -6,7 +6,8 @@ class DigitalScreen extends StatelessWidget {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Digital Services')),
+			appBar: AppBar(title: const Text('Digital Services'), backgroundColor: Colors.white, foregroundColor: Colors.black),
+			backgroundColor: Colors.white,
 			body: GridView.count(
 				padding: const EdgeInsets.all(16),
 				crossAxisCount: 3,
@@ -30,8 +31,8 @@ class _DigitalCard extends StatelessWidget {
 	@override
 	Widget build(BuildContext context) {
 		return Container(
-			decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
-			child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon), const SizedBox(height: 8), Text(label)]),
+			decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black12)),
+			child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: Colors.black), const SizedBox(height: 8), Text(label, style: const TextStyle(color: Colors.black))]),
 		);
 	}
 }

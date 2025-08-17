@@ -75,10 +75,18 @@ class _HomeScreenState extends State<HomeScreen> {
 					SliverAppBar(
 						pinned: true,
 						expandedHeight: 160,
-						flexibleSpace: const FlexibleSpaceBar(
-							titlePadding: EdgeInsetsDirectional.only(start: 16, bottom: 12),
-							title: Text('One Tap. All Services.', style: TextStyle(fontSize: 11)),
-							background: DecoratedBox(
+						flexibleSpace: FlexibleSpaceBar(
+							titlePadding: const EdgeInsetsDirectional.only(start: 16, bottom: 12),
+							title: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								mainAxisSize: MainAxisSize.min,
+								children: [
+									Text(_greet, style: const TextStyle(fontSize: 11)),
+									const SizedBox(height: 2),
+									const Text('One Tap. All Services.', style: TextStyle(fontSize: 11)),
+								],
+							),
+							background: const DecoratedBox(
 								decoration: BoxDecoration(
 									gradient: LinearGradient(
 										colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
@@ -88,7 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
 								),
 							),
 						),
-					),
 					SliverToBoxAdapter(
 						child: Padding(
 							padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -97,8 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
 									const Icon(Icons.location_on_outlined, size: 18, color: Colors.redAccent),
 									const SizedBox(width: 6),
 									Expanded(child: Text(_locationText, overflow: TextOverflow.ellipsis, maxLines: 1, style: const TextStyle(fontSize: 12))),
-									const SizedBox(width: 8),
-									Text(_greet, style: const TextStyle(fontSize: 12)),
+									IconButton(onPressed: _fetchLocation, icon: const Icon(Icons.refresh, size: 18)),
 								],
 							),
 						),
@@ -151,6 +157,7 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Digital', Icons.devices_other, 'digital', Color(0xFFE8F5E9), Colors.black),
 		_QuickAction('Emergency', Icons.emergency_share, 'emergency', Color(0xFFFFE5E5), Colors.black),
 		_QuickAction('Others', Icons.category, 'others', Color(0xFFFFE5E5), Colors.black),
+		_QuickAction('Personal', Icons.face_3, 'personal', Color(0xFFFFFFFF), Colors.black),
 	];
 
 	@override
@@ -200,30 +207,29 @@ class _EmergencyActions extends StatelessWidget {
 	@override
 	Widget build(BuildContext context) {
 		return Padding(
-			padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-			child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-				const Padding(
-					padding: EdgeInsets.only(bottom: 8),
-					child: Text('Emergency Services', style: TextStyle(fontWeight: FontWeight.w600)),
-				),
-				GridView.builder(
-					itemCount: items.length,
-					shrinkWrap: true,
-					physics: const NeverScrollableScrollPhysics(),
-					gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, childAspectRatio: .9, mainAxisSpacing: 10, crossAxisSpacing: 10),
-					itemBuilder: (context, i) {
-						final a = items[i];
-						return InkWell(
-							onTap: () => context.pushNamed(a.routeName),
-							child: Column(children: [
-								Container(decoration: BoxDecoration(color: a.bg, shape: BoxShape.circle), padding: const EdgeInsets.all(12), child: Icon(a.icon, color: a.iconColor)),
-								const SizedBox(height: 6),
-								Text(a.title, style: const TextStyle(fontSize: 12)),
-							]),
-						);
-					},
-				),
-			]),
+			padding: const EdgeInsets.all(16),
+			child: Column(
+				children: items
+					.map((e) => ListTile(leading: Icon(e.icon, color: e.iconColor), title: Text(e.title), onTap: () => context.push('/panic')))
+					.toList(),
+			),
+		);
+	}
+}
+
+class _DynamicCard extends StatelessWidget {
+	final int index;
+	const _DynamicCard({required this.index});
+	@override
+	Widget build(BuildContext context) {
+		return Container(
+			margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+			decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))]),
+			child: ListTile(
+				leading: CircleAvatar(backgroundColor: Colors.blue.shade50, child: const Icon(Icons.campaign)),
+				title: Text('Billboard ${index + 1}'),
+				subtitle: const Text('Colorful dynamic billboard content'),
+			),
 		);
 	}
 }
@@ -303,27 +309,6 @@ class _PromotionsState extends State<_Promotions> {
 					),
 					separatorBuilder: (_, __) => const SizedBox(width: 12),
 					itemCount: data.length,
-				),
-			),
-		);
-	}
-}
-
-class _DynamicCard extends StatelessWidget {
-	const _DynamicCard({required this.index});
-	final int index;
-	@override
-	Widget build(BuildContext context) {
-		return ListTile(
-			title: Text('Recommended item #$index'),
-			subtitle: const Text('Nearby and popular'),
-			leading: ClipRRect(
-				borderRadius: BorderRadius.circular(8),
-				child: CachedNetworkImage(
-					imageUrl: 'https://picsum.photos/seed/$index/100/100',
-					width: 56,
-					height: 56,
-					fit: BoxFit.cover,
 				),
 			),
 		);

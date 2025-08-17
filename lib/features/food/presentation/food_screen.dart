@@ -31,8 +31,10 @@ class FoodScreen extends StatelessWidget {
 			appBar: AppBar(
 				title: const Text('Food'),
 				actions: [
-					IconButton(onPressed: () => _voiceSearch(context, controller), icon: const Icon(Icons.mic_none)),
+					IconButton(onPressed: () => _voiceSearch(context, controller), icon: const Icon(Icons.mic_none, color: Colors.black)),
 				],
+				backgroundColor: Colors.white,
+				foregroundColor: Colors.black,
 				bottom: PreferredSize(
 					preferredSize: const Size.fromHeight(56),
 					child: Padding(
@@ -43,9 +45,10 @@ class FoodScreen extends StatelessWidget {
 							onSubmitted: (v) => _goSearch(context, v),
 							decoration: InputDecoration(
 								filled: true,
+								fillColor: Colors.white,
 								hintText: 'Search food, vendors...',
-								prefixIcon: const Icon(Icons.search),
-								border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+								prefixIcon: const Icon(Icons.search, color: Colors.black),
+								border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.black12)),
 							),
 						),
 					),
@@ -76,10 +79,10 @@ class _CategoryCard extends StatelessWidget {
 		return InkWell(
 			onTap: onTap,
 			child: Container(
-				decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
+				decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black12)),
 				child: Column(
 					mainAxisAlignment: MainAxisAlignment.center,
-					children: [Icon(icon), const SizedBox(height: 8), Text(label)],
+					children: [Icon(icon, color: Colors.black), const SizedBox(height: 8), Text(label, style: const TextStyle(color: Colors.black))],
 				),
 			),
 		);

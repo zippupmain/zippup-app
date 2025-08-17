@@ -160,15 +160,26 @@ class _TransportScreenState extends State<TransportScreen> {
 					),
 					if (_scheduled)
 						ListTile(
-							title: const Text('Scheduled time'),
-							subtitle: Text(_scheduledAt?.toString() ?? 'Pick time'),
+							title: const Text('Select date'),
+							subtitle: Text(_scheduledAt == null ? 'Pick a date' : '${_scheduledAt!.year}-${_scheduledAt!.month.toString().padLeft(2,'0')}-${_scheduledAt!.day.toString().padLeft(2,'0')}'),
 							onTap: () async {
 								final now = DateTime.now();
-								final date = await showDatePicker(context: context, firstDate: now, lastDate: now.add(const Duration(days: 30)), initialDate: now);
+								final date = await showDatePicker(context: context, firstDate: now, lastDate: now.add(const Duration(days: 30)), initialDate: _scheduledAt ?? now);
 								if (date == null) return;
-								final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-								if (time == null) return;
-								setState(() => _scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
+								final current = _scheduledAt ?? now;
+								setState(() => _scheduledAt = DateTime(date.year, date.month, date.day, current.hour, current.minute));
+							},
+						),
+					if (_scheduled)
+						ListTile(
+							title: const Text('Select time'),
+							subtitle: Text(_scheduledAt == null ? 'Pick a time' : '${_scheduledAt!.hour.toString().padLeft(2,'0')}:${_scheduledAt!.minute.toString().padLeft(2,'0')}'),
+							onTap: () async {
+								final now = TimeOfDay.now();
+								final picked = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_scheduledAt ?? DateTime.now()));
+								if (picked == null) return;
+								final base = _scheduledAt ?? DateTime.now();
+								setState(() => _scheduledAt = DateTime(base.year, base.month, base.day, picked.hour, picked.minute));
 							},
 						),
 					if (_scheduled)
