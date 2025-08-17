@@ -56,6 +56,15 @@ class _HomeScreenState extends State<HomeScreen> {
 						itemBuilder: (context) => [
 							PopupMenuItem(child: const Text('Profile'), onTap: () => context.push('/profile')),
 							PopupMenuItem(child: const Text('Bookings'), onTap: () => context.push('/bookings')),
+							PopupMenuItem(child: const Text('Wallet'), onTap: () => context.push('/profile')),
+							const PopupMenuDivider(),
+							PopupMenuItem(
+								child: const Text('Logout'),
+								onTap: () async {
+									await FirebaseAuth.instance.signOut();
+									if (context.mounted) context.go('/');
+								},
+							),
 						],
 					),
 				],
