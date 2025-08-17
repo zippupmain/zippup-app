@@ -18,10 +18,22 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	final _address = TextEditingController();
 	final _title = TextEditingController();
 	String _category = 'transport';
+	String? _subcategory;
 	String _type = 'individual';
 	File? _idDoc;
 	File? _bizDoc;
 	bool _saving = false;
+
+	final Map<String, List<String>> _subcategories = const {
+		'transport': ['Taxi', 'Bike', 'Truck', 'Courier'],
+		'food': ['Fast Food', 'Local', 'Grocery'],
+		'groceries': ['Grocery Store'],
+		'hire': ['Home', 'Tech', 'Construction', 'Auto', 'Personal'],
+		'marketplace': ['Electronics', 'Vehicles', 'Property', 'Fashion', 'Jobs', 'Services'],
+		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Roadside'],
+		'personal': ['Makeup', 'Hair', 'Nails', 'Pedicure', 'Massage', 'Barbing', 'Hair styling'],
+		'others': ['Events planning', 'Live event tickets', 'Tutors'],
+	};
 
 	Future<void> _pickId() async {
 		final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
@@ -52,6 +64,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'name': _name.text.trim(),
 				'address': _address.text.trim(),
 				'category': _category,
+				'subcategory': _subcategory,
 				'type': _type,
 				'title': _title.text.trim(),
 				'idUrl': idUrl,
@@ -74,6 +87,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 
 	@override
 	Widget build(BuildContext context) {
+		final subs = _subcategories[_category] ?? const <String>[];
 		return Scaffold(
 			appBar: AppBar(title: const Text('Apply as Provider / Vendor')),
 			body: ListView(
@@ -90,7 +104,14 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 						DropdownMenuItem(value: 'emergency', child: Text('Emergency')),
 						DropdownMenuItem(value: 'personal', child: Text('Personal')),
 						DropdownMenuItem(value: 'others', child: Text('Others')),
-					], onChanged: (v) => setState(() => _category = v as String), decoration: const InputDecoration(labelText: 'Service category')),
+					], onChanged: (v) => setState(() { _category = v as String; _subcategory = null; }), decoration: const InputDecoration(labelText: 'Service category')),
+					if (subs.isNotEmpty)
+						DropdownButtonFormField<String>(
+							value: _subcategory,
+							items: subs.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+							decoration: const InputDecoration(labelText: 'Sub category'),
+							onChanged: (v) => setState(() => _subcategory = v),
+						),
 					DropdownButtonFormField(value: _type, items: const [
 						DropdownMenuItem(value: 'individual', child: Text('Individual')),
 						DropdownMenuItem(value: 'company', child: Text('Company')),
