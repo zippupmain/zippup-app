@@ -5,7 +5,8 @@ class Product extends Equatable {
   final String title;
   final String description;
   final String category;
-  final String imageUrl;
+  final String imageUrl; // legacy single image
+  final List<String> imageUrls; // new multiple images
   final double price;
   final String sellerId;
   final DateTime createdAt;
@@ -16,6 +17,7 @@ class Product extends Equatable {
     required this.description,
     required this.category,
     required this.imageUrl,
+    required this.imageUrls,
     required this.price,
     required this.sellerId,
     required this.createdAt,
@@ -27,6 +29,9 @@ class Product extends Equatable {
     description: json['description'] ?? '',
     category: json['category'] ?? '',
     imageUrl: json['imageUrl'] ?? '',
+    imageUrls: (json['imageUrls'] is List)
+        ? (json['imageUrls'] as List).map((e) => e.toString()).toList()
+        : (json['imageUrl'] != null ? [json['imageUrl'].toString()] : const <String>[]),
     price: (json['price'] is num)
         ? (json['price'] as num).toDouble()
         : double.tryParse(json['price']?.toString() ?? '0') ?? 0,
@@ -42,6 +47,7 @@ class Product extends Equatable {
     'description': description,
     'category': category,
     'imageUrl': imageUrl,
+    'imageUrls': imageUrls,
     'price': price,
     'sellerId': sellerId,
     'createdAt': createdAt.toIso8601String(),
