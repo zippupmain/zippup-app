@@ -29,6 +29,8 @@ import 'package:zippup/features/profile/presentation/provider_detail_screen.dart
 import 'package:zippup/features/personal/presentation/personal_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_providers_screen.dart';
 import 'package:zippup/features/profile/presentation/profile_settings_screen.dart';
+import 'package:zippup/features/admin/presentation/vendor_admin_screen.dart';
+import 'package:zippup/features/admin/presentation/driver_delivery_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -102,6 +104,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/admin/applications',
 				name: 'adminApplications',
 				builder: (context, state) => const AdminApplicationsScreen(),
+			),
+			GoRoute(
+				path: '/admin/dashboard',
+				name: 'vendorAdmin',
+				builder: (context, state) => const VendorAdminScreen(),
+			),
+			GoRoute(
+				path: '/driver/delivery',
+				name: 'driverDelivery',
+				builder: (context, state) => DriverDeliveryScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
 			),
 			GoRoute(
 				path: '/chat/:threadId',
