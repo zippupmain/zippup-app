@@ -40,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
 			final pos = await LocationService.getCurrentPosition();
 			if (pos == null) return;
 			final addr = await LocationService.reverseGeocode(pos);
+			await LocationService.updateUserLocationProfile(pos);
 			if (!mounted) return;
 			setState(() => _locationText = addr ?? '${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}');
 		} catch (_) {}

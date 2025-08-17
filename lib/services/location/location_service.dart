@@ -1,3 +1,6 @@
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geocoding/geocoding.dart' as gc;
 import 'package:geolocator/geolocator.dart';
 
@@ -62,5 +65,21 @@ class LocationService {
 		if (places.isEmpty) return null;
 		final pm = places.first;
 		return [pm.street, pm.locality, pm.administrativeArea].where((e) => (e ?? '').isNotEmpty).join(', ');
+	}
+
+	static Future<void> updateUserLocationProfile(Position p) async {
+		final fn = FirebaseFunctions.instance.httpsCallable('geocode');
+		final res = await fn.call({'lat': p.latitude, 'lng': p.longitude});
+		final data = Map<String, dynamic>.from(res.data as Map);
+		final address = data['address']?.toString();
+		final country = data['country']?.toString();
+		final countryCode = data['countryCode']?.toString();
+		final uid = FirebaseAuth.instance.currentUser?.uid;
+		if (uid == null) return;
+		await FirebaseFirestore.instance.collection('users').doc(uid).set({
+			'address': address,
+			'country': country,
+			'countryCode': countryCode,
+		}, SetOptions(merge: true));
 	}
 }

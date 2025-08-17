@@ -177,6 +177,27 @@ exports.sendPanicAlert = functions.https.onCall(async (data, context) => {
 	return { ok: true };
 });
 
+exports.geocode = functions.https.onCall(async (data, context) => {
+	const { lat, lng } = data || {};
+	if (typeof lat !== 'number' || typeof lng !== 'number') throw new functions.https.HttpsError('invalid-argument', 'lat,lng required');
+	const key = 'AIzaSyDBCSRDaKqgEL5qha6GKqQVrU6ORrw0hnc';
+	const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${key}`;
+	const res = await axios.get(url);
+	const results = res.data && res.data.results || [];
+	const formatted = results[0] && results[0].formatted_address;
+	let country = null, countryCode = null;
+	if (results[0] && Array.isArray(results[0].address_components)) {
+		for (const comp of results[0].address_components) {
+			if (comp.types && comp.types.includes('country')) {
+				country = comp.long_name;
+				countryCode = comp.short_name;
+				break;
+			}
+		}
+	}
+	return { address: formatted || null, country, countryCode };
+});
+
 async function notifyUsersFor(threadId, minutesLeft) {
 	const tokens = []; // TODO: collect rider/driver device tokens from users collection
 	const payload = {
