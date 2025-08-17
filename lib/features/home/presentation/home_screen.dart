@@ -2,12 +2,39 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
 	const HomeScreen({super.key});
+	@override
+	State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+	int _tab = 0;
+
+	String _greeting() {
+		final h = DateTime.now().hour;
+		if (h < 12) return 'Good morning';
+		if (h < 17) return 'Good afternoon';
+		return 'Good evening';
+	}
 
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
+			appBar: AppBar(
+				title: const Text('ZippUp'),
+				actions: [
+					IconButton(onPressed: () => context.push('/cart'), icon: const Icon(Icons.shopping_cart_outlined)),
+					IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none)),
+					PopupMenuButton(
+						icon: const CircleAvatar(child: Icon(Icons.person_outline)),
+						itemBuilder: (context) => [
+							PopupMenuItem(child: const Text('Profile'), onTap: () => context.push('/profile')),
+							PopupMenuItem(child: const Text('Bookings'), onTap: () => context.push('/bookings')),
+						],
+					),
+				],
+			),
 			body: CustomScrollView(
 				slivers: [
 					SliverAppBar(
@@ -18,10 +45,9 @@ class HomeScreen extends StatelessWidget {
 							title: Column(
 								mainAxisSize: MainAxisSize.min,
 								crossAxisAlignment: CrossAxisAlignment.start,
-								children: const [
-									Text('ZippUp'),
-									SizedBox(height: 2),
-									Text('ZippUp! One Tap. All Services.', style: TextStyle(fontSize: 11)),
+								children: [
+									const Text('ZippUp! One Tap. All Services.', style: TextStyle(fontSize: 11)),
+									Text('${_greeting()} 👋', style: const TextStyle(fontSize: 11)),
 								],
 							),
 							background: const DecoratedBox(
@@ -34,14 +60,12 @@ class HomeScreen extends StatelessWidget {
 								),
 							),
 						),
-					),
 					SliverToBoxAdapter(
 						child: Padding(
 							padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
 							child: _HomeSearchBar(),
 						),
 					),
-					SliverToBoxAdapter(child: _EmergencySection()),
 					SliverToBoxAdapter(child: _QuickActions()),
 					SliverToBoxAdapter(child: _Promotions()),
 					SliverList(
@@ -52,6 +76,25 @@ class HomeScreen extends StatelessWidget {
 					),
 				],
 			),
+			floatingActionButton: FloatingActionButton.extended(
+				backgroundColor: Colors.red,
+				foregroundColor: Colors.white,
+				onPressed: () => context.push('/panic'),
+				label: const Text('Panic'),
+				icon: const Icon(Icons.emergency_share),
+			),
+			bottomNavigationBar: NavigationBar(
+				selectedIndex: _tab,
+				onDestinationSelected: (i) {
+					setState(() => _tab = i);
+					if (i == 0) return; if (i == 1) context.push('/bookings'); if (i == 2) context.push('/profile');
+				},
+				destinations: const [
+					NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+					NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Bookings'),
+					NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+				],
+			),
 		);
 	}
 }
@@ -59,32 +102,17 @@ class HomeScreen extends StatelessWidget {
 class _EmergencySection extends StatelessWidget {
 	@override
 	Widget build(BuildContext context) {
-		return Padding(
-			padding: const EdgeInsets.all(16),
-			child: SizedBox(
-				height: 72,
-				child: ElevatedButton.icon(
-					style: ElevatedButton.styleFrom(
-						backgroundColor: Colors.red,
-						foregroundColor: Colors.white,
-						shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-					),
-					icon: const Icon(Icons.warning_amber_rounded),
-					label: const Text('Emergency'),
-					onPressed: () => context.pushNamed('panic'),
-				),
-			),
-		);
+		return const SizedBox.shrink();
 	}
 }
 
 class _QuickActions extends StatelessWidget {
 	final List<_QuickAction> actions = const [
-		_QuickAction('Ride', Icons.local_taxi, 'transport'),
-		_QuickAction('Food', Icons.fastfood, 'food'),
-		_QuickAction('Hire', Icons.handyman, 'hire'),
-		_QuickAction('Marketplace', Icons.store_mall_directory, 'marketplace'),
-		_QuickAction('Digital', Icons.phone_android, 'digital'),
+		_QuickAction('Ride', Icons.local_taxi, 'transport', Color(0xFFFFEDD5)),
+		_QuickAction('Food', Icons.fastfood, 'food', Color(0xFFE0F2FE)),
+		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFEDE9FE)),
+		_QuickAction('Marketplace', Icons.store_mall_directory, 'marketplace', Color(0xFFE6F4EA)),
+		_QuickAction('Digital', Icons.phone_android, 'digital', Color(0xFFFFE4E6)),
 	];
 
 	@override
@@ -105,7 +133,11 @@ class _QuickActions extends StatelessWidget {
 						onTap: () => context.pushNamed(a.routeName),
 						child: Column(
 							children: [
-								CircleAvatar(radius: 24, child: Icon(a.icon)),
+								Container(
+									decoration: BoxDecoration(color: a.bg, shape: BoxShape.circle),
+									padding: const EdgeInsets.all(12),
+									child: Icon(a.icon, color: Colors.black87),
+								),
 								const SizedBox(height: 6),
 								Text(a.title, style: const TextStyle(fontSize: 12)),
 							],
@@ -121,25 +153,29 @@ class _QuickAction {
 	final String title;
 	final IconData icon;
 	final String routeName;
-	const _QuickAction(this.title, this.icon, this.routeName);
+	final Color bg;
+	const _QuickAction(this.title, this.icon, this.routeName, this.bg);
 }
 
 class _Promotions extends StatelessWidget {
 	@override
 	Widget build(BuildContext context) {
 		return SizedBox(
-			height: 120,
+			height: 140,
 			child: ListView.separated(
 				padding: const EdgeInsets.all(16),
 				scrollDirection: Axis.horizontal,
 				itemBuilder: (context, index) => Container(
-					width: 220,
-					decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
+					width: 260,
+					decoration: BoxDecoration(
+						color: index.isEven ? const Color(0xFFFEF3C7) : const Color(0xFFF3E8FF),
+						borderRadius: BorderRadius.circular(12),
+					),
 					padding: const EdgeInsets.all(12),
-					child: const Text('🍔 10% off first food order'),
+					child: Text(index.isEven ? '🚑 Emergency services 24/7' : '🍔 10% off first food order', style: const TextStyle(fontWeight: FontWeight.w600)),
 				),
 				separatorBuilder: (_, __) => const SizedBox(width: 12),
-				itemCount: 5,
+				itemCount: 6,
 			),
 		);
 	}
@@ -188,6 +224,7 @@ class _HomeSearchBarState extends State<_HomeSearchBar> {
 				filled: true,
 				hintText: 'Search services, vendors, items...',
 				prefixIcon: IconButton(icon: const Icon(Icons.search), onPressed: _go),
+				suffixIcon: IconButton(icon: const Icon(Icons.mic_none), onPressed: _go),
 				border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
 			),
 		);

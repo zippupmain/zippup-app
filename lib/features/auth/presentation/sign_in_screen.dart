@@ -93,9 +93,9 @@ class _SignInScreenState extends State<SignInScreen> {
 					children: [
 						// Logo space
 						Container(
-							height: 80,
+							height: 96,
 							alignment: Alignment.center,
-							child: const Text('ZippUp Logo Here'),
+							child: Image.asset('assets/icons/app_icon.png', height: 72),
 						),
 						const SizedBox(height: 8),
 						Text(
