@@ -12,6 +12,14 @@ class HireScreen extends StatefulWidget {
 class _HireScreenState extends State<HireScreen> {
 	String _filter = 'home';
 
+	final Map<String, List<String>> _examples = const {
+		'home': ['Cleaning', 'Plumbing', 'Electrician', 'Painting', 'Carpentry', 'Pest control'],
+		'tech': ['Phone repair', 'Computer repair', 'Networking', 'CCTV install', 'Data recovery'],
+		'construction': ['Builders', 'Roofing', 'Tiling', 'Welding', 'Scaffolding'],
+		'auto': ['Mechanic', 'Tyre replacement', 'Battery jumpstart', 'Fuel delivery'],
+		'personal': ['Nails', 'Hair', 'Massage', 'Pedicure', 'Manicure', 'Makeups'],
+	};
+
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
@@ -26,7 +34,18 @@ class _HireScreenState extends State<HireScreen> {
 							ChoiceChip(label: const Text('Tech'), selected: _filter == 'tech', onSelected: (_) => setState(() => _filter = 'tech')),
 							ChoiceChip(label: const Text('Construction'), selected: _filter == 'construction', onSelected: (_) => setState(() => _filter = 'construction')),
 							ChoiceChip(label: const Text('Auto'), selected: _filter == 'auto', onSelected: (_) => setState(() => _filter = 'auto')),
+							ChoiceChip(label: const Text('Personal'), selected: _filter == 'personal', onSelected: (_) => setState(() => _filter = 'personal')),
 						]),
+					),
+					Padding(
+						padding: const EdgeInsets.symmetric(horizontal: 16.0),
+						child: Align(
+							alignment: Alignment.centerLeft,
+							child: Text(
+								'Examples: ${( _examples[_filter] ?? const <String>[] ).join(', ')}',
+								style: const TextStyle(fontSize: 12, color: Colors.black54),
+							),
+						),
 					),
 					Expanded(
 						child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -48,10 +67,10 @@ class _HireScreenState extends State<HireScreen> {
 												TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Profile')),
 												FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Book')),
 											]),
-										);
-									},
-								);
-							},
+									);
+								},
+							);
+						},
 						),
 					),
 				],
