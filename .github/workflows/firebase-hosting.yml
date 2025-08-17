@@ -19,6 +19,11 @@ jobs:
           channel: stable
           flutter-version: '3.27.0'
 
+      - name: Setup Dart 3.9.0
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.9.0'
+
       - name: Enable web and fetch deps
         run: |
           flutter config --enable-web
