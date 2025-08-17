@@ -156,6 +156,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				name: 'personal',
 				builder: (context, state) => const PersonalScreen(),
 			),
+      GoRoute(
+        path: '/emergency/roadside',
+        name: 'roadside',
+        builder: (context, state) => const HireScreen(initialCategory: 'auto'),
+      ),
     ],
   );
 });

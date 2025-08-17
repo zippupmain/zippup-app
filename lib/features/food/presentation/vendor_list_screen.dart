@@ -2,19 +2,48 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class VendorListScreen extends StatelessWidget {
+class VendorListScreen extends StatefulWidget {
 	const VendorListScreen({super.key, required this.category});
 	final String category;
+	@override
+	State<VendorListScreen> createState() => _VendorListScreenState();
+}
 
+class _VendorListScreenState extends State<VendorListScreen> {
+	final _search = TextEditingController();
+	String _q = '';
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: Text('Vendors • ${category.replaceAll('_', ' ')}')),
+			appBar: AppBar(
+				title: Text('Vendors • ${widget.category.replaceAll('_', ' ')}'),
+				bottom: PreferredSize(
+					preferredSize: const Size.fromHeight(56),
+					child: Padding(
+						padding: const EdgeInsets.all(8.0),
+						child: TextField(
+							controller: _search,
+							textInputAction: TextInputAction.search,
+							onChanged: (v) => setState(() => _q = v.trim().toLowerCase()),
+							decoration: InputDecoration(
+								filled: true,
+								hintText: 'Search vendors...',
+								prefixIcon: const Icon(Icons.search),
+								border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+							),
+						),
+					),
+				),
+			),
 			body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-				stream: FirebaseFirestore.instance.collection('vendors').where('category', isEqualTo: category).snapshots(),
+				stream: FirebaseFirestore.instance.collection('vendors').where('category', isEqualTo: widget.category).snapshots(),
 				builder: (context, snapshot) {
 					if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-					final docs = snapshot.data!.docs;
+					final docs = snapshot.data!.docs.where((d) {
+						if (_q.isEmpty) return true;
+						final name = (d.data()['name'] ?? '').toString().toLowerCase();
+						return name.contains(_q);
+					}).toList();
 					if (docs.isEmpty) return const Center(child: Text('No vendors nearby'));
 					return ListView.separated(
 						itemCount: docs.length,

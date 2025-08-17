@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zippup/features/hire/presentation/hire_screen.dart';
 
 class PersonalScreen extends StatelessWidget {
 	const PersonalScreen({super.key});
@@ -23,9 +24,12 @@ class PersonalScreen extends StatelessWidget {
 				itemCount: items.length,
 				itemBuilder: (context, i) {
 					final (label, icon) = items[i];
-					return Container(
-						decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black12)),
-						child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: Colors.black), const SizedBox(height: 8), Text(label, style: const TextStyle(color: Colors.black))]),
+					return InkWell(
+						onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HireScreen(initialCategory: 'personal', initialQuery: label))),
+						child: Container(
+							decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black12)),
+							child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: Colors.black), const SizedBox(height: 8), Text(label, style: const TextStyle(color: Colors.black))]),
+						),
 					);
 				},
 			),

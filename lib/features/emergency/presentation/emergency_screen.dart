@@ -24,7 +24,13 @@ class EmergencyScreen extends StatelessWidget {
 					return ListTile(
 						leading: icon,
 						title: Text(title),
-						onTap: () => context.push('/panic'),
+						onTap: () {
+							if (title == 'Roadside') {
+								context.push('/emergency/roadside');
+							} else {
+								context.push('/transport');
+							}
+						},
 					);
 				},
 			),

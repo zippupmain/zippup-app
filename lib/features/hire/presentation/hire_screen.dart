@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:zippup/features/profile/presentation/provider_profile_screen.dart';
 
 class HireScreen extends StatefulWidget {
-	const HireScreen({super.key});
+	const HireScreen({super.key, this.initialCategory, this.initialQuery});
+	final String? initialCategory;
+	final String? initialQuery;
 
 	@override
 	State<HireScreen> createState() => _HireScreenState();
@@ -11,6 +13,8 @@ class HireScreen extends StatefulWidget {
 
 class _HireScreenState extends State<HireScreen> {
 	String _filter = 'home';
+	final TextEditingController _search = TextEditingController();
+	String _q = '';
 
 	final Map<String, List<String>> _examples = const {
 		'home': ['Cleaning', 'Plumbing', 'Electrician', 'Painting', 'Carpentry', 'Pest control'],
@@ -19,6 +23,16 @@ class _HireScreenState extends State<HireScreen> {
 		'auto': ['Mechanic', 'Tyre replacement', 'Battery jumpstart', 'Fuel delivery'],
 		'personal': ['Nails', 'Hair', 'Massage', 'Pedicure', 'Manicure', 'Makeups'],
 	};
+
+	@override
+	void initState() {
+		super.initState();
+		if (widget.initialCategory != null) _filter = widget.initialCategory!;
+		if (widget.initialQuery != null) {
+			_q = widget.initialQuery!.toLowerCase();
+			_search.text = widget.initialQuery!;
+		}
+	}
 
 	@override
 	Widget build(BuildContext context) {
@@ -40,6 +54,17 @@ class _HireScreenState extends State<HireScreen> {
 					),
 					Padding(
 						padding: const EdgeInsets.symmetric(horizontal: 16.0),
+						child: TextField(
+							controller: _search,
+							decoration: const InputDecoration(
+								labelText: 'Search providers',
+								prefixIcon: Icon(Icons.search),
+							),
+							onChanged: (v) => setState(() => _q = v.trim().toLowerCase()),
+						),
+					),
+					Padding(
+						padding: const EdgeInsets.symmetric(horizontal: 16.0),
 						child: Align(
 							alignment: Alignment.centerLeft,
 							child: Text(
@@ -53,7 +78,12 @@ class _HireScreenState extends State<HireScreen> {
 							stream: FirebaseFirestore.instance.collection('providers').where('category', isEqualTo: _filter).snapshots(),
 							builder: (context, snap) {
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-								final docs = snap.data!.docs;
+								final docs = snap.data!.docs.where((d) {
+									if (_q.isEmpty) return true;
+									final name = (d.data()['name'] ?? '').toString().toLowerCase();
+									final title = (d.data()['title'] ?? '').toString().toLowerCase();
+									return name.contains(_q) || title.contains(_q);
+								}).toList();
 								if (docs.isEmpty) return const Center(child: Text('No providers found', style: TextStyle(color: Colors.black)));
 								return ListView.separated(
 									itemCount: docs.length,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/location/location_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class HomeScreen extends StatefulWidget {
 	const HomeScreen({super.key});
@@ -223,13 +224,16 @@ class _DynamicCard extends StatelessWidget {
 	const _DynamicCard({required this.index});
 	@override
 	Widget build(BuildContext context) {
-		return Container(
-			margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-			decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))]),
-			child: ListTile(
-				leading: CircleAvatar(backgroundColor: Colors.blue.shade50, child: const Icon(Icons.campaign)),
-				title: Text('Billboard ${index + 1}'),
-				subtitle: const Text('Colorful dynamic billboard content'),
+		return InkWell(
+			onTap: () => context.push('/marketplace'),
+			child: Container(
+				margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+				decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))]),
+				child: ListTile(
+					leading: CircleAvatar(backgroundColor: Colors.blue.shade50, child: const Icon(Icons.campaign)),
+					title: Text('Billboard ${index + 1}'),
+					subtitle: const Text('Colorful dynamic billboard content'),
+				),
 			),
 		);
 	}
@@ -261,6 +265,15 @@ class _PromotionsState extends State<_Promotions> {
 		'🎁 Refer friends, earn coupons',
 	];
 
+	void _goFor(String text) {
+		final t = text.toLowerCase();
+		if (t.contains('taxi') || t.contains('truck')) context.push('/transport');
+		else if (t.contains('food') || t.contains('order')) context.push('/food');
+		else if (t.contains('hire') || t.contains('verified')) context.push('/hire');
+		else if (t.contains('market')) context.push('/marketplace');
+		else context.push('/search?q=${Uri.encodeComponent(text)}');
+	}
+
 	@override
 	void initState() {
 		super.initState();
@@ -285,7 +298,7 @@ class _PromotionsState extends State<_Promotions> {
 
 	@override
 	Widget build(BuildContext context) {
-		final data = [..._items, ..._items]; // duplicate to simulate loop
+		final data = [..._items, ..._items];
 		return SizedBox(
 			height: 140,
 			child: Container(
@@ -295,19 +308,22 @@ class _PromotionsState extends State<_Promotions> {
 					scrollDirection: Axis.horizontal,
 					physics: const NeverScrollableScrollPhysics(),
 					padding: const EdgeInsets.all(16),
-					itemBuilder: (context, index) => Container(
-						width: 260,
-						decoration: BoxDecoration(
-							color: Colors.white,
-							borderRadius: BorderRadius.circular(12),
-							border: Border.all(color: Colors.black12),
-						),
-						padding: const EdgeInsets.all(12),
-						child: Text(
-							data[index % data.length],
-							style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
-						),
-					),
+					itemBuilder: (context, index) {
+						final text = data[index % data.length];
+						return InkWell(
+							onTap: () => _goFor(text),
+							child: Container(
+								width: 260,
+								decoration: BoxDecoration(
+									color: Colors.white,
+									borderRadius: BorderRadius.circular(12),
+									border: Border.all(color: Colors.black12),
+								),
+								padding: const EdgeInsets.all(12),
+								child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
+							),
+						);
+					},
 					separatorBuilder: (_, __) => const SizedBox(width: 12),
 					itemCount: data.length,
 				),
@@ -323,6 +339,18 @@ class _HomeSearchBar extends StatefulWidget {
 
 class _HomeSearchBarState extends State<_HomeSearchBar> {
 	final controller = TextEditingController();
+	final stt.SpeechToText _stt = stt.SpeechToText();
+	Future<void> _voice() async {
+		final ok = await _stt.initialize(options: [stt.SpeechToText.androidIntentLookup]);
+		if (!ok) return;
+		await _stt.listen(onResult: (res) {
+			if (res.finalResult) {
+				controller.text = res.recognizedWords;
+				_go();
+				_stt.stop();
+			}
+		});
+	}
 	void _go() {
 		final q = controller.text.trim();
 		if (q.isEmpty) return;
@@ -338,7 +366,7 @@ class _HomeSearchBarState extends State<_HomeSearchBar> {
 				filled: true,
 				hintText: 'Search services, vendors, items...',
 				prefixIcon: IconButton(icon: const Icon(Icons.search), onPressed: _go),
-				suffixIcon: IconButton(icon: const Icon(Icons.mic_none), onPressed: _go),
+				suffixIcon: IconButton(icon: const Icon(Icons.mic_none), onPressed: _voice),
 				border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
 			),
 		);
