@@ -153,6 +153,32 @@ exports.placesAutocomplete = functions.https.onCall(async (data, context) => {
 	return { predictions: preds.map(p => ({ description: p.description, place_id: p.place_id })) };
 });
 
+exports.sendPanicAlert = functions.https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const { lat, lng } = data || {};
+	// Fetch user emergency contacts (array of phone numbers) and country code
+	const userDoc = await admin.firestore().collection('users').doc(uid).get();
+	const contacts = userDoc.get('emergencyContacts') || [];
+	const country = userDoc.get('country') || 'NG';
+	// Admin-configured default emergency line per country stored at _config/emergency/{country}
+	const adminLineDoc = await admin.firestore().collection('_config').doc('emergency').get();
+	const adminLines = adminLineDoc.exists ? adminLineDoc.data() : {};
+	const defaultLine = adminLines && adminLines[country];
+	const links = [];
+	if (lat && lng) links.push(`https://maps.google.com/?q=${lat},${lng}`);
+	const body = `EMERGENCY ALERT! User ${uid} needs help.${links.length ? ` Location: ${links.join(' ')}` : ''}`;
+	// Here we demo by writing a notification record; in production integrate with SMS provider
+	await admin.firestore().collection('panic_alerts').add({
+		uid,
+		contacts: contacts.slice(0, 5),
+		defaultLine: defaultLine || null,
+		message: body,
+		createdAt: admin.firestore.FieldValue.serverTimestamp(),
+	});
+	return { ok: true };
+});
+
 async function notifyUsersFor(threadId, minutesLeft) {
 	const tokens = []; // TODO: collect rider/driver device tokens from users collection
 	const payload = {

@@ -27,6 +27,7 @@ import 'package:zippup/features/food/presentation/vendor_detail_screen.dart';
 import 'package:zippup/features/marketplace/presentation/product_detail_screen.dart';
 import 'package:zippup/features/profile/presentation/provider_detail_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_screen.dart';
+import 'package:zippup/features/emergency/presentation/emergency_providers_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -160,6 +161,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/emergency/roadside',
         name: 'roadside',
         builder: (context, state) => const HireScreen(initialCategory: 'auto'),
+      ),
+      GoRoute(
+        path: '/emergency/providers/:type',
+        name: 'emergencyProviders',
+        builder: (context, state) => EmergencyProvidersScreen(type: state.pathParameters['type'] ?? 'ambulance'),
       ),
     ],
   );

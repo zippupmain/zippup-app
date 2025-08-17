@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:zippup/services/location/location_service.dart';
 
 class PanicScreen extends StatelessWidget {
   const PanicScreen({super.key});
@@ -35,10 +38,29 @@ class PanicScreen extends StatelessWidget {
               ),
             );
             if (shouldSend == true) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Emergency alert sent')),
-                );
+              double? lat;
+              double? lng;
+              final pos = await LocationService.getCurrentPosition();
+              if (pos != null) {
+                lat = pos.latitude;
+                lng = pos.longitude;
+              }
+              try {
+                await FirebaseFunctions.instance.httpsCallable('sendPanicAlert').call({
+                  'lat': lat,
+                  'lng': lng,
+                });
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Emergency alert sent')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to send alert: $e')),
+                  );
+                }
               }
             }
           },
