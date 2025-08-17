@@ -21,6 +21,8 @@ import 'package:zippup/features/orders/presentation/track_order_screen.dart';
 import 'package:zippup/features/transport/presentation/ride_track_screen.dart';
 import 'package:zippup/features/transport/presentation/courier_dashboard_screen.dart';
 import 'package:zippup/features/search/presentation/search_results_screen.dart';
+import 'package:zippup/features/emergency/presentation/emergency_screen.dart';
+import 'package:zippup/features/others/presentation/others_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_detail_screen.dart';
 import 'package:zippup/features/marketplace/presentation/product_detail_screen.dart';
 import 'package:zippup/features/profile/presentation/provider_detail_screen.dart';
@@ -122,6 +124,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/search',
 				name: 'search',
 				builder: (context, state) => SearchResultsScreen(query: state.uri.queryParameters['q'] ?? ''),
+			),
+			GoRoute(
+				path: '/emergency',
+				name: 'emergency',
+				builder: (context, state) => const EmergencyScreen(),
+			),
+			GoRoute(
+				path: '/others',
+				name: 'others',
+				builder: (context, state) => const OthersScreen(),
 			),
 			GoRoute(
 				path: '/vendor',

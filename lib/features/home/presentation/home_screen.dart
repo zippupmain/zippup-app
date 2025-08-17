@@ -100,7 +100,6 @@ class _HomeScreenState extends State<HomeScreen> {
 						),
 					),
 					SliverToBoxAdapter(child: _QuickActions()),
-					SliverToBoxAdapter(child: _EmergencyActions()),
 					SliverToBoxAdapter(child: _Promotions()),
 					SliverList(
 						delegate: SliverChildBuilderDelegate(
@@ -135,12 +134,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _QuickActions extends StatelessWidget {
 	final List<_QuickAction> actions = const [
-		_QuickAction('Ride', Icons.directions_car_filled, 'transport', Color(0xFFFFE5E5), Colors.red),
-		_QuickAction('Food', Icons.local_fire_department, 'food', Color(0xFFE8F5E9), Colors.green),
-		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFFFF7E0), Colors.amber),
-		_QuickAction('Marketplace', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.pink),
-		_QuickAction('Digital', Icons.devices_other, 'digital', Color(0xFFE8F5E9), Colors.green),
-		_QuickAction('Others', Icons.category, 'hire', Color(0xFFFFE5E5), Colors.red),
+		_QuickAction('Ride', Icons.directions_car_filled, 'transport', Color(0xFFFFE5E5), Colors.black),
+		_QuickAction('Food', Icons.local_fire_department, 'food', Color(0xFFE8F5E9), Colors.black),
+		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFFFF7E0), Colors.black),
+		_QuickAction('Marketplace', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.black),
+		_QuickAction('Digital', Icons.devices_other, 'digital', Color(0xFFE8F5E9), Colors.black),
+		_QuickAction('Emergency', Icons.emergency_share, 'emergency', Color(0xFFFFE5E5), Colors.black),
+		_QuickAction('Others', Icons.category, 'others', Color(0xFFFFE5E5), Colors.black),
 	];
 
 	@override
