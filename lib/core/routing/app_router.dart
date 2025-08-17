@@ -39,6 +39,7 @@ import 'package:zippup/features/profile/presentation/manage_accounts_screen.dart
 import 'package:zippup/features/legal/presentation/privacy_screen.dart';
 import 'package:zippup/features/legal/presentation/terms_screen.dart';
 import 'package:zippup/features/ratings/presentation/rate_app_screen.dart';
+import 'package:zippup/features/promos/presentation/promos_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -232,6 +233,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/rate',
         name: 'rate',
         builder: (context, state) => const RateAppScreen(),
+      ),
+      GoRoute(
+        path: '/promos',
+        name: 'promos',
+        builder: (context, state) => const PromosScreen(),
       ),
     ],
   );
