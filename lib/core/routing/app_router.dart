@@ -40,6 +40,7 @@ import 'package:zippup/features/legal/presentation/privacy_screen.dart';
 import 'package:zippup/features/legal/presentation/terms_screen.dart';
 import 'package:zippup/features/ratings/presentation/rate_app_screen.dart';
 import 'package:zippup/features/promos/presentation/promos_screen.dart';
+import 'package:zippup/features/profile/presentation/emergency_contacts_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -108,6 +109,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				path: '/profile/apply-provider',
 				name: 'applyProvider',
 				builder: (context, state) => const ApplyProviderScreen(),
+			),
+			GoRoute(
+				path: '/profile/emergency-contacts',
+				name: 'emergencyContacts',
+				builder: (context, state) => const EmergencyContactsScreen(),
 			),
 			GoRoute(
 				path: '/admin/applications',

@@ -69,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 					ListTile(leading: const Icon(Icons.star_rate), title: const Text('Rate ZippUp'), onTap: () => context.push('/rate')),
 					ListTile(leading: const Icon(Icons.privacy_tip), title: const Text('Privacy & policy'), onTap: () => context.push('/privacy')),
 					ListTile(leading: const Icon(Icons.rule), title: const Text('Terms of service'), onTap: () => context.push('/terms')),
+					ListTile(leading: const Icon(Icons.contact_phone), title: const Text('Emergency contacts'), onTap: () => context.push('/profile/emergency-contacts')),
 					const Divider(),
 					ListTile(leading: const Icon(Icons.logout), title: const Text('Logout'), onTap: () async { await FirebaseAuth.instance.signOut(); if (context.mounted) context.go('/'); }),
 				],
