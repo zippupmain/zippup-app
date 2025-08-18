@@ -8,6 +8,11 @@ import 'package:zippup/features/food/providers/order_service.dart';
 class MyBookingsScreen extends StatelessWidget {
 	const MyBookingsScreen({super.key});
 
+  bool _isInstant(Order o) {
+    // Instant categories navigate to live map immediately on acceptance
+    return o.category != OrderCategory.tickets && o.category != OrderCategory.events && o.category != OrderCategory.tutors;
+  }
+
 	Stream<List<Order>> _orders() {
 		final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anon';
 		return FirebaseFirestore.instance
@@ -37,6 +42,15 @@ class MyBookingsScreen extends StatelessWidget {
 					final docs = snap.data!.docs;
 					if (docs.isEmpty) return const Center(child: Text('No bookings'));
 					final orders = docs.map((d) => Order.fromJson(d.id, d.data())).toList();
+					// Auto-navigate to live tracking when an instant order moves to accepted/assigned/enroute
+					for (final o in orders) {
+						if (_isInstant(o) && (o.status == OrderStatus.accepted || o.status == OrderStatus.assigned || o.status == OrderStatus.enroute)) {
+							WidgetsBinding.instance.addPostFrameCallback((_) {
+								if (context.mounted) context.pushNamed('trackOrder', queryParameters: {'orderId': o.id});
+							});
+							break;
+						}
+					}
 					if (orders.isEmpty) return const Center(child: Text('No bookings yet'));
 					return ListView.separated(
 						itemCount: orders.length,
