@@ -103,8 +103,8 @@ class _OthersSearchScreenState extends State<OthersSearchScreen> {
 			'createdAt': DateTime.now().toIso8601String(),
 		});
 		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request submitted')));
-		if (!scheduled) {
-			// One-off listener to auto-navigate when provider accepts/assigns/enroute
+		if (!scheduled && widget.kind != 'tickets') {
+			// One-off listener to auto-navigate when provider accepts/assigns/enroute (not for tickets)
 			FirebaseFirestore.instance.collection('orders').doc(ref.id).snapshots().listen((doc) {
 				final d = doc.data() ?? {};
 				final status = (d['status'] ?? '').toString();

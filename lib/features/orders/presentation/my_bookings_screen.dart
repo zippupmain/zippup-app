@@ -9,8 +9,8 @@ class MyBookingsScreen extends StatelessWidget {
 	const MyBookingsScreen({super.key});
 
   bool _isInstant(Order o) {
-    // Instant categories navigate to live map immediately on acceptance
-    return o.category != OrderCategory.tickets && o.category != OrderCategory.events && o.category != OrderCategory.tutors;
+    // Tickets are non-instant (no live navigation). Others are treated as instant.
+    return o.category != OrderCategory.tickets;
   }
 
 	Stream<List<Order>> _orders() {
