@@ -137,7 +137,6 @@ class _HomeScreenState extends State<HomeScreen> {
 								),
 							),
 						),
-					),
 					SliverToBoxAdapter(
 						child: Padding(
 							padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -188,31 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
 			),
 		);
 	}
-}
-
-class _PositionedUnreadDot extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return const SizedBox.shrink();
-    final stream = FirebaseFirestore.instance
-        .collection('notifications')
-        .where('userId', isEqualTo: uid)
-        .where('read', isEqualTo: false)
-        .snapshots();
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: stream,
-      builder: (context, snap) {
-        final hasUnread = (snap.data?.docs.length ?? 0) > 0;
-        if (!hasUnread) return const SizedBox.shrink();
-        return const Positioned(
-          right: 0,
-          top: 0,
-          child: CircleAvatar(radius: 4, backgroundColor: Colors.red),
-        );
-      },
-    );
-  }
 }
 
 class _QuickActions extends StatelessWidget {

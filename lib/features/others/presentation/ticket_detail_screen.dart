@@ -35,7 +35,7 @@ class TicketDetailScreen extends ConsumerWidget {
 
           return StatefulBuilder(builder: (context, setStateSB) {
             final selectedVariant = variants.firstWhere((v) => v['key'] == selectedKey, orElse: () => variants.first);
-            final price = ((selectedVariant['price'] as num?)?.toDouble() ?? basePrice).clamp(0, double.infinity);
+            final price = ((selectedVariant['price'] as num?)?.toDouble() ?? basePrice).clamp(0, double.infinity) as double;
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -67,7 +67,7 @@ class TicketDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 if (expired) const Text('Tickets ended', style: TextStyle(color: Colors.red))
                 else Row(children: [
-                  Expanded(child: FilledButton(onPressed: () => _addToCart(context, ref, ticketId, title, price, organizerId, selectedKey), child: Text('Buy (₦${price.toStringAsFixed(2)})'))),
+                  Expanded(child: FilledButton(onPressed: () => _addToCart(context, ref, ticketId, title, price.toDouble(), organizerId, selectedKey), child: Text('Buy (₦${price.toStringAsFixed(2)})'))),
                   const SizedBox(width: 8),
                   Expanded(child: OutlinedButton(onPressed: () => _reserve(context, ticketId, eventAt), child: const Text('Reserve (pay later)'))),
                 ]),
