@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class VendorDetailScreen extends StatelessWidget {
 	const VendorDetailScreen({super.key, required this.vendorId});
@@ -21,7 +22,7 @@ class VendorDetailScreen extends StatelessWidget {
 							Text('Category: ${v['category'] ?? ''}'),
 							Text('Rating: ${(v['rating'] ?? 0).toString()}'),
 							const Spacer(),
-							FilledButton(onPressed: () {}, child: const Text('View menu')),
+							FilledButton(onPressed: () => context.push('/food/vendor/menu?vendorId=$vendorId'), child: const Text('View menu')),
 						]),
 					);
 				},

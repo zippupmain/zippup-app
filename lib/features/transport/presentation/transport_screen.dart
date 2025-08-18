@@ -104,9 +104,9 @@ class _TransportScreenState extends State<TransportScreen> {
 		}
 		setState(() => _status = 'requesting');
 		try {
-			final oLoc = await gc.locationFromAddress(origin);
-			final dLoc = await gc.locationFromAddress(dests.first);
-			if (oLoc.isEmpty || dLoc.isEmpty) throw Exception('Geocode failed');
+			final oLoc = await gc.locationFromAddress(origin).catchError((_) => <gc.Location>[]);
+			final dLoc = await gc.locationFromAddress(dests.first).catchError((_) => <gc.Location>[]);
+			if (oLoc.isEmpty || dLoc.isEmpty) throw Exception('Could not resolve addresses. Please refine.');
 			final db = FirebaseFirestore.instance;
 			final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
 			final doc = await db.collection('rides').add({
