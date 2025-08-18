@@ -13,6 +13,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 	bool _isProvider = false;
 	bool _available = false;
 	bool _approved = false;
+	bool _isPlatformAdmin = false;
 
 	@override
 	void initState() {
@@ -31,6 +32,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 				_approved = true;
 			});
 		}
+		try {
+			final token = await FirebaseAuth.instance.currentUser?.getIdTokenResult(true);
+			setState(() => _isPlatformAdmin = (token?.claims?['admin'] == true || token?.claims?['role'] == 'admin'));
+		} catch (_) {}
 	}
 
 	Future<void> _toggleAvailable(bool v) async {
@@ -59,8 +64,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 					ListTile(leading: const Icon(Icons.person), title: const Text('Profile settings'), onTap: () => context.push('/profile/settings')),
 					ListTile(leading: const Icon(Icons.assignment_outlined), title: const Text('My Bookings'), onTap: () => context.push('/bookings')),
 					ListTile(leading: const Icon(Icons.verified_user), title: const Text('Apply as Service Provider / Vendor'), onTap: () => context.push('/profile/apply-provider')),
-					if (_approved) ListTile(leading: const Icon(Icons.admin_panel_settings), title: const Text('Admin'), onTap: () => context.push('/admin/dashboard')),
-					ListTile(leading: const Icon(Icons.shield), title: const Text('Platform Admin'), onTap: () => context.push('/admin/platform')),
+					if (_approved) ListTile(leading: const Icon(Icons.admin_panel_settings), title: const Text('Vendor Admin'), onTap: () => context.push('/admin/dashboard')),
+					if (_isPlatformAdmin) ListTile(leading: const Icon(Icons.shield), title: const Text('Platform Admin'), onTap: () => context.push('/admin/platform')),
 					ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Wallet'), onTap: () => context.push('/wallet')),
 					ListTile(leading: const Icon(Icons.local_activity), title: const Text('Promo & vouchers'), onTap: () => context.push('/promos')),
 					ListTile(leading: const Icon(Icons.language), title: const Text('Languages'), onTap: () => context.push('/languages')),

@@ -44,11 +44,19 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 				url = await ref.getDownloadURL();
 				await u.updatePhotoURL(url);
 			}
-			await u.updateDisplayName(_name.text.trim());
-			await FirebaseFirestore.instance.collection('users').doc(u.uid).set({'name': _name.text.trim(), 'phone': _phone.text.trim(), 'photoUrl': url}, SetOptions(merge: true));
-			if (mounted) Navigator.pop(context);
+			final name = _name.text.trim();
+			await u.updateDisplayName(name);
+			await FirebaseFirestore.instance.collection('users').doc(u.uid).set({'name': name, 'phone': _phone.text.trim(), 'photoUrl': url}, SetOptions(merge: true));
+			await u.reload();
+			if (!mounted) return;
+			setState(() { _photoUrl = url; });
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile saved')));
+		} catch (e) {
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
+			}
 		} finally {
-			setState(() => _saving = false);
+			if (mounted) setState(() => _saving = false);
 		}
 	}
 
@@ -75,9 +83,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 					TextField(controller: _name, decoration: const InputDecoration(labelText: 'Public name')),
 					TextField(controller: _phone, decoration: const InputDecoration(labelText: 'Phone number')),
 					const SizedBox(height: 12),
-					FilledButton(onPressed: _saving ? null : _save, child: const Text('Save')),
-					const SizedBox(height: 24),
+					FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving…' : 'Save')),
+					const SizedBox(height: 48),
 					const Divider(),
+					const SizedBox(height: 8),
 					const Text('Danger zone', style: TextStyle(color: Colors.red)),
 					const SizedBox(height: 8),
 					TextButton(style: TextButton.styleFrom(foregroundColor: Colors.red), onPressed: _deleteAccount, child: const Text('Delete account')),

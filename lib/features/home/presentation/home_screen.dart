@@ -34,11 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
 	}
 
 	Future<void> _checkAdmin() async {
-		final uid = FirebaseAuth.instance.currentUser?.uid;
-		if (uid == null) return;
-		final snap = await FirebaseFirestore.instance.collection('_config').doc('admins').collection('users').doc(uid).get();
-		if (!mounted) return;
-		setState(() => _isPlatformAdmin = snap.exists);
+		try {
+			final token = await FirebaseAuth.instance.currentUser?.getIdTokenResult(true);
+			if (!mounted) return;
+			setState(() => _isPlatformAdmin = (token?.claims?['admin'] == true || token?.claims?['role'] == 'admin'));
+		} catch (_) {}
 	}
 
 	void _setGreeting() {
@@ -59,9 +59,8 @@ class _HomeScreenState extends State<HomeScreen> {
 				setState(() => _locationText = 'Location unavailable');
 				return;
 			}
-			setState(() => _locationText = '${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}');
-			// Reverse geocode asynchronously; if it fails, try user profile address; else keep coords
-			// ignore: unawaited_futures
+			// Keep detecting text; resolve to address
+			setState(() => _locationText = 'Detecting location…');
 			(() async {
 				final addr = await LocationService.reverseGeocode(pos);
 				if (!mounted) return;
@@ -75,13 +74,13 @@ class _HomeScreenState extends State<HomeScreen> {
 							final fallbackAddr = (u.data() ?? const {})['address']?.toString();
 							if (fallbackAddr != null && fallbackAddr.trim().isNotEmpty && mounted) {
 								setState(() => _locationText = fallbackAddr);
+							} else {
+								setState(() => _locationText = 'Location unavailable');
 							}
 						}
-					} catch (_) {}
+					} catch (_) { setState(() => _locationText = 'Location unavailable'); }
 				}
 			})();
-			// Fire-and-forget profile update; do not block UI
-			// ignore: unawaited_futures
 			LocationService.updateUserLocationProfile(pos).catchError((_) {});
 		} catch (_) {
 			if (!mounted) return;
