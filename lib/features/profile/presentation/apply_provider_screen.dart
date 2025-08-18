@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,6 +23,8 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	String _type = 'individual';
 	File? _idDoc;
 	File? _bizDoc;
+	Uint8List? _idBytes;
+	Uint8List? _bizBytes;
 	bool _saving = false;
 
 	final Map<String, List<String>> _subcategories = const {
@@ -37,11 +40,15 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 
 	Future<void> _pickId() async {
 		final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (f != null) setState(() => _idDoc = File(f.path));
+		if (f == null) return;
+		try { _idBytes = await f.readAsBytes(); _idDoc = null; } catch (_) { _idDoc = File(f.path); _idBytes = null; }
+		setState(() {});
 	}
 	Future<void> _pickBiz() async {
 		final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (f != null) setState(() => _bizDoc = File(f.path));
+		if (f == null) return;
+		try { _bizBytes = await f.readAsBytes(); _bizDoc = null; } catch (_) { _bizDoc = File(f.path); _bizBytes = null; }
+		setState(() {});
 	}
 
 	Future<void> _submit() async {
@@ -50,17 +57,20 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 			final uid = FirebaseAuth.instance.currentUser!.uid;
 			String? idUrl;
 			String? bizUrl;
-			if (_idDoc != null) {
+			if (_idBytes != null || _idDoc != null) {
 				final ref = FirebaseStorage.instance.ref('applications/$uid/id_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				await ref.putFile(_idDoc!);
+				if (_idBytes != null) { await ref.putData(_idBytes!, SettableMetadata(contentType: 'image/jpeg')); }
+				else if (_idDoc != null) { await ref.putFile(_idDoc!); }
 				idUrl = await ref.getDownloadURL();
 			}
-			if (_bizDoc != null) {
+			if (_bizBytes != null || _bizDoc != null) {
 				final ref = FirebaseStorage.instance.ref('applications/$uid/biz_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				await ref.putFile(_bizDoc!);
+				if (_bizBytes != null) { await ref.putData(_bizBytes!, SettableMetadata(contentType: 'image/jpeg')); }
+				else if (_bizDoc != null) { await ref.putFile(_bizDoc!); }
 				bizUrl = await ref.getDownloadURL();
 			}
 			await FirebaseFirestore.instance.collection('applications').doc(uid).set({
+				'applicantId': uid,
 				'name': _name.text.trim(),
 				'address': _address.text.trim(),
 				'category': _category,
@@ -118,8 +128,8 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 					], onChanged: (v) => setState(() => _type = v as String), decoration: const InputDecoration(labelText: 'Type')),
 					TextField(controller: _title, decoration: const InputDecoration(labelText: 'Service title')),
 					const SizedBox(height: 8),
-					ListTile(title: const Text('Upload ID/Passport'), trailing: const Icon(Icons.upload_file), onTap: _pickId, subtitle: Text(_idDoc?.path.split('/').last ?? 'Not uploaded')),
-					ListTile(title: const Text('Upload business document (registration/permits)'), trailing: const Icon(Icons.upload_file), onTap: _pickBiz, subtitle: Text(_bizDoc?.path.split('/').last ?? 'Not uploaded')),
+					ListTile(title: const Text('Upload ID/Passport'), trailing: const Icon(Icons.upload_file), onTap: _pickId, subtitle: Text(_idDoc?.path.split('/').last ?? (_idBytes != null ? 'Selected' : 'Not uploaded'))),
+					ListTile(title: const Text('Upload business document (registration/permits)'), trailing: const Icon(Icons.upload_file), onTap: _pickBiz, subtitle: Text(_bizDoc?.path.split('/').last ?? (_bizBytes != null ? 'Selected' : 'Not uploaded'))),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _saving ? null : _submit, child: const Text('Submit application')),
 				],

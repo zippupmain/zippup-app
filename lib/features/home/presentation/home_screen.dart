@@ -467,7 +467,11 @@ class _UserAvatar extends StatelessWidget {
 				}
 				url ??= FirebaseAuth.instance.currentUser?.photoURL;
 				if (url == null || url.isEmpty) return const CircleAvatar(child: Icon(Icons.person_outline));
-				return CircleAvatar(backgroundImage: CachedNetworkImageProvider(url));
+				try {
+					return CircleAvatar(backgroundImage: NetworkImage(url));
+				} catch (_) {
+					return const CircleAvatar(child: Icon(Icons.person_outline));
+				}
 			},
 		);
 	}
