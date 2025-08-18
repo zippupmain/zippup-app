@@ -25,6 +25,7 @@ class _TransportScreenState extends State<TransportScreen> {
 	int _eta = 0;
 	String _status = 'idle';
 	final _distanceService = DistanceService();
+	bool _submitting = false;
 
 	@override
 	void initState() {
@@ -96,13 +97,14 @@ class _TransportScreenState extends State<TransportScreen> {
 	}
 
 	Future<void> _requestRide() async {
+		if (_submitting) return;
 		final origin = _pickup.text.trim();
 		final dests = _stops.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList();
 		if (origin.isEmpty || dests.isEmpty) {
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a destination')));
 			return;
 		}
-		setState(() => _status = 'requesting');
+		setState(() { _status = 'requesting'; _submitting = true; });
 		try {
 			final oLoc = await gc.locationFromAddress(origin).catchError((_) => <gc.Location>[]);
 			final dLoc = await gc.locationFromAddress(dests.first).catchError((_) => <gc.Location>[]);
@@ -140,6 +142,8 @@ class _TransportScreenState extends State<TransportScreen> {
 			setState(() => _status = 'idle');
 			if (!mounted) return;
 			ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Request failed: $e')));
+		} finally {
+			if (mounted) setState(() { _submitting = false; });
 		}
 	}
 
@@ -205,7 +209,7 @@ class _TransportScreenState extends State<TransportScreen> {
 						children: [
 							Expanded(child: OutlinedButton(onPressed: _estimate, child: const Text('Estimate fare'))),
 							const SizedBox(width: 8),
-							Expanded(child: FilledButton(onPressed: _requestRide, child: const Text('Request ride'))),
+							Expanded(child: FilledButton(onPressed: _submitting ? null : _requestRide, child: Text(_submitting ? 'Requesting...' : 'Request ride'))),
 						],
 					),
 					const SizedBox(height: 12),
