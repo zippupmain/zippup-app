@@ -28,6 +28,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 		_name.text = u?.displayName ?? '';
 		_phone.text = u?.phoneNumber ?? '';
 		_photoUrl = u?.photoURL;
+		_prefillFromFirestore();
+	}
+
+	Future<void> _prefillFromFirestore() async {
+		try {
+			final uid = FirebaseAuth.instance.currentUser?.uid;
+			if (uid == null) return;
+			final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+			final data = doc.data() ?? {};
+			if (!mounted) return;
+			if ((data['name'] ?? '').toString().trim().isNotEmpty) _name.text = data['name'];
+			if ((data['phone'] ?? '').toString().trim().isNotEmpty) _phone.text = data['phone'];
+			if ((data['photoUrl'] ?? '').toString().trim().isNotEmpty) setState(() => _photoUrl = data['photoUrl']);
+		} catch (_) {}
 	}
 
 	Future<void> _pickPhoto() async {
