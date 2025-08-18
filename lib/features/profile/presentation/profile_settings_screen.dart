@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -15,7 +17,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 	final _name = TextEditingController();
 	final _phone = TextEditingController();
 	String? _photoUrl;
-	File? _photoFile;
+	File? _photoFile; // mobile/desktop
+	Uint8List? _photoBytes; // web
 	bool _saving = false;
 
 	@override
@@ -29,7 +32,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
 	Future<void> _pickPhoto() async {
 		final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (x != null) setState(() => _photoFile = File(x.path));
+		if (x == null) return;
+		if (kIsWeb) {
+			final bytes = await x.readAsBytes();
+			setState(() { _photoBytes = bytes; _photoFile = null; });
+		} else {
+			setState(() { _photoFile = File(x.path); _photoBytes = null; });
+		}
 	}
 
 	Future<void> _save() async {
@@ -38,9 +47,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			final u = FirebaseAuth.instance.currentUser;
 			if (u == null) return;
 			String? url = _photoUrl;
-			if (_photoFile != null) {
+			if (_photoBytes != null || _photoFile != null) {
 				final ref = FirebaseStorage.instance.ref('users/${u.uid}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				await ref.putFile(_photoFile!);
+				if (kIsWeb && _photoBytes != null) {
+					await ref.putData(_photoBytes!, SettableMetadata(contentType: 'image/jpeg'));
+				} else if (_photoFile != null) {
+					await ref.putFile(_photoFile!);
+				}
 				url = await ref.getDownloadURL();
 				await u.updatePhotoURL(url);
 			}
@@ -70,6 +83,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
 	@override
 	Widget build(BuildContext context) {
+		final ImageProvider? avatar = _photoBytes != null
+			? MemoryImage(_photoBytes!)
+			: (_photoFile != null
+				? FileImage(_photoFile!)
+				: (_photoUrl != null ? NetworkImage(_photoUrl!) : null) as ImageProvider?);
 		return Scaffold(
 			appBar: AppBar(title: const Text('Profile settings')),
 			body: ListView(
@@ -77,7 +95,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 				children: [
 					GestureDetector(
 						onTap: _pickPhoto,
-						child: CircleAvatar(radius: 36, backgroundImage: _photoFile != null ? FileImage(_photoFile!) : (_photoUrl != null ? NetworkImage(_photoUrl!) : null) as ImageProvider?, child: (_photoUrl == null && _photoFile == null) ? const Icon(Icons.person) : null),
+						child: CircleAvatar(radius: 36, backgroundImage: avatar, child: (avatar == null) ? const Icon(Icons.person) : null),
 					),
 					const SizedBox(height: 8),
 					TextField(controller: _name, decoration: const InputDecoration(labelText: 'Public name')),
