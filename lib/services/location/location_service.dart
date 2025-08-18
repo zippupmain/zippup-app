@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geocoding/geocoding.dart' as gc;
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class LocationService {
 	static Future<bool> ensurePermissions() async {
@@ -61,14 +62,26 @@ class LocationService {
 	}
 
 	static Future<String?> reverseGeocode(Position p) async {
+		// Prefer platform geocoding where supported; fallback to Cloud Function
+		if (!kIsWeb) {
+			try {
+				final places = await gc.placemarkFromCoordinates(p.latitude, p.longitude);
+				if (places.isNotEmpty) {
+					final pm = places.first;
+					return [pm.street, pm.locality, pm.administrativeArea]
+						.where((e) => (e ?? '').isNotEmpty)
+						.map((e) => e!)
+						.join(', ');
+				}
+			} catch (_) {
+				// fall through to cloud
+			}
+		}
 		try {
-			final places = await gc.placemarkFromCoordinates(p.latitude, p.longitude);
-			if (places.isEmpty) return null;
-			final pm = places.first;
-			return [pm.street, pm.locality, pm.administrativeArea]
-				.where((e) => (e ?? '').isNotEmpty)
-				.map((e) => e!)
-				.join(', ');
+			final fn = FirebaseFunctions.instance.httpsCallable('geocode');
+			final res = await fn.call({'lat': p.latitude, 'lng': p.longitude});
+			final data = Map<String, dynamic>.from(res.data as Map);
+			return data['address']?.toString();
 		} catch (_) {
 			return null;
 		}

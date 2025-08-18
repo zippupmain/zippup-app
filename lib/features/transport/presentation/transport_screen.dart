@@ -106,7 +106,9 @@ class _TransportScreenState extends State<TransportScreen> {
 		try {
 			final oLoc = await gc.locationFromAddress(origin).catchError((_) => <gc.Location>[]);
 			final dLoc = await gc.locationFromAddress(dests.first).catchError((_) => <gc.Location>[]);
-			if (oLoc.isEmpty || dLoc.isEmpty) throw Exception('Could not resolve addresses. Please refine.');
+			if (oLoc.isEmpty || dLoc.isEmpty) {
+				throw Exception('Could not resolve addresses. Please refine search.');
+			}
 			final db = FirebaseFirestore.instance;
 			final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
 			final doc = await db.collection('rides').add({
