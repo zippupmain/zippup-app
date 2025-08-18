@@ -94,8 +94,8 @@ class _OthersSearchScreenState extends State<OthersSearchScreen> {
 			if (time == null) return;
 			at = DateTime(date.year, date.month, date.day, time.hour, time.minute);
 		}
-		await FirebaseFirestore.instance.collection('orders').add({
-			'buyerId': 'self',
+		final ref = await FirebaseFirestore.instance.collection('orders').add({
+			'buyerId': FirebaseFirestore.instance.app.options.projectId ?? 'self',
 			'providerId': id,
 			'category': kind,
 			'status': scheduled ? 'scheduled' : 'pending',
@@ -103,5 +103,15 @@ class _OthersSearchScreenState extends State<OthersSearchScreen> {
 			'createdAt': DateTime.now().toIso8601String(),
 		});
 		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request submitted')));
+		if (!scheduled) {
+			// One-off listener to auto-navigate when provider accepts/assigns/enroute
+			FirebaseFirestore.instance.collection('orders').doc(ref.id).snapshots().listen((doc) {
+				final d = doc.data() ?? {};
+				final status = (d['status'] ?? '').toString();
+				if (status == 'accepted' || status == 'assigned' || status == 'enroute') {
+					if (mounted) context.pushNamed('trackOrder', queryParameters: {'orderId': ref.id});
+				}
+			});
+		}
 	}
 }
