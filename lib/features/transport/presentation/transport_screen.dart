@@ -129,8 +129,13 @@ class _TransportScreenState extends State<TransportScreen> {
 				'status': 'requested',
 			});
 			if (!mounted) return;
-			context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
-			setState(() => _status = 'driver_accepted');
+			if (_scheduled) {
+				setState(() => _status = 'scheduled');
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride scheduled. We\'ll remind you.')));
+			} else {
+				context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
+				setState(() => _status = 'driver_accepted');
+			}
 		} catch (e) {
 			setState(() => _status = 'idle');
 			if (!mounted) return;
