@@ -52,14 +52,28 @@ class _HomeScreenState extends State<HomeScreen> {
 	Future<void> _fetchLocation() async {
 		try {
 			final pos = await LocationService.getCurrentPosition();
-			if (pos == null) return;
-			final addr = await LocationService.reverseGeocode(pos);
 			if (!mounted) return;
-			setState(() => _locationText = addr ?? '${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}');
+			if (pos == null) {
+				setState(() => _locationText = 'Location unavailable');
+				return;
+			}
+			setState(() => _locationText = '${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}');
+			// Reverse geocode asynchronously; if it fails, we keep coords
+			// ignore: unawaited_futures
+			(() async {
+				final addr = await LocationService.reverseGeocode(pos);
+				if (!mounted) return;
+				if (addr != null && addr.trim().isNotEmpty) {
+					setState(() => _locationText = addr);
+				}
+			})();
 			// Fire-and-forget profile update; do not block UI
 			// ignore: unawaited_futures
 			LocationService.updateUserLocationProfile(pos).catchError((_) {});
-		} catch (_) {}
+		} catch (_) {
+			if (!mounted) return;
+			setState(() => _locationText = 'Location unavailable');
+		}
 	}
 
 	@override

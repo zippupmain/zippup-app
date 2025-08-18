@@ -61,10 +61,17 @@ class LocationService {
 	}
 
 	static Future<String?> reverseGeocode(Position p) async {
-		final places = await gc.placemarkFromCoordinates(p.latitude, p.longitude);
-		if (places.isEmpty) return null;
-		final pm = places.first;
-		return [pm.street, pm.locality, pm.administrativeArea].where((e) => (e ?? '').isNotEmpty).join(', ');
+		try {
+			final places = await gc.placemarkFromCoordinates(p.latitude, p.longitude);
+			if (places.isEmpty) return null;
+			final pm = places.first;
+			return [pm.street, pm.locality, pm.administrativeArea]
+				.where((e) => (e ?? '').isNotEmpty)
+				.map((e) => e!)
+				.join(', ');
+		} catch (_) {
+			return null;
+		}
 	}
 
 	static Future<void> updateUserLocationProfile(Position p) async {
