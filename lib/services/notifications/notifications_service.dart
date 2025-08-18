@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationsService {
@@ -13,14 +12,16 @@ class NotificationsService {
 	final FlutterLocalNotificationsPlugin _local = FlutterLocalNotificationsPlugin();
 
 	Future<void> init() async {
-		if (Platform.isIOS) {
+		// On web, FCM requires setup and local notifications are not used the same way; skip local init
+		if (!kIsWeb) {
+			// Request permission on Apple platforms; Android auto-permits
 			await _messaging.requestPermission(alert: true, badge: true, sound: true);
-		}
 
-		const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-		const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
-		const InitializationSettings initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
-		await _local.initialize(initSettings);
+			const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+			const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
+			const InitializationSettings initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
+			await _local.initialize(initSettings);
+		}
 
 		// Register token
 		final token = await _messaging.getToken();
@@ -28,6 +29,7 @@ class NotificationsService {
 		_messaging.onTokenRefresh.listen(_saveToken);
 
 		FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+			if (kIsWeb) return; // do not use local notifications on web
 			final title = message.notification?.title ?? 'ZippUp';
 			final body = message.notification?.body ?? '';
 			_showLocalNotification(title, body);
