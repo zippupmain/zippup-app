@@ -6,7 +6,7 @@ const axios = require('axios');
 admin.initializeApp();
 
 // Stripe checkout (Callable)
-exports.createStripeCheckout = functions.https.onCall(async (data, context) => {
+exports.createStripeCheckout = functions.region('us-central1').https.onCall(async (data, context) => {
 	const amount = data.amount;
 	const currency = data.currency || 'NGN';
 	const items = Array.isArray(data.items) ? data.items : [];
@@ -37,7 +37,7 @@ exports.createStripeCheckout = functions.https.onCall(async (data, context) => {
 });
 
 // Flutterwave checkout (Callable)
-exports.createFlutterwaveCheckout = functions.https.onCall(async (data, context) => {
+exports.createFlutterwaveCheckout = functions.region('us-central1').https.onCall(async (data, context) => {
 	const amount = data.amount;
 	const currency = data.currency || 'NGN';
 	const items = Array.isArray(data.items) ? data.items : [];
