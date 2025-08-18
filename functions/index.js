@@ -133,7 +133,7 @@ exports.onOrderDeliveredValidate = functions.firestore.document('orders/{orderId
 	return null;
 });
 
-exports.distanceMatrix = functions.https.onCall(async (data, context) => {
+exports.distanceMatrix = functions.region('us-central1').https.onCall(async (data, context) => {
 	const origin = data.origin; // "lat,lng"
 	const destinations = data.destinations; // ["lat,lng", ...]
 	if (!origin || !destinations || destinations.length === 0) throw new functions.https.HttpsError('invalid-argument', 'Missing origin/destinations');
@@ -143,7 +143,7 @@ exports.distanceMatrix = functions.https.onCall(async (data, context) => {
 	return res.data;
 });
 
-exports.directions = functions.https.onCall(async (data, context) => {
+exports.directions = functions.region('us-central1').https.onCall(async (data, context) => {
 	const origin = data.origin; // "lat,lng"
 	const destination = data.destination; // "lat,lng"
 	if (!origin || !destination) throw new functions.https.HttpsError('invalid-argument', 'Missing origin/destination');
@@ -154,7 +154,7 @@ exports.directions = functions.https.onCall(async (data, context) => {
 	return { polyline: route && route.overview_polyline && route.overview_polyline.points };
 });
 
-exports.placesAutocomplete = functions.https.onCall(async (data, context) => {
+exports.placesAutocomplete = functions.region('us-central1').https.onCall(async (data, context) => {
 	const input = (data && data.input) || '';
 	const sessiontoken = data && data.sessiontoken;
 	if (!input || input.length < 3) return { predictions: [] };
@@ -167,7 +167,7 @@ exports.placesAutocomplete = functions.https.onCall(async (data, context) => {
 	return { predictions: preds.map(p => ({ description: p.description, place_id: p.place_id })) };
 });
 
-exports.sendPanicAlert = functions.https.onCall(async (data, context) => {
+exports.sendPanicAlert = functions.region('us-central1').https.onCall(async (data, context) => {
 	const uid = context.auth && context.auth.uid;
 	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
 	const { lat, lng } = data || {};
@@ -193,7 +193,7 @@ exports.sendPanicAlert = functions.https.onCall(async (data, context) => {
 	return { ok: true };
 });
 
-exports.geocode = functions.https.onCall(async (data, context) => {
+exports.geocode = functions.region('us-central1').https.onCall(async (data, context) => {
 	const { lat, lng } = data || {};
 	if (typeof lat !== 'number' || typeof lng !== 'number') throw new functions.https.HttpsError('invalid-argument', 'lat,lng required');
 	const key = 'AIzaSyAk22rv_OsFJVXUA-GK0PMdEVqBJcNYozI';
