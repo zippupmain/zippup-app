@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
 						]),
 					),
 					PopupMenuButton(
-						icon: const CircleAvatar(child: Icon(Icons.person_outline)),
+						icon: _UserAvatar(),
 						itemBuilder: (context) => <PopupMenuEntry>[
 							PopupMenuItem(child: const Text('Profile'), onTap: () => context.push('/profile')),
 							PopupMenuItem(child: const Text('Bookings'), onTap: () => context.push('/bookings')),
@@ -448,6 +448,26 @@ class _PositionedUnreadDot extends StatelessWidget {
 						),
 					),
 				);
+			},
+		);
+	}
+}
+
+class _UserAvatar extends StatelessWidget {
+	@override
+	Widget build(BuildContext context) {
+		final uid = FirebaseAuth.instance.currentUser?.uid;
+		if (uid == null) return const CircleAvatar(child: Icon(Icons.person_outline));
+		return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+			stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+			builder: (context, snap) {
+				String? url;
+				if (snap.hasData) {
+					url = (snap.data!.data() ?? const {})['photoUrl']?.toString();
+				}
+				url ??= FirebaseAuth.instance.currentUser?.photoURL;
+				if (url == null || url.isEmpty) return const CircleAvatar(child: Icon(Icons.person_outline));
+				return CircleAvatar(backgroundImage: CachedNetworkImageProvider(url));
 			},
 		);
 	}
