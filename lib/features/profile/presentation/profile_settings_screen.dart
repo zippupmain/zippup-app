@@ -59,7 +59,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			}
 			final name = _name.text.trim();
 			await u.updateDisplayName(name);
-			await FirebaseFirestore.instance.collection('users').doc(u.uid).set({'name': name, 'phone': _phone.text.trim(), 'photoUrl': url}, SetOptions(merge: true));
+			await FirebaseFirestore.instance.collection('users').doc(u.uid).set({
+				'uid': u.uid,
+				'name': name,
+				'phone': _phone.text.trim(),
+				'photoUrl': url,
+				'updatedAt': FieldValue.serverTimestamp(),
+			}, SetOptions(merge: true));
 			await u.reload();
 			if (!mounted) return;
 			setState(() { _photoUrl = url; });
