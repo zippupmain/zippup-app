@@ -43,6 +43,9 @@ import 'package:zippup/features/promos/presentation/promos_screen.dart';
 import 'package:zippup/features/profile/presentation/emergency_contacts_screen.dart';
 import 'package:zippup/features/others/presentation/others_search_screen.dart';
 import 'package:zippup/features/admin/presentation/platform_admin_screen.dart';
+import 'package:zippup/features/others/presentation/ticket_detail_screen.dart';
+import 'package:zippup/features/admin/presentation/admin_users_screen.dart';
+import 'package:zippup/features/food/presentation/vendor_menu_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -276,6 +279,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin/emergency-config',
         name: 'emergencyConfig',
         builder: (context, state) => const _AdminEmergencyConfigPlaceholder(),
+      ),
+      GoRoute(
+        path: '/others/ticket/:id',
+        name: 'ticketDetail',
+        builder: (context, state) => TicketDetailScreen(ticketId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/admin/users',
+        name: 'adminUsers',
+        builder: (context, state) => const AdminUsersScreen(),
+      ),
+      GoRoute(
+        path: '/food/vendor/menu',
+        name: 'vendorMenu',
+        builder: (context, state) => VendorMenuScreen(vendorId: state.uri.queryParameters['vendorId'] ?? ''),
       ),
     ],
   );

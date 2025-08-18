@@ -69,6 +69,18 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
 								separatorBuilder: (_, __) => const Divider(height: 1),
 								itemBuilder: (context, i) => ListTile(
 									title: Text(contacts[i].toString()),
+									onTap: () async {
+										final controller = TextEditingController(text: contacts[i].toString());
+										final ok = await showDialog<bool>(
+											context: context,
+											builder: (c) => AlertDialog(title: const Text('Edit number'), content: TextField(controller: controller, keyboardType: TextInputType.phone), actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Save'))]),
+										);
+										if (ok == true) {
+											final updated = [...contacts];
+											updated[i] = controller.text.trim();
+											await FirebaseFirestore.instance.collection('users').doc(_uid).set({'emergencyContacts': updated}, SetOptions(merge: true));
+										}
+									},
 									trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () async { await _remove(contacts, i); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Removed'))); }),
 								),
 							),
