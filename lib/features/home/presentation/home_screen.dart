@@ -35,9 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
 	Future<void> _checkAdmin() async {
 		try {
-			final token = await FirebaseAuth.instance.currentUser?.getIdTokenResult(true);
+			final uid = FirebaseAuth.instance.currentUser?.uid;
+			if (uid == null) return;
+			final snap = await FirebaseFirestore.instance.collection('_config').doc('admins').collection('users').doc(uid).get();
 			if (!mounted) return;
-			setState(() => _isPlatformAdmin = (token?.claims?['admin'] == true || token?.claims?['role'] == 'admin'));
+			setState(() => _isPlatformAdmin = snap.exists);
 		} catch (_) {}
 	}
 
@@ -461,12 +463,14 @@ class _UserAvatar extends StatelessWidget {
 		return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
 			stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
 			builder: (context, snap) {
-				String? url;
+				String fs = '';
 				if (snap.hasData) {
-					url = (snap.data!.data() ?? const {})['photoUrl']?.toString();
+					final data = (snap.data!.data() ?? const {});
+					fs = (data['photoUrl']?.toString() ?? '').trim();
 				}
-				url ??= FirebaseAuth.instance.currentUser?.photoURL;
-				if (url == null || url.isEmpty) return const CircleAvatar(child: Icon(Icons.person_outline));
+				final authUrl = (FirebaseAuth.instance.currentUser?.photoURL ?? '').trim();
+				final url = fs.isNotEmpty ? fs : authUrl;
+				if (url.isEmpty) return const CircleAvatar(child: Icon(Icons.person_outline));
 				return CircleAvatar(
 					backgroundColor: Colors.grey.shade200,
 					radius: 16,

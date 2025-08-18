@@ -81,8 +81,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 				'updatedAt': FieldValue.serverTimestamp(),
 			}, SetOptions(merge: true));
 			await u.reload();
+			// Force re-read of Firestore photoUrl after save
+			final doc = await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
+			final fresh = (doc.data() ?? const {})['photoUrl']?.toString() ?? url;
 			if (!mounted) return;
-			setState(() { _photoUrl = url; });
+			setState(() { _photoUrl = fresh; _photoBytes = null; _photoFile = null; });
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile saved')));
 		} catch (e) {
 			if (mounted) {
