@@ -7,17 +7,23 @@ import 'package:zippup/core/routing/app_router.dart';
 import 'package:zippup/core/theme/app_theme.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:zippup/services/notifications/notifications_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 Future<void> main() async {
 	WidgetsFlutterBinding.ensureInitialized();
-	await dotenv.load(fileName: '.env');
-	final stripeKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'];
-	if (stripeKey != null && stripeKey.isNotEmpty) {
-		Stripe.publishableKey = stripeKey;
+	// Dotenv not used on web
+	if (!kIsWeb) {
+		await dotenv.load(fileName: '.env');
+		final stripeKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'];
+		if (stripeKey != null && stripeKey.isNotEmpty) {
+			Stripe.publishableKey = stripeKey;
+		}
 	}
 	await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-	// Initialize notifications (FCM + local notifications)
-	await NotificationsService.instance.init();
+	// Initialize notifications (skip on web)
+	if (!kIsWeb) {
+		await NotificationsService.instance.init();
+	}
 	runApp(const ProviderScope(child: ZippUpApp()));
 }
 
