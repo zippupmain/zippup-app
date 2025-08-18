@@ -1,0 +1,164 @@
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:zippup/services/navigation/map_booking_service.dart';
+
+class MapBookingScreen extends StatefulWidget {
+	const MapBookingScreen({super.key});
+
+	@override
+	State<MapBookingScreen> createState() => _MapBookingScreenState();
+}
+
+class _MapBookingScreenState extends State<MapBookingScreen> {
+	final MapBookingService _mapService = MapBookingService();
+	GoogleMapController? _mapController;
+	bool _isTracking = false;
+
+	@override
+	void initState() {
+		super.initState();
+		_init();
+	}
+
+	Future<void> _init() async {
+		await _mapService.initializeLocation();
+		await _mapService.populateInitialMarkers();
+		if (mounted) setState(() {});
+	}
+
+	@override
+	Widget build(BuildContext context) {
+		return Scaffold(
+			appBar: AppBar(title: const Text('Map & Booking')),
+			body: Column(children: [
+				// Location info
+				Padding(
+					padding: const EdgeInsets.all(8.0),
+					child: ValueListenableBuilder<String>(
+						valueListenable: _mapService.currentAddressNotifier,
+						builder: (context, value, _) => Text(value, style: Theme.of(context).textTheme.bodySmall),
+					),
+				),
+				// Map
+				Expanded(
+					child: ValueListenableBuilder<Set<Marker>>(
+						valueListenable: _mapService.markersNotifier,
+						builder: (context, markers, _) {
+							final initial = _mapService.currentLocation ?? const LatLng(0, 0);
+							return GoogleMap(
+								initialCameraPosition: CameraPosition(target: initial, zoom: _mapService.currentLocation != null ? 15 : 2),
+								markers: markers,
+								onMapCreated: (c) {
+									_mapController = c;
+									if (_mapService.currentLocation != null) {
+										c.animateCamera(CameraUpdate.newLatLngZoom(_mapService.currentLocation!, 15));
+									}
+								},
+								myLocationEnabled: true,
+								myLocationButtonEnabled: true,
+							);
+						},
+					),
+				),
+				// Booking controls
+				Padding(
+					padding: const EdgeInsets.all(16.0),
+					child: Column(children: [
+						if (!_isTracking) ElevatedButton(onPressed: _bookTransport, child: const Text('Book Transport')),
+						if (!_isTracking) const SizedBox(height: 8),
+						if (!_isTracking) ElevatedButton(onPressed: _bookService, child: const Text('Book Service')),
+						if (_isTracking)
+							ElevatedButton(
+								onPressed: _stopTracking,
+								style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+								child: const Text('Cancel Booking'),
+							),
+					]),
+				),
+			]),
+		);
+	}
+
+	Future<void> _bookTransport() async {
+		if (_mapService.currentLocation == null) return;
+		final destination = LatLng(_mapService.currentLocation!.latitude + 0.02, _mapService.currentLocation!.longitude + 0.02);
+		await _mapService.createTransportBooking(
+			pickup: _mapService.currentLocation!,
+			destination: destination,
+			driverName: 'Driver John',
+			driverId: 'd123',
+			onTrackingStarted: (orderId) {
+				setState(() => _isTracking = true);
+				_showTrackingDialog(orderId, destination);
+			},
+		);
+		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking request sent')));
+	}
+
+	Future<void> _bookService() async {
+		await _mapService.createServiceBooking(
+			providerId: 'p456',
+			serviceType: 'Plumber',
+			onTrackingStarted: (orderId) {
+				setState(() => _isTracking = true);
+				_showTrackingDialog(orderId, _mapService.currentLocation!);
+			},
+		);
+		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Service booking requested')));
+	}
+
+	void _stopTracking() {
+		setState(() => _isTracking = false);
+		_mapService.stopLiveTracking();
+	}
+
+	void _showTrackingDialog(String orderId, LatLng destination) {
+		showDialog(
+			context: context,
+			barrierDismissible: false,
+			builder: (context) => AlertDialog(
+				title: const Text('Tracking Booking'),
+				content: SizedBox(
+					height: 300,
+					width: double.maxFinite,
+					child: ValueListenableBuilder<Set<Marker>>(
+						valueListenable: _mapService.markersNotifier,
+						builder: (context, markers, _) {
+							return GoogleMap(
+								initialCameraPosition: CameraPosition(target: _mapService.currentLocation ?? const LatLng(0, 0), zoom: 15),
+								markers: markers,
+								onMapCreated: (controller) {
+									_mapService.startLiveTracking(
+										destination: destination,
+										orderId: orderId,
+										onDriverArrived: (id) {
+											Navigator.pop(context);
+											ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Driver has arrived!')));
+											setState(() => _isTracking = false);
+										},
+									);
+								},
+							);
+						},
+					),
+				),
+				actions: [
+					TextButton(
+						onPressed: () {
+							Navigator.pop(context);
+							_stopTracking();
+						},
+						child: const Text('Cancel'),
+					),
+				],
+			),
+		);
+	}
+
+	@override
+	void dispose() {
+		_mapController?.dispose();
+		_mapService.dispose();
+		super.dispose();
+	}
+}

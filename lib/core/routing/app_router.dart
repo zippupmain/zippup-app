@@ -47,6 +47,7 @@ import 'package:zippup/features/others/presentation/ticket_detail_screen.dart';
 import 'package:zippup/features/admin/presentation/admin_users_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_menu_screen.dart';
 import 'package:zippup/features/notifications/presentation/notifications_screen.dart';
+import 'package:zippup/features/navigation/map_booking_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -300,6 +301,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/notifications',
         name: 'notifications',
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/dev/map-booking',
+        name: 'mapBookingDev',
+        builder: (context, state) => const MapBookingScreen(),
       ),
     ],
   );
