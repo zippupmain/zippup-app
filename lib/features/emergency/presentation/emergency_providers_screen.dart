@@ -70,6 +70,7 @@ class _EmergencyProvidersScreenState extends State<EmergencyProvidersScreen> {
 			body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
 				stream: FirebaseFirestore.instance.collection('providers').where('category', isEqualTo: widget.type).snapshots(),
 				builder: (context, snap) {
+					if (snap.hasError) return Center(child: Text('Error: ${snap.error}'));
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
 					final docs = snap.data!.docs.where((d) {
 						if (_q.isEmpty) return true;

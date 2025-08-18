@@ -64,6 +64,7 @@ class _VendorListScreenState extends State<VendorListScreen> {
 			body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
 				stream: FirebaseFirestore.instance.collection('vendors').where('category', isEqualTo: widget.category).snapshots(),
 				builder: (context, snapshot) {
+					if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
 					if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 					final docs = snapshot.data!.docs.where((d) {
 						if (_q.isEmpty) return true;

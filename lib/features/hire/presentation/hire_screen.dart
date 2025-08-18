@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:zippup/features/profile/presentation/provider_profile_screen.dart';
+import 'package:zippup/services/location/location_service.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HireScreen extends StatefulWidget {
 	const HireScreen({super.key, this.initialCategory, this.initialQuery});
@@ -15,6 +18,7 @@ class _HireScreenState extends State<HireScreen> {
 	String _filter = 'home';
 	final TextEditingController _search = TextEditingController();
 	String _q = '';
+	geo.Position? _me;
 
 	final Map<String, List<String>> _examples = const {
 		'home': ['Cleaning', 'Plumbing', 'Electrician', 'Painting', 'Carpentry', 'Pest control'],
@@ -32,6 +36,22 @@ class _HireScreenState extends State<HireScreen> {
 			_q = widget.initialQuery!.toLowerCase();
 			_search.text = widget.initialQuery!;
 		}
+		_location();
+	}
+
+	Future<void> _location() async {
+		final p = await LocationService.getCurrentPosition();
+		if (!mounted) return;
+		setState(() => _me = p);
+	}
+
+	String _distanceText(Map<String, dynamic> p) {
+		final lat = (p['lat'] as num?)?.toDouble();
+		final lng = (p['lng'] as num?)?.toDouble();
+		if (_me == null || lat == null || lng == null) return '';
+		final meters = geo.Geolocator.distanceBetween(_me!.latitude, _me!.longitude, lat, lng);
+		final km = meters / 1000.0;
+		return '${km.toStringAsFixed(km < 10 ? 1 : 0)} km away';
 	}
 
 	@override
@@ -77,30 +97,74 @@ class _HireScreenState extends State<HireScreen> {
 						child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
 							stream: FirebaseFirestore.instance.collection('providers').where('category', isEqualTo: _filter).snapshots(),
 							builder: (context, snap) {
+								if (snap.hasError) {
+									return Center(child: Text('Error loading providers: ${snap.error}'));
+								}
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-								final docs = snap.data!.docs.where((d) {
+								final allDocs = snap.data!.docs.where((d) {
 									if (_q.isEmpty) return true;
 									final name = (d.data()['name'] ?? '').toString().toLowerCase();
 									final title = (d.data()['title'] ?? '').toString().toLowerCase();
 									return name.contains(_q) || title.contains(_q);
 								}).toList();
-								if (docs.isEmpty) return const Center(child: Text('No providers found', style: TextStyle(color: Colors.black)));
-								return ListView.separated(
-									itemCount: docs.length,
-									separatorBuilder: (_, __) => const Divider(height: 1),
-									itemBuilder: (context, i) {
-										final p = docs[i].data();
-										final pid = docs[i].id;
-										return ListTile(
-											title: Text(p['name'] ?? 'Provider', style: const TextStyle(color: Colors.black)),
-											subtitle: Text('Rating: ${(p['rating'] ?? 0).toString()} • Fee: ₦${(p['fee'] ?? 0).toString()}', style: const TextStyle(color: Colors.black54)),
-											trailing: Wrap(spacing: 8, children: [
-												TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Profile')),
-												FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Book')),
-											]),
-										);
-								},
-							);
+
+								// Build map markers
+								final markers = <Marker>{};
+								LatLng? center;
+								if (_me != null) center = LatLng(_me!.latitude, _me!.longitude);
+								for (final d in allDocs) {
+									final p = d.data();
+									final lat = (p['lat'] as num?)?.toDouble();
+									final lng = (p['lng'] as num?)?.toDouble();
+									if (lat == null || lng == null) continue;
+									final dist = _distanceText(p);
+									final id = d.id;
+									markers.add(Marker(
+										markerId: MarkerId(id),
+										position: LatLng(lat, lng),
+										infoWindow: InfoWindow(title: p['name']?.toString() ?? 'Provider', snippet: dist.isEmpty ? null : dist),
+									));
+									center ??= LatLng(lat, lng);
+								}
+
+								return Column(children: [
+									SizedBox(
+										height: 220,
+										child: Builder(builder: (context) {
+											if (center == null) return const Center(child: Text('Map: no location yet'));
+											try {
+												return GoogleMap(
+													initialCameraPosition: CameraPosition(target: center!, zoom: 12),
+													markers: markers,
+													myLocationEnabled: false,
+													compassEnabled: false,
+											);
+											} catch (_) {
+												return const Center(child: Text('Map failed to load'));
+											}
+										}),
+									),
+									const Divider(height: 1),
+									Expanded(
+										child: ListView.separated(
+											itemCount: allDocs.length,
+											separatorBuilder: (_, __) => const Divider(height: 1),
+											itemBuilder: (context, i) {
+												final p = allDocs[i].data();
+												final pid = allDocs[i].id;
+												final dist = _distanceText(p);
+												return ListTile(
+													title: Text(p['name'] ?? 'Provider', style: const TextStyle(color: Colors.black)),
+													subtitle: Text('Rating: ${(p['rating'] ?? 0).toString()} • Fee: ₦${(p['fee'] ?? 0).toString()}${dist.isNotEmpty ? ' • $dist' : ''}', style: const TextStyle(color: Colors.black54)),
+													trailing: Wrap(spacing: 8, children: [
+														TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Profile')),
+														FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Book')),
+													]),
+												);
+										},
+									),
+									),
+								]);
 						},
 						),
 					),
