@@ -7,18 +7,31 @@ admin.initializeApp();
 
 // Stripe checkout (Callable)
 exports.createStripeCheckout = functions.https.onCall(async (data, context) => {
-	const amount = data.amount; // in minor units
+	const amount = data.amount;
 	const currency = data.currency || 'NGN';
+	const items = Array.isArray(data.items) ? data.items : [];
+	const uid = context.auth && context.auth.uid;
 	if (!amount || amount <= 0) throw new functions.https.HttpsError('invalid-argument', 'Invalid amount');
 	const secret = (await admin.firestore().doc('_config/stripe').get()).get('secret') || process.env.STRIPE_SECRET || (functions.config().stripe && functions.config().stripe.secret);
 	if (!secret) throw new functions.https.HttpsError('failed-precondition', 'Stripe secret not configured');
 	const stripe = new Stripe(secret);
+	const line_items = items.length > 0
+		? items.map(it => ({
+			price_data: {
+				currency,
+				product_data: { name: String(it.title || 'Item'), metadata: { itemId: String(it.id || ''), vendorId: String(it.vendorId || '') } },
+				unit_amount: Math.round(Number(it.price || 0) * 100),
+			},
+			quantity: Number(it.quantity || 1),
+		}))
+		: [{ price_data: { currency, product_data: { name: 'ZippUp Order' }, unit_amount: Math.round(Number(amount) * 100) }, quantity: 1 }];
 	const session = await stripe.checkout.sessions.create({
 		mode: 'payment',
 		payment_method_types: ['card'],
-		line_items: [{ price_data: { currency, product_data: { name: 'ZippUp Order' }, unit_amount: amount }, quantity: 1 }],
+		line_items,
 		success_url: 'https://zippup.app/success',
 		cancel_url: 'https://zippup.app/cancel',
+		metadata: { uid: String(uid || ''), vendorId: String((items[0] && items[0].vendorId) || '') },
 	});
 	return { checkoutUrl: session.url };
 });
@@ -27,6 +40,8 @@ exports.createStripeCheckout = functions.https.onCall(async (data, context) => {
 exports.createFlutterwaveCheckout = functions.https.onCall(async (data, context) => {
 	const amount = data.amount;
 	const currency = data.currency || 'NGN';
+	const items = Array.isArray(data.items) ? data.items : [];
+	const uid = context.auth && context.auth.uid;
 	if (!amount || amount <= 0) throw new functions.https.HttpsError('invalid-argument', 'Invalid amount');
 	const secret = (await admin.firestore().doc('_config/flutterwave').get()).get('secret') || process.env.FLW_SECRET || (functions.config().flutterwave && functions.config().flutterwave.secret);
 	if (!secret) throw new functions.https.HttpsError('failed-precondition', 'Flutterwave secret not configured');
@@ -36,6 +51,7 @@ exports.createFlutterwaveCheckout = functions.https.onCall(async (data, context)
 		tx_ref: `zippup_${Date.now()}`,
 		redirect_url: 'https://zippup.app/payment-callback',
 		customer: { email: 'customer@example.com' },
+		meta: { uid: String(uid || ''), vendorId: String((items[0] && items[0].vendorId) || '') },
 	};
 	const res = await axios.post('https://api.flutterwave.com/v3/payments', payload, { headers: { Authorization: `Bearer ${secret}` } });
 	return { checkoutUrl: res.data && res.data.data && res.data.data.link };

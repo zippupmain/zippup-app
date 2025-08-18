@@ -60,11 +60,11 @@ class CartScreen extends ConsumerWidget {
 								children: [
 									Text('Total: ₦${total.toStringAsFixed(2)}', style: Theme.of(context).textTheme.titleMedium),
 									const Spacer(),
-									FilledButton(onPressed: () => _checkout(context, total, 'stripe'), child: const Text('Pay with Stripe')),
+									FilledButton(onPressed: () => _checkout(context, items, total, 'stripe'), child: const Text('Pay with Stripe')),
 								],
 							),
 							const SizedBox(height: 8),
-							FilledButton.tonal(onPressed: () => _checkout(context, total, 'flutterwave'), child: const Text('Pay with Flutterwave')),
+							FilledButton.tonal(onPressed: () => _checkout(context, items, total, 'flutterwave'), child: const Text('Pay with Flutterwave')),
 						],
 					),
 				),
@@ -72,14 +72,15 @@ class CartScreen extends ConsumerWidget {
 		);
 	}
 
-	Future<void> _checkout(BuildContext context, double total, String provider) async {
+	Future<void> _checkout(BuildContext context, List<CartItem> items, double total, String provider) async {
 		final service = PaymentsService();
 		final currency = 'NGN';
 		late String url;
+		final payloadItems = items.map((e) => {'id': e.id, 'vendorId': e.vendorId, 'title': e.title, 'price': e.price, 'quantity': e.quantity}).toList();
 		if (provider == 'stripe') {
-			url = await service.createStripeCheckout(amount: total, currency: currency);
+			url = await service.createStripeCheckout(amount: total, currency: currency, items: payloadItems);
 		} else {
-			url = await service.createFlutterwaveCheckout(amount: total, currency: currency);
+			url = await service.createFlutterwaveCheckout(amount: total, currency: currency, items: payloadItems);
 		}
 		if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open checkout')));
