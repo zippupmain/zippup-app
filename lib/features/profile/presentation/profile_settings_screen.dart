@@ -103,20 +103,27 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
 	@override
 	Widget build(BuildContext context) {
-		final ImageProvider? avatar = _photoBytes != null
-			? MemoryImage(_photoBytes!)
-			: (_photoFile != null
-				? FileImage(_photoFile!)
-				: (_photoUrl != null ? NetworkImage(_photoUrl!) : null) as ImageProvider?);
+		Widget avatarWidget() {
+			if (_photoBytes != null) {
+				return ClipOval(child: Image.memory(_photoBytes!, width: 72, height: 72, fit: BoxFit.cover));
+			}
+			if (_photoFile != null) {
+				return ClipOval(child: Image.file(_photoFile!, width: 72, height: 72, fit: BoxFit.cover));
+			}
+			if (_photoUrl != null && _photoUrl!.isNotEmpty) {
+				return ClipOval(
+					child: Image.network(_photoUrl!, width: 72, height: 72, fit: BoxFit.cover,
+						errorBuilder: (context, error, stack) => const Icon(Icons.person, size: 36)),
+				);
+			}
+			return const Icon(Icons.person, size: 36);
+		}
 		return Scaffold(
 			appBar: AppBar(title: const Text('Profile settings')),
 			body: ListView(
 				padding: const EdgeInsets.all(16),
 				children: [
-					GestureDetector(
-						onTap: _pickPhoto,
-						child: CircleAvatar(radius: 36, backgroundImage: avatar, child: (avatar == null) ? const Icon(Icons.person) : null),
-					),
+					GestureDetector(onTap: _pickPhoto, child: CircleAvatar(radius: 36, backgroundColor: Colors.grey.shade200, child: avatarWidget())),
 					const SizedBox(height: 8),
 					TextField(controller: _name, decoration: const InputDecoration(labelText: 'Public name')),
 					TextField(controller: _phone, decoration: const InputDecoration(labelText: 'Phone number')),

@@ -467,11 +467,19 @@ class _UserAvatar extends StatelessWidget {
 				}
 				url ??= FirebaseAuth.instance.currentUser?.photoURL;
 				if (url == null || url.isEmpty) return const CircleAvatar(child: Icon(Icons.person_outline));
-				try {
-					return CircleAvatar(backgroundImage: NetworkImage(url));
-				} catch (_) {
-					return const CircleAvatar(child: Icon(Icons.person_outline));
-				}
+				return CircleAvatar(
+					backgroundColor: Colors.grey.shade200,
+					radius: 16,
+					child: ClipOval(
+						child: Image.network(
+							url,
+							width: 32,
+							height: 32,
+							fit: BoxFit.cover,
+							errorBuilder: (context, error, stack) => const Icon(Icons.person_outline),
+						),
+					),
+				);
 			},
 		);
 	}
