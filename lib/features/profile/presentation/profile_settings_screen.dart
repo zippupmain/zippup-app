@@ -69,8 +69,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 					await ref.putFile(_photoFile!);
 				}
 				final baseUrl = await ref.getDownloadURL();
-				// add cache-busting query so UI refreshes even if CDN caches
-				url = '$baseUrl?v=${DateTime.now().millisecondsSinceEpoch}';
+				final ts = DateTime.now().millisecondsSinceEpoch;
+				url = baseUrl.contains('?') ? '$baseUrl&v=$ts' : '$baseUrl?v=$ts';
 				await u.updatePhotoURL(url);
 			}
 			final name = _name.text.trim();
