@@ -6,6 +6,8 @@ import 'package:zippup/services/location/location_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
 	const HomeScreen({super.key});
@@ -83,7 +85,13 @@ class _HomeScreenState extends State<HomeScreen> {
 				title: const Text('ZippUp'),
 				actions: [
 					IconButton(onPressed: () => context.push('/cart'), icon: const Icon(Icons.shopping_cart_outlined)),
-					IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none)),
+					IconButton(
+						onPressed: () => context.push('/notifications'),
+						icon: Stack(children: [
+							const Icon(Icons.notifications_none),
+							_PositionedUnreadDot(),
+						]),
+					),
 					PopupMenuButton(
 						icon: const CircleAvatar(child: Icon(Icons.person_outline)),
 						itemBuilder: (context) => <PopupMenuEntry>[
@@ -180,6 +188,31 @@ class _HomeScreenState extends State<HomeScreen> {
 			),
 		);
 	}
+}
+
+class _PositionedUnreadDot extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const SizedBox.shrink();
+    final stream = FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: uid)
+        .where('read', isEqualTo: false)
+        .snapshots();
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: stream,
+      builder: (context, snap) {
+        final hasUnread = (snap.data?.docs.length ?? 0) > 0;
+        if (!hasUnread) return const SizedBox.shrink();
+        return const Positioned(
+          right: 0,
+          top: 0,
+          child: CircleAvatar(radius: 4, backgroundColor: Colors.red),
+        );
+      },
+    );
+  }
 }
 
 class _QuickActions extends StatelessWidget {
@@ -401,6 +434,36 @@ class _HomeSearchBarState extends State<_HomeSearchBar> {
 				suffixIcon: IconButton(icon: const Icon(Icons.mic_none), onPressed: _voice),
 				border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
 			),
+		);
+	}
+}
+
+class _PositionedUnreadDot extends StatelessWidget {
+	@override
+	Widget build(BuildContext context) {
+		return StreamBuilder<int>(
+			stream: FirebaseFirestore.instance.collection('notifications').where('read', isEqualTo: false).snapshots().map((snapshot) => snapshot.docs.length),
+			builder: (context, snapshot) {
+				final count = snapshot.data ?? 0;
+				if (count == 0) return const SizedBox.shrink();
+				return Positioned(
+					right: 0,
+					top: 0,
+					child: Container(
+						padding: const EdgeInsets.all(2),
+						decoration: BoxDecoration(
+							color: Colors.red,
+							borderRadius: BorderRadius.circular(6),
+						),
+						constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+						child: Text(
+							count.toString(),
+							style: const TextStyle(color: Colors.white, fontSize: 8),
+							textAlign: TextAlign.center,
+						),
+					),
+				);
+			},
 		);
 	}
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:zippup/features/cart/providers/cart_provider.dart';
-import 'package:zippup/services/payments/payments_service.dart';
+import 'package:zippup/features/cart/models/cart_item.dart';
 
 class CartScreen extends ConsumerWidget {
 	const CartScreen({super.key});
@@ -10,7 +10,8 @@ class CartScreen extends ConsumerWidget {
 	@override
 	Widget build(BuildContext context, WidgetRef ref) {
 		final items = ref.watch(cartProvider);
-		final total = ref.read(cartProvider.notifier).total;
+		final notifier = ref.read(cartProvider.notifier);
+		final total = notifier.total;
 		return Scaffold(
 			appBar: AppBar(title: const Text('Cart')),
 			body: items.isEmpty
@@ -19,11 +20,24 @@ class CartScreen extends ConsumerWidget {
 						padding: const EdgeInsets.all(16),
 						itemCount: items.length,
 						separatorBuilder: (_, __) => const Divider(height: 1),
-						itemBuilder: (context, i) => ListTile(
-							title: Text(items[i].title),
-							subtitle: Text('x${items[i].quantity}'),
-							trailing: Text('₦${(items[i].price * items[i].quantity).toStringAsFixed(2)}'),
-						),
+						itemBuilder: (context, i) {
+							final item = items[i];
+							return ListTile(
+								title: Text(item.title),
+								subtitle: Row(children: [
+									IconButton(onPressed: () => notifier.decrement(item.id), icon: const Icon(Icons.remove_circle_outline)),
+									Text('x${item.quantity}'),
+									IconButton(onPressed: () => notifier.increment(item.id), icon: const Icon(Icons.add_circle_outline)),
+								]),
+								trailing: Column(
+									mainAxisAlignment: MainAxisAlignment.center,
+									children: [
+										Text('₦${(item.price * item.quantity).toStringAsFixed(2)}'),
+										TextButton(onPressed: () => notifier.remove(item.id), child: const Text('Remove')),
+									],
+								),
+							);
+						},
 					),
 			bottomNavigationBar: SafeArea(
 				child: Container(
@@ -48,14 +62,9 @@ class CartScreen extends ConsumerWidget {
 	}
 
 	Future<void> _checkout(BuildContext context, double total, String provider) async {
-		final service = PaymentsService();
 		final currency = 'NGN';
-		late String url;
-		if (provider == 'stripe') {
-			url = await service.createStripeCheckout(amount: total, currency: currency);
-		} else {
-			url = await service.createFlutterwaveCheckout(amount: total, currency: currency);
-		}
+		// Placeholder: integrate back-end checkout URLs via PaymentsService
+		final url = 'https://example.com/checkout?amount=${total.toStringAsFixed(2)}&provider=$provider&currency=$currency';
 		if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open checkout')));
 		}
