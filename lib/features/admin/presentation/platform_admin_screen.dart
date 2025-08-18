@@ -67,6 +67,60 @@ class _PlatformAdminScreenState extends State<PlatformAdminScreen> {
 		}
 	}
 
+	Future<void> _promptEdit(DocumentReference<Map<String, dynamic>> ref, Map<String, dynamic> data, {required bool isUser}) async {
+		final nameCtl = TextEditingController(text: data['name']?.toString() ?? '');
+		final extraCtl = TextEditingController(text: isUser ? data['email']?.toString() ?? '' : data['category']?.toString() ?? '');
+		final ok = await showDialog<bool>(
+			context: context,
+			builder: (c) => AlertDialog(
+				title: Text(isUser ? 'Edit user' : 'Edit provider'),
+				content: Column(
+					mainAxisSize: MainAxisSize.min,
+					children: [
+						TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
+						TextField(controller: extraCtl, decoration: InputDecoration(labelText: isUser ? 'Email' : 'Category')),
+					],
+				),
+				actions: [
+					TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+					FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Save')),
+				],
+			),
+		);
+		if (ok == true) {
+			await ref.set(isUser ? {'name': nameCtl.text.trim(), 'email': extraCtl.text.trim()} : {'name': nameCtl.text.trim(), 'category': extraCtl.text.trim()}, SetOptions(merge: true));
+		}
+	}
+
+	Future<void> _promptAdd({required bool isUser}) async {
+		final nameCtl = TextEditingController();
+		final extraCtl = TextEditingController();
+		final ok = await showDialog<bool>(
+			context: context,
+			builder: (c) => AlertDialog(
+				title: Text(isUser ? 'Add user' : 'Add provider'),
+				content: Column(
+					mainAxisSize: MainAxisSize.min,
+					children: [
+						TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
+						TextField(controller: extraCtl, decoration: InputDecoration(labelText: isUser ? 'Email' : 'Category')),
+					],
+				),
+				actions: [
+					TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+					FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Create')),
+				],
+			),
+		);
+		if (ok == true) {
+			if (isUser) {
+				await FirebaseFirestore.instance.collection('users').add({'name': nameCtl.text.trim(), 'email': extraCtl.text.trim(), 'createdAt': DateTime.now().toIso8601String()});
+			} else {
+				await FirebaseFirestore.instance.collection('providers').add({'name': nameCtl.text.trim(), 'category': extraCtl.text.trim(), 'createdAt': DateTime.now().toIso8601String(), 'approved': false});
+			}
+		}
+	}
+
 	@override
 	Widget build(BuildContext context) {
 		if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -116,7 +170,10 @@ class _PlatformAdminScreenState extends State<PlatformAdminScreen> {
 						onTap: () => context.push('/admin/emergency-config'),
 					),
 					const Divider(),
-					const Text('Users', style: TextStyle(fontWeight: FontWeight.bold)),
+					Row(children: [
+						const Expanded(child: Text('Users', style: TextStyle(fontWeight: FontWeight.bold))),
+						TextButton.icon(onPressed: () => _promptAdd(isUser: true), icon: const Icon(Icons.add), label: const Text('Add user')),
+					]),
 					StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
 						stream: FirebaseFirestore.instance.collection('users').orderBy('createdAt', descending: true).limit(50).snapshots(),
 						builder: (context, snap) {
@@ -128,6 +185,7 @@ class _PlatformAdminScreenState extends State<PlatformAdminScreen> {
 											title: Text(d.data()['name']?.toString() ?? d.id),
 											subtitle: Text(d.data()['email']?.toString() ?? ''),
 											trailing: Wrap(spacing: 8, children: [
+												TextButton(onPressed: () => _promptEdit(d.reference, d.data(), isUser: true), child: const Text('Edit')),
 												TextButton(onPressed: () => d.reference.set({'disabled': false}, SetOptions(merge: true)), child: const Text('Enable')),
 												TextButton(onPressed: () => d.reference.set({'disabled': true}, SetOptions(merge: true)), child: const Text('Disable')),
 												TextButton(onPressed: () => d.reference.delete(), child: const Text('Delete', style: TextStyle(color: Colors.red))),
@@ -138,7 +196,10 @@ class _PlatformAdminScreenState extends State<PlatformAdminScreen> {
 					},
 					),
 					const Divider(),
-					const Text('Providers / Vendors', style: TextStyle(fontWeight: FontWeight.bold)),
+					Row(children: [
+						const Expanded(child: Text('Providers / Vendors', style: TextStyle(fontWeight: FontWeight.bold))),
+						TextButton.icon(onPressed: () => _promptAdd(isUser: false), icon: const Icon(Icons.add_business), label: const Text('Add provider')),
+					]),
 					StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
 						stream: FirebaseFirestore.instance.collection('providers').orderBy('createdAt', descending: true).limit(50).snapshots(),
 						builder: (context, snap) {
@@ -150,6 +211,7 @@ class _PlatformAdminScreenState extends State<PlatformAdminScreen> {
 											title: Text(d.data()['name']?.toString() ?? d.id),
 											subtitle: Text(d.data()['category']?.toString() ?? ''),
 											trailing: Wrap(spacing: 8, children: [
+												TextButton(onPressed: () => _promptEdit(d.reference, d.data(), isUser: false), child: const Text('Edit')),
 												TextButton(onPressed: () => d.reference.set({'approved': true}, SetOptions(merge: true)), child: const Text('Approve')),
 												TextButton(onPressed: () => d.reference.set({'approved': false}, SetOptions(merge: true)), child: const Text('Reject')),
 												TextButton(onPressed: () => d.reference.delete(), child: const Text('Delete', style: TextStyle(color: Colors.red))),
