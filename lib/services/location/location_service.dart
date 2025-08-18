@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -83,23 +85,39 @@ class LocationService {
 			final data = Map<String, dynamic>.from(res.data as Map);
 			return data['address']?.toString();
 		} catch (_) {
-			return null;
+			// Web fallback to Nominatim if callable blocked by CORS
+			try {
+				final uri = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${p.latitude}&lon=${p.longitude}');
+				final client = HttpClient();
+				final req = await client.getUrl(uri);
+				req.headers.set('User-Agent', 'ZippUp/1.0');
+				final resp = await req.close();
+				final body = await resp.transform(const Utf8Decoder()).join();
+				final json = jsonDecode(body) as Map<String, dynamic>;
+				return (json['display_name'] as String?) ?? 'Address unavailable';
+			} catch (_) {
+				return null;
+			}
 		}
 	}
 
 	static Future<void> updateUserLocationProfile(Position p) async {
-		final fn = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('geocode');
-		final res = await fn.call({'lat': p.latitude, 'lng': p.longitude});
-		final data = Map<String, dynamic>.from(res.data as Map);
-		final address = data['address']?.toString();
-		final country = data['country']?.toString();
-		final countryCode = data['countryCode']?.toString();
-		final uid = FirebaseAuth.instance.currentUser?.uid;
-		if (uid == null) return;
-		await FirebaseFirestore.instance.collection('users').doc(uid).set({
-			'address': address,
-			'country': country,
-			'countryCode': countryCode,
-		}, SetOptions(merge: true));
+		try {
+			final fn = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('geocode');
+			final res = await fn.call({'lat': p.latitude, 'lng': p.longitude});
+			final data = Map<String, dynamic>.from(res.data as Map);
+			final address = data['address']?.toString();
+			final country = data['country']?.toString();
+			final countryCode = data['countryCode']?.toString();
+			final uid = FirebaseAuth.instance.currentUser?.uid;
+			if (uid == null) return;
+			await FirebaseFirestore.instance.collection('users').doc(uid).set({
+				'address': address,
+				'country': country,
+				'countryCode': countryCode,
+			}, SetOptions(merge: true));
+		} catch (_) {
+			// ignore failures on web to avoid crash
+		}
 	}
 }
