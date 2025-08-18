@@ -45,13 +45,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 	}
 
 	Future<void> _pickPhoto() async {
-		final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (x == null) return;
+		final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+		if (f == null) return;
 		if (kIsWeb) {
-			final bytes = await x.readAsBytes();
+			final bytes = await f.readAsBytes();
 			setState(() { _photoBytes = bytes; _photoFile = null; });
 		} else {
-			setState(() { _photoFile = File(x.path); _photoBytes = null; });
+			setState(() { _photoFile = File(f.path); _photoBytes = null; });
 		}
 	}
 
@@ -62,13 +62,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			if (u == null) return;
 			String? url = _photoUrl;
 			if (_photoBytes != null || _photoFile != null) {
-				final ref = FirebaseStorage.instance.ref('users/${u.uid}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				if (kIsWeb && _photoBytes != null) {
+				final ref = FirebaseStorage.instance.ref('users/${u.uid}/profile.jpg');
+				if (_photoBytes != null) {
 					await ref.putData(_photoBytes!, SettableMetadata(contentType: 'image/jpeg'));
 				} else if (_photoFile != null) {
 					await ref.putFile(_photoFile!);
 				}
-				url = await ref.getDownloadURL();
+				final baseUrl = await ref.getDownloadURL();
+				// add cache-busting query so UI refreshes even if CDN caches
+				url = '$baseUrl?v=${DateTime.now().millisecondsSinceEpoch}';
 				await u.updatePhotoURL(url);
 			}
 			final name = _name.text.trim();
@@ -81,7 +83,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 				'updatedAt': FieldValue.serverTimestamp(),
 			}, SetOptions(merge: true));
 			await u.reload();
-			// Force re-read of Firestore photoUrl after save
 			final doc = await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
 			final fresh = (doc.data() ?? const {})['photoUrl']?.toString() ?? url;
 			if (!mounted) return;
