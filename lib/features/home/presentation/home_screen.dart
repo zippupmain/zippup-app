@@ -60,13 +60,24 @@ class _HomeScreenState extends State<HomeScreen> {
 				return;
 			}
 			setState(() => _locationText = '${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}');
-			// Reverse geocode asynchronously; if it fails, we keep coords
+			// Reverse geocode asynchronously; if it fails, try user profile address; else keep coords
 			// ignore: unawaited_futures
 			(() async {
 				final addr = await LocationService.reverseGeocode(pos);
 				if (!mounted) return;
 				if (addr != null && addr.trim().isNotEmpty) {
 					setState(() => _locationText = addr);
+				} else {
+					try {
+						final uid = FirebaseAuth.instance.currentUser?.uid;
+						if (uid != null) {
+							final u = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+							final fallbackAddr = (u.data() ?? const {})['address']?.toString();
+							if (fallbackAddr != null && fallbackAddr.trim().isNotEmpty && mounted) {
+								setState(() => _locationText = fallbackAddr);
+							}
+						}
+					} catch (_) {}
 				}
 			})();
 			// Fire-and-forget profile update; do not block UI

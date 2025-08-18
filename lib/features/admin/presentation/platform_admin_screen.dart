@@ -116,15 +116,48 @@ class _PlatformAdminScreenState extends State<PlatformAdminScreen> {
 						onTap: () => context.push('/admin/emergency-config'),
 					),
 					const Divider(),
-					ListTile(
-						leading: const Icon(Icons.people),
-						title: const Text('Users'),
-						onTap: () {},
+					const Text('Users', style: TextStyle(fontWeight: FontWeight.bold)),
+					StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+						stream: FirebaseFirestore.instance.collection('users').orderBy('createdAt', descending: true).limit(50).snapshots(),
+						builder: (context, snap) {
+							if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+							return Column(children: [
+								for (final d in snap.data!.docs)
+									Card(
+										child: ListTile(
+											title: Text(d.data()['name']?.toString() ?? d.id),
+											subtitle: Text(d.data()['email']?.toString() ?? ''),
+											trailing: Wrap(spacing: 8, children: [
+												TextButton(onPressed: () => d.reference.set({'disabled': false}, SetOptions(merge: true)), child: const Text('Enable')),
+												TextButton(onPressed: () => d.reference.set({'disabled': true}, SetOptions(merge: true)), child: const Text('Disable')),
+												TextButton(onPressed: () => d.reference.delete(), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+											]),
+										),
+								),
+							]);
+					},
 					),
-					ListTile(
-						leading: const Icon(Icons.store_mall_directory),
-						title: const Text('Providers/Vendors'),
-						onTap: () {},
+					const Divider(),
+					const Text('Providers / Vendors', style: TextStyle(fontWeight: FontWeight.bold)),
+					StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+						stream: FirebaseFirestore.instance.collection('providers').orderBy('createdAt', descending: true).limit(50).snapshots(),
+						builder: (context, snap) {
+							if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+							return Column(children: [
+								for (final d in snap.data!.docs)
+									Card(
+										child: ListTile(
+											title: Text(d.data()['name']?.toString() ?? d.id),
+											subtitle: Text(d.data()['category']?.toString() ?? ''),
+											trailing: Wrap(spacing: 8, children: [
+												TextButton(onPressed: () => d.reference.set({'approved': true}, SetOptions(merge: true)), child: const Text('Approve')),
+												TextButton(onPressed: () => d.reference.set({'approved': false}, SetOptions(merge: true)), child: const Text('Reject')),
+												TextButton(onPressed: () => d.reference.delete(), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+											]),
+										),
+								),
+							]);
+					},
 					),
 				],
 			),
