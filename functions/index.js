@@ -76,6 +76,38 @@ exports.scheduledReminders = functions.pubsub.schedule('every 5 minutes').onRun(
 	return null;
 });
 
+// Auto-timeout/cleanup for orders and rides
+exports.timeoutJobs = functions.pubsub.schedule('every 1 minutes').onRun(async () => {
+  const now = Date.now();
+  // Handle ride acceptance timeout (70s)
+  const rides = await admin.firestore().collection('rides').where('status', '==', 'requested').get();
+  for (const d of rides.docs) {
+    const createdAt = new Date(d.get('createdAt') || now).getTime();
+    if (now - createdAt > 70 * 1000) {
+      // write a notification to rider; frontend will prompt
+      await d.ref.set({ timeout: true }, { merge: true });
+    }
+  }
+  // Scheduled orders timeout logic (24h or 7h if within 24h)
+  const orders = await admin.firestore().collection('orders').where('status', '==', 'scheduled').get();
+  for (const d of orders.docs) {
+    const scheduledAtStr = d.get('scheduledAt');
+    if (!scheduledAtStr) continue;
+    const scheduledAt = new Date(scheduledAtStr).getTime();
+    const hoursToGo = (scheduledAt - now) / (1000 * 60 * 60);
+    const createdAt = new Date(d.get('createdAt') || now).getTime();
+    const elapsedHours = (now - createdAt) / (1000 * 60 * 60);
+    const limit = hoursToGo <= 24 ? 7 : 24;
+    if (elapsedHours > limit) {
+      await d.ref.set({ status: 'cancelled', cancelReason: 'timeout' }, { merge: true });
+    }
+    if (now > scheduledAt && (d.get('status') || 'scheduled') === 'scheduled') {
+      await d.ref.set({ status: 'cancelled', cancelReason: 'schedule elapsed' }, { merge: true });
+    }
+  }
+  return null;
+});
+
 function statusTitle(entity, status) {
 	switch (status) {
 		case 'accepted': return `${entity} accepted`;

@@ -19,6 +19,9 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	final _distance = DistanceService();
 	final _rideService = RideService();
 	Set<Polyline> _polylines = {};
+	int? _etaMinutes;
+	DateTime? _waitingSince;
+	bool _mockStarted = false;
 
 	List<String> _stepsFor(RideType type) => const ['Accepted', 'Arriving', 'Arrived', 'Enroute', 'Completed'];
 
@@ -47,6 +50,21 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		});
 	}
 
+	Future<void> _updateEta({required double originLat, required double originLng, required double destLat, required double destLng}) async {
+		try {
+			final matrix = await _distance.getMatrix(origin: '$originLat,$originLng', destinations: ['$destLat,$destLng']);
+			final elements = (matrix['rows'][0]['elements'] as List);
+			for (final el in elements) {
+				if (el['status'] == 'OK') {
+					setState(() => _etaMinutes = ((el['duration']['value'] as num).toInt() / 60).round());
+					return;
+				}
+			}
+		} catch (_) {
+			// ignore errors
+		}
+	}
+
 	List<LatLng> _decodePolyline(String polyline) {
 		int index = 0, len = polyline.length;
 		int lat = 0, lng = 0;
@@ -72,6 +90,155 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 			coordinates.add(LatLng(lat / 1E5, lng / 1E5));
 		}
 		return coordinates;
+	}
+
+	Future<void> _promptWaitRedirect() async {
+		if (!mounted) return;
+		final go = await showDialog<bool>(
+			context: context,
+			builder: (c) => AlertDialog(
+				title: const Text('Provider is taking long to accept'),
+				content: const Text('Do you want to try other providers or continue waiting?'),
+				actions: [
+					TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Continue waiting')),
+					FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Find others')),
+				],
+			),
+		);
+		if (go == true && mounted) {
+			Navigator.pop(context);
+			// redirect to transport to select another provider
+			// ignore: use_build_context_synchronously
+			Navigator.of(context).pushNamed('/transport');
+		} else {
+			_waitingSince = DateTime.now();
+		}
+	}
+
+	Future<void> _maybeStartMockAccept(Map<String, dynamic> data) async {
+		if (_mockStarted) return;
+		try {
+			final conf = await FirebaseFirestore.instance.collection('_config').doc('mock').get();
+			final auto = (conf.data() ?? const {})['autoAccept'] == true;
+			if (!auto) return;
+			_mockStarted = true;
+			await Future.delayed(const Duration(seconds: 10));
+			final pickupLat = (data['pickupLat'] as num?)?.toDouble();
+			final pickupLng = (data['pickupLng'] as num?)?.toDouble();
+			await FirebaseFirestore.instance.collection('rides').doc(widget.rideId).set({
+				'driverId': 'mock_driver',
+				'status': 'accepted',
+				if (pickupLat != null && pickupLng != null) 'driverLat': pickupLat,
+				if (pickupLat != null && pickupLng != null) 'driverLng': pickupLng,
+			}, SetOptions(merge: true));
+		} catch (_) {}
+	}
+
+	@override
+	Widget build(BuildContext context) {
+		return Scaffold(
+			appBar: AppBar(title: const Text('Track Ride')),
+			body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+				stream: FirebaseFirestore.instance.collection('rides').doc(widget.rideId).snapshots(),
+				builder: (context, snap) {
+					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+					final data = snap.data!.data() ?? {};
+					final ride = Ride.fromJson(widget.rideId, data);
+					final steps = _stepsFor(ride.type);
+					final idx = _indexFor(ride.status, steps);
+
+					final driverLat = (data['driverLat'] as num?)?.toDouble();
+					final driverLng = (data['driverLng'] as num?)?.toDouble();
+					final pickupLat = (data['pickupLat'] as num?)?.toDouble();
+					final pickupLng = (data['pickupLng'] as num?)?.toDouble();
+					final destLat = (data['destLat'] as num?)?.toDouble();
+					final destLng = (data['destLng'] as num?)?.toDouble();
+
+					if (ride.status == RideStatus.requested) {
+						_waitingSince ??= DateTime.now();
+						// prompt every 70 seconds
+						if (DateTime.now().difference(_waitingSince!).inSeconds >= 70) {
+							_waitingSince = DateTime.now();
+							_promptWaitRedirect();
+						}
+						_maybeStartMockAccept(data);
+					}
+
+					LatLng? center;
+					final markers = <Marker>{};
+					if (pickupLat != null && pickupLng != null) {
+						final pos = LatLng(pickupLat, pickupLng);
+						markers.add(const Marker(markerId: MarkerId('pickup'), infoWindow: InfoWindow(title: 'Pickup')));
+						center ??= pos;
+					}
+					if (destLat != null && destLng != null) {
+						final pos = LatLng(destLat, destLng);
+						markers.add(const Marker(markerId: MarkerId('dest'), infoWindow: InfoWindow(title: 'Destination')));
+						center ??= pos;
+					}
+					if (driverLat != null && driverLng != null) {
+						final pos = LatLng(driverLat, driverLng);
+						markers.add(const Marker(markerId: MarkerId('driver'), infoWindow: InfoWindow(title: 'Driver')));
+						center = pos;
+					}
+
+					final origin = pickupLat != null && pickupLng != null ? '$pickupLat,$pickupLng' : null;
+					final dest = destLat != null && destLng != null ? '$destLat,$destLng' : null;
+					if (origin != null && dest != null) {
+						_buildPolyline(origin, dest);
+					}
+
+					// Update ETA when positions are available
+					if (driverLat != null && driverLng != null) {
+						// Before pickup: ETA to pickup; otherwise ETA to destination
+						if (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving || ride.status == RideStatus.requested) {
+							if (pickupLat != null && pickupLng != null) {
+								_updateEta(originLat: driverLat, originLng: driverLng, destLat: pickupLat, destLng: pickupLng);
+							}
+						} else if (destLat != null && destLng != null) {
+							_updateEta(originLat: driverLat, originLng: driverLng, destLat: destLat, destLng: destLng);
+						}
+					}
+
+					return Column(
+						children: [
+							Expanded(
+								child: Builder(builder: (context) {
+									if (center == null) return const Center(child: Text('Waiting for provider...'));
+									try {
+										return GoogleMap(
+											initialCameraPosition: CameraPosition(target: center!, zoom: 14),
+											markers: markers,
+											polylines: _polylines,
+											myLocationEnabled: false,
+											compassEnabled: false,
+										);
+									} catch (_) {
+										return const Center(child: Text('Map failed to load. Check API key/config.'));
+									}
+								}),
+							),
+							Padding(
+								padding: const EdgeInsets.all(16),
+								child: Column(
+									children: [
+										StatusTimeline(steps: steps, currentIndex: idx),
+										if (_etaMinutes != null) Padding(
+											padding: const EdgeInsets.only(top: 8.0),
+											child: Text('ETA: $_etaMinutes min'),
+										),
+										if (_rideCancelable(ride.status)) Align(
+											alignment: Alignment.centerRight,
+											child: TextButton.icon(onPressed: () => _cancel(context, widget.rideId), icon: const Icon(Icons.cancel_outlined), label: const Text('Cancel ride')),
+										),
+									],
+								),
+							),
+						],
+					);
+				},
+			),
+		);
 	}
 
 	Future<void> _cancel(BuildContext context, String rideId) async {
@@ -109,86 +276,5 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 
 	bool _rideCancelable(RideStatus s) {
 		return s == RideStatus.requested || s == RideStatus.accepted || s == RideStatus.arriving || s == RideStatus.arrived;
-	}
-
-	@override
-	Widget build(BuildContext context) {
-		return Scaffold(
-			appBar: AppBar(title: const Text('Track Ride')),
-			body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-				stream: FirebaseFirestore.instance.collection('rides').doc(widget.rideId).snapshots(),
-				builder: (context, snap) {
-					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-					final data = snap.data!.data() ?? {};
-					final ride = Ride.fromJson(widget.rideId, data);
-					final steps = _stepsFor(ride.type);
-					final idx = _indexFor(ride.status, steps);
-
-					final driverLat = (data['driverLat'] as num?)?.toDouble();
-					final driverLng = (data['driverLng'] as num?)?.toDouble();
-					final pickupLat = (data['pickupLat'] as num?)?.toDouble();
-					final pickupLng = (data['pickupLng'] as num?)?.toDouble();
-					final destLat = (data['destLat'] as num?)?.toDouble();
-					final destLng = (data['destLng'] as num?)?.toDouble();
-
-					LatLng? center;
-					final markers = <Marker>{};
-					if (pickupLat != null && pickupLng != null) {
-						final pos = LatLng(pickupLat, pickupLng);
-						markers.add(const Marker(markerId: MarkerId('pickup'), infoWindow: InfoWindow(title: 'Pickup')));
-						center ??= pos;
-					}
-					if (destLat != null && destLng != null) {
-						final pos = LatLng(destLat, destLng);
-						markers.add(const Marker(markerId: MarkerId('dest'), infoWindow: InfoWindow(title: 'Destination')));
-						center ??= pos;
-					}
-					if (driverLat != null && driverLng != null) {
-						final pos = LatLng(driverLat, driverLng);
-						markers.add(const Marker(markerId: MarkerId('driver'), infoWindow: InfoWindow(title: 'Driver')));
-						center = pos;
-					}
-
-					final origin = pickupLat != null && pickupLng != null ? '${pickupLat},${pickupLng}' : null;
-					final dest = destLat != null && destLng != null ? '${destLat},${destLng}' : null;
-					if (origin != null && dest != null) {
-						_buildPolyline(origin, dest);
-					}
-
-					return Column(
-						children: [
-							Expanded(
-								child: Builder(builder: (context) {
-									if (center == null) return const Center(child: Text('Waiting for location...'));
-									try {
-										return GoogleMap(
-											initialCameraPosition: CameraPosition(target: center!, zoom: 14),
-											markers: markers,
-											polylines: _polylines,
-											myLocationEnabled: false,
-											compassEnabled: false,
-										);
-									} catch (_) {
-										return const Center(child: Text('Map failed to load. Check API key/config.'));
-									}
-								}),
-							),
-							Padding(
-								padding: const EdgeInsets.all(16),
-								child: Column(
-									children: [
-										StatusTimeline(steps: steps, currentIndex: idx),
-										if (_rideCancelable(ride.status)) Align(
-											alignment: Alignment.centerRight,
-											child: TextButton.icon(onPressed: () => _cancel(context, widget.rideId), icon: const Icon(Icons.cancel_outlined), label: const Text('Cancel ride')),
-										),
-									],
-								),
-							),
-						],
-					);
-				},
-			),
-		);
 	}
 }
