@@ -2,7 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 
 class PlacesService {
 	final FirebaseFunctions _functions;
-	PlacesService({FirebaseFunctions? functions}) : _functions = functions ?? FirebaseFunctions.instance;
+	PlacesService({FirebaseFunctions? functions}) : _functions = (functions ?? FirebaseFunctions.instanceFor(region: 'us-central1'));
 
 	Future<List<PlacePrediction>> autocomplete(String input, {String? sessionToken}) async {
 		if (input.trim().length < 3) return const <PlacePrediction>[];

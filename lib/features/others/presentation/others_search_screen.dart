@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OthersSearchScreen extends StatefulWidget {
 	const OthersSearchScreen({super.key, required this.kind});
@@ -11,6 +12,7 @@ class OthersSearchScreen extends StatefulWidget {
 
 class _OthersSearchScreenState extends State<OthersSearchScreen> {
 	final _q = TextEditingController();
+	bool _submitting = false;
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
@@ -79,39 +81,48 @@ class _OthersSearchScreenState extends State<OthersSearchScreen> {
 		}
 		// events and tutors: Book / Schedule
 		return Wrap(spacing: 8, children: [
-			TextButton(onPressed: () => _book(context, kind, id, data, scheduled: false), child: const Text('Book')),
-			TextButton(onPressed: () => _book(context, kind, id, data, scheduled: true), child: const Text('Schedule')),
+			TextButton(onPressed: _submitting ? null : () => _book(context, kind, id, data, scheduled: false), child: Text(_submitting ? 'Booking…' : 'Book')),
+			TextButton(onPressed: _submitting ? null : () => _book(context, kind, id, data, scheduled: true), child: const Text('Schedule')),
 		]);
 	}
 
 	Future<void> _book(BuildContext context, String kind, String id, Map<String, dynamic> data, {required bool scheduled}) async {
-		DateTime? at;
-		if (scheduled) {
-			final now = DateTime.now();
-			final date = await showDatePicker(context: context, firstDate: now, lastDate: now.add(const Duration(days: 365)), initialDate: now);
-			if (date == null) return;
-			final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-			if (time == null) return;
-			at = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-		}
-		final ref = await FirebaseFirestore.instance.collection('orders').add({
-			'buyerId': FirebaseFirestore.instance.app.options.projectId ?? 'self',
-			'providerId': id,
-			'category': kind,
-			'status': scheduled ? 'scheduled' : 'pending',
-			'scheduledAt': at?.toIso8601String(),
-			'createdAt': DateTime.now().toIso8601String(),
-		});
-		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request submitted')));
-		if (!scheduled && widget.kind != 'tickets') {
-			// One-off listener to auto-navigate when provider accepts/assigns/enroute (not for tickets)
-			FirebaseFirestore.instance.collection('orders').doc(ref.id).snapshots().listen((doc) {
-				final d = doc.data() ?? {};
-				final status = (d['status'] ?? '').toString();
-				if (status == 'accepted' || status == 'assigned' || status == 'enroute') {
-					if (mounted) context.pushNamed('trackOrder', queryParameters: {'orderId': ref.id});
-				}
+		if (_submitting) return;
+		setState(() => _submitting = true);
+		try {
+			DateTime? at;
+			if (scheduled) {
+				final now = DateTime.now();
+				final date = await showDatePicker(context: context, firstDate: now, lastDate: now.add(const Duration(days: 365)), initialDate: now);
+				if (date == null) { setState(() => _submitting = false); return; }
+				final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+				if (time == null) { setState(() => _submitting = false); return; }
+				at = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+			}
+			final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+			final ref = await FirebaseFirestore.instance.collection('orders').add({
+				'buyerId': uid,
+				'providerId': id,
+				'category': kind,
+				'status': scheduled ? 'scheduled' : 'pending',
+				'scheduledAt': at?.toIso8601String(),
+				'createdAt': DateTime.now().toIso8601String(),
 			});
+			if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request submitted')));
+			if (!scheduled && widget.kind != 'tickets') {
+				// One-off listener to auto-navigate when provider accepts/assigns/enroute (not for tickets)
+				final sub = FirebaseFirestore.instance.collection('orders').doc(ref.id).snapshots().listen((doc) {
+					final d = doc.data() ?? {};
+					final status = (d['status'] ?? '').toString();
+					if (status == 'accepted' || status == 'assigned' || status == 'enroute') {
+						if (mounted) context.pushNamed('trackOrder', queryParameters: {'orderId': ref.id});
+					}
+				});
+				// Cancel the subscription after 10 minutes to avoid leaks
+				Future.delayed(const Duration(minutes: 10)).then((_) => sub.cancel());
+			}
+		} finally {
+			if (mounted) setState(() => _submitting = false);
 		}
 	}
 }

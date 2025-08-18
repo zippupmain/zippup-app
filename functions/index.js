@@ -4,6 +4,17 @@ const Stripe = require('stripe');
 const axios = require('axios');
 
 admin.initializeApp();
+async function getMapsKey() {
+  try {
+    const snap = await admin.firestore().doc('_config/maps').get();
+    const k = snap.get('key');
+    if (k) return k;
+  } catch {}
+  const env = process.env.MAPS_KEY || (functions.config().maps && functions.config().maps.key);
+  if (!env) throw new functions.https.HttpsError('failed-precondition', 'Maps key not configured');
+  return env;
+}
+
 
 // Stripe checkout (Callable)
 exports.createStripeCheckout = functions.region('us-central1').https.onCall(async (data, context) => {
@@ -169,7 +180,7 @@ exports.distanceMatrix = functions.region('us-central1').https.onCall(async (dat
 	const origin = data.origin; // "lat,lng"
 	const destinations = data.destinations; // ["lat,lng", ...]
 	if (!origin || !destinations || destinations.length === 0) throw new functions.https.HttpsError('invalid-argument', 'Missing origin/destinations');
-	const key = 'AIzaSyAk22rv_OsFJVXUA-GK0PMdEVqBJcNYozI';
+	const key = await getMapsKey();
 	const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destinations.join('|'))}&key=${key}`;
 	const res = await axios.get(url);
 	return res.data;
@@ -179,7 +190,7 @@ exports.directions = functions.region('us-central1').https.onCall(async (data, c
 	const origin = data.origin; // "lat,lng"
 	const destination = data.destination; // "lat,lng"
 	if (!origin || !destination) throw new functions.https.HttpsError('invalid-argument', 'Missing origin/destination');
-	const key = 'AIzaSyAk22rv_OsFJVXUA-GK0PMdEVqBJcNYozI';
+	const key = await getMapsKey();
 	const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${key}`;
 	const res = await axios.get(url);
 	const route = res.data.routes && res.data.routes[0];
@@ -190,7 +201,7 @@ exports.placesAutocomplete = functions.region('us-central1').https.onCall(async 
 	const input = (data && data.input) || '';
 	const sessiontoken = data && data.sessiontoken;
 	if (!input || input.length < 3) return { predictions: [] };
-	const key = (await admin.firestore().doc('_config/maps').get()).get('key') || process.env.MAPS_KEY || (functions.config().maps && functions.config().maps.key);
+	const key = await getMapsKey();
 	if (!key) throw new functions.https.HttpsError('failed-precondition', 'Maps key not configured');
 	let url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=geocode&key=${key}`;
 	if (sessiontoken) url += `&sessiontoken=${encodeURIComponent(sessiontoken)}`;
@@ -228,7 +239,7 @@ exports.sendPanicAlert = functions.region('us-central1').https.onCall(async (dat
 exports.geocode = functions.region('us-central1').https.onCall(async (data, context) => {
 	const { lat, lng } = data || {};
 	if (typeof lat !== 'number' || typeof lng !== 'number') throw new functions.https.HttpsError('invalid-argument', 'lat,lng required');
-	const key = 'AIzaSyAk22rv_OsFJVXUA-GK0PMdEVqBJcNYozI';
+	const key = await getMapsKey();
 	const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${key}`;
 	const res = await axios.get(url);
 	const results = res.data && res.data.results || [];

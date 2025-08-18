@@ -78,7 +78,7 @@ class LocationService {
 			}
 		}
 		try {
-			final fn = FirebaseFunctions.instance.httpsCallable('geocode');
+			final fn = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('geocode');
 			final res = await fn.call({'lat': p.latitude, 'lng': p.longitude});
 			final data = Map<String, dynamic>.from(res.data as Map);
 			return data['address']?.toString();
@@ -88,7 +88,7 @@ class LocationService {
 	}
 
 	static Future<void> updateUserLocationProfile(Position p) async {
-		final fn = FirebaseFunctions.instance.httpsCallable('geocode');
+		final fn = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('geocode');
 		final res = await fn.call({'lat': p.latitude, 'lng': p.longitude});
 		final data = Map<String, dynamic>.from(res.data as Map);
 		final address = data['address']?.toString();

@@ -46,7 +46,7 @@ class PanicScreen extends StatelessWidget {
                 lng = pos.longitude;
               }
               try {
-                await FirebaseFunctions.instance.httpsCallable('sendPanicAlert').call({
+                await FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('sendPanicAlert').call({
                   'lat': lat,
                   'lng': lng,
                 });
