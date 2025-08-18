@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum OrderCategory { transport, food, groceries, digital, hire, marketplace }
+enum OrderCategory { transport, food, groceries, digital, hire, marketplace, tickets, events, tutors }
 
 enum OrderStatus {
 	pending,
