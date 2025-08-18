@@ -6,6 +6,7 @@ import 'package:zippup/core/config/firebase_options.dart';
 import 'package:zippup/core/routing/app_router.dart';
 import 'package:zippup/core/theme/app_theme.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:zippup/services/notifications/notifications_service.dart';
 
 Future<void> main() async {
 	WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,8 @@ Future<void> main() async {
 		Stripe.publishableKey = stripeKey;
 	}
 	await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+	// Initialize notifications (FCM + local notifications)
+	await NotificationsService.instance.init();
 	runApp(const ProviderScope(child: ZippUpApp()));
 }
 

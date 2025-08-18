@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:zippup/features/cart/providers/cart_provider.dart';
 import 'package:zippup/features/cart/models/cart_item.dart';
+import 'package:zippup/services/payments/payments_service.dart';
 
 class CartScreen extends ConsumerWidget {
 	const CartScreen({super.key});
@@ -12,8 +13,12 @@ class CartScreen extends ConsumerWidget {
 		final items = ref.watch(cartProvider);
 		final notifier = ref.read(cartProvider.notifier);
 		final total = notifier.total;
+		final vendorLocked = items.map((e) => e.vendorId).toSet().length == 1 && items.isNotEmpty;
 		return Scaffold(
-			appBar: AppBar(title: const Text('Cart')),
+			appBar: AppBar(title: const Text('Cart'), actions: [
+				if (items.isNotEmpty)
+					TextButton(onPressed: notifier.clear, child: const Text('Clear', style: TextStyle(color: Colors.white)))
+			]),
 			body: items.isEmpty
 					? const Center(child: Text('Cart is empty'))
 					: ListView.separated(
@@ -45,6 +50,12 @@ class CartScreen extends ConsumerWidget {
 					child: Column(
 						mainAxisSize: MainAxisSize.min,
 						children: [
+							if (vendorLocked)
+								Row(children: [
+									const Icon(Icons.store_mall_directory, size: 16),
+									const SizedBox(width: 6),
+									Expanded(child: Text('Items from a single vendor. To change vendor, clear cart.')),
+								]),
 							Row(
 								children: [
 									Text('Total: ₦${total.toStringAsFixed(2)}', style: Theme.of(context).textTheme.titleMedium),
@@ -62,9 +73,14 @@ class CartScreen extends ConsumerWidget {
 	}
 
 	Future<void> _checkout(BuildContext context, double total, String provider) async {
+		final service = PaymentsService();
 		final currency = 'NGN';
-		// Placeholder: integrate back-end checkout URLs via PaymentsService
-		final url = 'https://example.com/checkout?amount=${total.toStringAsFixed(2)}&provider=$provider&currency=$currency';
+		late String url;
+		if (provider == 'stripe') {
+			url = await service.createStripeCheckout(amount: total, currency: currency);
+		} else {
+			url = await service.createFlutterwaveCheckout(amount: total, currency: currency);
+		}
 		if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open checkout')));
 		}
