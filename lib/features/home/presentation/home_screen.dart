@@ -167,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
 									alignment: Alignment.bottomCenter,
 									child: Padding(
 										padding: const EdgeInsets.only(bottom: 12),
-										child: const _BillboardCarousel(height: 130),
+										child: _BillboardCarousel(height: 130),
 									),
 								),
 							]),
@@ -196,13 +196,13 @@ class _HomeScreenState extends State<HomeScreen> {
 					SliverToBoxAdapter(
 						child: Padding(
 							padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-							child: const _BillboardCarousel(height: 140),
+							child: _BillboardCarousel(height: 140),
 						),
 					),
 					SliverToBoxAdapter(
 						child: Padding(
 							padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-							child: const _BillboardCarousel(height: 140),
+							child: _BillboardCarousel(height: 140),
 						),
 					),
 				],
@@ -235,7 +235,7 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Ride', Icons.directions_car_filled, 'transport', Color(0xFFFFE5E5), Colors.black),
 		_QuickAction('Food', Icons.local_fire_department, 'food', Color(0xFFE8F5E9), Colors.black),
 		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFFFF7E0), Colors.black),
-		_QuickAction('Marketplace', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.black),
+		_QuickAction('Market(P)', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.black),
 		_QuickAction('Digital', Icons.devices_other, 'digital', Color(0xFFE8F5E9), Colors.black),
 		_QuickAction('Emergency', Icons.emergency_share, 'emergency', Color(0xFFFFE5E5), Colors.black),
 		_QuickAction('Others', Icons.category, 'others', Color(0xFFFFE5E5), Colors.black),
@@ -278,9 +278,9 @@ class _QuickActions extends StatelessWidget {
 									),
 									const SizedBox(height: 6),
 									Text(a.title, style: const TextStyle(fontSize: 12, color: Colors.black)),
-								],
-							),
-						);
+							],
+						),
+					);
 					},
 				),
 			),
@@ -438,42 +438,52 @@ class _BillboardCard extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return Padding(
 			padding: const EdgeInsets.symmetric(horizontal: 6),
-			child: Container(
-				decoration: BoxDecoration(
-					borderRadius: BorderRadius.circular(12),
-					gradient: imageUrl == null
-						? const LinearGradient(colors: [Color(0xFF00C6FF), Color(0xFF0072FF)])
-						: null,
-					color: imageUrl == null ? null : Colors.white,
-					boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,2))],
-				),
-				clipBehavior: Clip.antiAlias,
-				child: Stack(
-					fit: StackFit.expand,
-					children: [
-						if (imageUrl != null)
-							CachedNetworkImage(imageUrl: imageUrl!, fit: BoxFit.cover),
-						Container(
-							decoration: BoxDecoration(
-								gradient: LinearGradient(
-									colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.5)],
-									begin: Alignment.topCenter,
-									end: Alignment.bottomCenter,
+			child: InkWell(
+				onTap: () {
+					// Optional: support deep link via title keywords
+					final t = title.toLowerCase();
+					if (t.contains('taxi') || t.contains('ride')) context.push('/transport');
+					else if (t.contains('plumber') || t.contains('plumbers')) context.push('/hire');
+					else if (t.contains('food')) context.push('/food');
+					else if (t.contains('market')) context.push('/marketplace');
+				},
+				child: Container(
+					decoration: BoxDecoration(
+						borderRadius: BorderRadius.circular(12),
+						gradient: imageUrl == null
+							? const LinearGradient(colors: [Color(0xFF00C6FF), Color(0xFF0072FF)])
+							: null,
+						color: imageUrl == null ? null : Colors.white,
+						boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,2))],
+					),
+					clipBehavior: Clip.antiAlias,
+					child: Stack(
+						fit: StackFit.expand,
+						children: [
+							if (imageUrl != null)
+								CachedNetworkImage(imageUrl: imageUrl!, fit: BoxFit.cover),
+							Container(
+								decoration: BoxDecoration(
+									gradient: LinearGradient(
+										colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.5)],
+										begin: Alignment.topCenter,
+										end: Alignment.bottomCenter,
+									),
 								),
 							),
+						Padding(
+							padding: const EdgeInsets.all(12),
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+									const SizedBox(height: 4),
+									Text(subtitle, style: const TextStyle(color: Colors.white, fontSize: 12)),
+								],
+							),
 						),
-					Padding(
-						padding: const EdgeInsets.all(12),
-						child: Column(
-							crossAxisAlignment: CrossAxisAlignment.start,
-							children: [
-								Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-								const SizedBox(height: 4),
-								Text(subtitle, style: const TextStyle(color: Colors.white, fontSize: 12)),
-							],
-						),
+					],
 					),
-				],
 				),
 			),
 		);

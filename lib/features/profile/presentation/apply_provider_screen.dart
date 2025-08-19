@@ -33,6 +33,10 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	final _vehicleModel = TextEditingController();
 	final List<Uint8List> _vehiclePhotos = [];
 	final List<File> _vehiclePhotoFiles = [];
+	// Rentals hierarchy state and extra fields
+	String? _rentalSubtype;
+	final _description = TextEditingController();
+	final _size = TextEditingController();
 
 	final Map<String, List<String>> _subcategories = const {
 		'transport': ['Taxi', 'Bike', 'Bus', 'Tricycle', 'Courier'],
@@ -109,6 +113,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'address': _address.text.trim(),
 				'category': _category,
 				'subcategory': _subcategory,
+				'rentalSubtype': _rentalSubtype,
 				'type': _type,
 				'title': _title.text.trim(),
 				'idUrl': idUrl,
@@ -118,6 +123,8 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'vehiclePlate': _vehiclePlate.text.trim().isEmpty ? null : _vehiclePlate.text.trim(),
 				'vehicleModel': _vehicleModel.text.trim().isEmpty ? null : _vehicleModel.text.trim(),
 				'vehiclePhotoUrls': vehicleUrls,
+				'description': _description.text.trim().isEmpty ? null : _description.text.trim(),
+				'size': _size.text.trim().isEmpty ? null : _size.text.trim(),
 				'status': 'pending',
 				'createdAt': DateTime.now().toIso8601String(),
 			});
@@ -155,7 +162,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 						DropdownMenuItem(value: 'emergency', child: Text('Emergency')),
 						DropdownMenuItem(value: 'personal', child: Text('Personal')),
 						DropdownMenuItem(value: 'others', child: Text('Others')),
-					], onChanged: (v) => setState(() { _category = v as String; _subcategory = null; }), decoration: const InputDecoration(labelText: 'Service category')),
+					], onChanged: (v) => setState(() { _category = v as String; _subcategory = null; _rentalSubtype = null; }), decoration: const InputDecoration(labelText: 'Service category')),
 					if (subs.isNotEmpty)
 						DropdownButtonFormField<String>(
 							value: _subcategory,
@@ -168,7 +175,52 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 						DropdownMenuItem(value: 'company', child: Text('Company')),
 					], onChanged: (v) => setState(() => _type = v as String), decoration: const InputDecoration(labelText: 'Type')),
 					TextField(controller: _title, decoration: const InputDecoration(labelText: 'Service title')),
-					if (['transport','moving','rentals'].contains(_category)) ...[
+					if (_category == 'rentals' && _subcategory == 'Vehicle')
+						DropdownButtonFormField<String>(
+							value: _rentalSubtype,
+							items: const [
+								DropdownMenuItem(value: 'Luxury car', child: Text('Luxury car')),
+								DropdownMenuItem(value: 'Normal car', child: Text('Normal car')),
+								DropdownMenuItem(value: 'Bus', child: Text('Bus')),
+								DropdownMenuItem(value: 'Truck', child: Text('Truck')),
+								DropdownMenuItem(value: 'Tractor', child: Text('Tractor')),
+							],
+							onChanged: (v) => setState(() => _rentalSubtype = v),
+							decoration: const InputDecoration(labelText: 'Vehicle subtype'),
+						),
+					if (_category == 'rentals' && _subcategory == 'Houses') ...[
+						DropdownButtonFormField<String>(
+							value: _rentalSubtype,
+							items: const [
+								DropdownMenuItem(value: 'Apartment', child: Text('Apartment')),
+								DropdownMenuItem(value: 'Shortlet', child: Text('Shortlet')),
+								DropdownMenuItem(value: 'Event hall', child: Text('Event hall')),
+								DropdownMenuItem(value: 'Office space', child: Text('Office space')),
+								DropdownMenuItem(value: 'Warehouse', child: Text('Warehouse')),
+							],
+							onChanged: (v) => setState(() => _rentalSubtype = v),
+							decoration: const InputDecoration(labelText: 'Property subtype'),
+						),
+						TextField(controller: _title, decoration: const InputDecoration(labelText: 'Listing title')),
+						TextField(controller: _description, maxLines: 3, decoration: const InputDecoration(labelText: 'Description')),
+						TextField(controller: _size, decoration: const InputDecoration(labelText: 'Size (e.g., 3-bedroom / 120sqm)')),
+					],
+					if (_category == 'rentals' && _subcategory == 'Other rentals') ...[
+						DropdownButtonFormField<String>(
+							value: _rentalSubtype,
+							items: const [
+								DropdownMenuItem(value: 'Equipment', child: Text('Equipment')),
+								DropdownMenuItem(value: 'Instruments', child: Text('Instruments')),
+								DropdownMenuItem(value: 'Party items', child: Text('Party items')),
+								DropdownMenuItem(value: 'Tools', child: Text('Tools')),
+							],
+							onChanged: (v) => setState(() => _rentalSubtype = v),
+							decoration: const InputDecoration(labelText: 'Other subtype'),
+						),
+						TextField(controller: _title, decoration: const InputDecoration(labelText: 'Title')),
+						TextField(controller: _description, maxLines: 3, decoration: const InputDecoration(labelText: 'Description')),
+					],
+					if (_category == 'transport' || _category == 'moving' || (_category == 'rentals' && _subcategory == 'Vehicle')) ...[
 						const SizedBox(height: 8),
 						const Text('Vehicle details', style: TextStyle(fontWeight: FontWeight.bold)),
 						TextField(controller: _vehicleBrand, decoration: const InputDecoration(labelText: 'Brand / make')),
