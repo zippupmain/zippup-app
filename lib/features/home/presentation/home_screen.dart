@@ -502,6 +502,7 @@ class _UserAvatar extends StatelessWidget {
 					height: 28,
 					fit: BoxFit.cover,
 					errorBuilder: (_, __, ___) => const Icon(Icons.person),
+					headers: const { 'Cache-Control': 'no-cache' },
 				),
 			);
 		}
