@@ -8,7 +8,7 @@ class DefaultFirebaseOptions {
       messagingSenderId: '529547739475',
       projectId: 'zippup-3b5c6',
       authDomain: 'zippup-3b5c6.firebaseapp.com',
-      storageBucket: 'zippup-3b5c6.firebasestorage.app',
+      storageBucket: 'zippup-3b5c6.appspot.com',
     );
   }
 }
