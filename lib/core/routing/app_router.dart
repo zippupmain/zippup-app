@@ -317,6 +317,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MapBookingScreen(),
       ),
       GoRoute(
+        path: '/live',
+        name: 'liveMap',
+        builder: (context, state) => const MapBookingScreen(),
+      ),
+      GoRoute(
         path: '/moving',
         name: 'moving',
         builder: (context, state) => const MovingScreen(),

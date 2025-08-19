@@ -85,7 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
 				setState(() => _locationText = 'Location unavailable');
 				return;
 			}
-			// Keep detecting text; resolve to address
 			setState(() => _locationText = 'Detecting location…');
 			(() async {
 				final addr = await LocationService.reverseGeocode(pos);
@@ -121,12 +120,18 @@ class _HomeScreenState extends State<HomeScreen> {
 				title: const Text('ZippUp'),
 				actions: [
 					IconButton(onPressed: () => context.push('/cart'), icon: const Icon(Icons.shopping_cart_outlined)),
-					IconButton(
-						onPressed: () => context.push('/notifications'),
-						icon: Stack(children: [
-							const Icon(Icons.notifications_none),
-							_PositionedUnreadDot(),
-						]),
+					StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+						stream: FirebaseFirestore.instance.collection('notifications').where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '').where('read', isEqualTo: false).snapshots(),
+						builder: (context, snap) {
+							final unread = (snap.data?.docs.length ?? 0) > 0;
+							return IconButton(
+								onPressed: () => context.push('/notifications'),
+								icon: Stack(children: [
+									const Icon(Icons.notifications_none),
+									if (unread) const Positioned(right: 0, top: 0, child: Icon(Icons.brightness_1, color: Colors.red, size: 10)),
+								]),
+							);
+						},
 					),
 					PopupMenuButton(
 						icon: _UserAvatar(),
@@ -243,6 +248,7 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Ride', Icons.directions_car_filled, 'transport', Color(0xFFFFE5E5), Colors.black),
 		_QuickAction('Food', Icons.local_fire_department, 'food', Color(0xFFE8F5E9), Colors.black),
 		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFFFF7E0), Colors.black),
+		_QuickAction('Live Map', Icons.navigation, 'liveMap', Color(0xFFE3F2FD), Colors.black),
 		_QuickAction('Market(P)', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.black),
 		_QuickAction('Digital', Icons.devices_other, 'digital', Color(0xFFE8F5E9), Colors.black),
 		_QuickAction('Emergency', Icons.emergency_share, 'emergency', Color(0xFFFFE5E5), Colors.black),
@@ -396,7 +402,7 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 				await Future.delayed(const Duration(seconds: 4));
 				if (!mounted) break;
 				_index++;
-				_controller.animateToPage(_index % 5, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+				_controller.animateToPage(_index, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
 			}
 		});
 	}
@@ -408,25 +414,22 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 				stream: FirebaseFirestore.instance.collection('promos').orderBy('createdAt', descending: true).limit(5).snapshots(),
 				builder: (context, snapshot) {
 					final docs = snapshot.data?.docs ?? const [];
-					if (docs.isEmpty) {
-						return PageView.builder(
-							controller: _controller,
-							itemBuilder: (_, i) => const _BillboardCard(
-								title: 'ZippUp! One Tap. All Services.',
-								subtitle: 'Everything you need, in one app.',
-								imageUrl: null,
-							),
-							itemCount: 5,
-						);
-					}
+					final count = docs.isNotEmpty ? docs.length : 1;
 					return PageView.builder(
 						controller: _controller,
-						itemCount: docs.length,
+						itemCount: count,
 						itemBuilder: (context, i) {
-							final data = docs[i].data();
+							if (docs.isEmpty) {
+								return const _BillboardCard(
+									title: 'ZippUp! One Tap. All Services.',
+									subtitle: 'Everything you need, in one app.',
+									imageUrl: null,
+								);
+							}
+							final data = docs[i % docs.length].data();
 							return _BillboardCard(
 								title: (data['title'] ?? '').toString(),
-								subtitle: (data['subtitle'] ?? '').toString(),
+								subtitle: (data['subtitle'] ?? data['description'] ?? '').toString(),
 								imageUrl: (data['imageUrl'] ?? '').toString().isEmpty ? null : (data['imageUrl'] as String),
 							);
 						},
@@ -448,7 +451,6 @@ class _BillboardCard extends StatelessWidget {
 			padding: const EdgeInsets.symmetric(horizontal: 6),
 			child: InkWell(
 				onTap: () {
-					// Optional: support deep link via title keywords
 					final t = title.toLowerCase();
 					if (t.contains('taxi') || t.contains('ride')) context.push('/transport');
 					else if (t.contains('plumber') || t.contains('plumbers')) context.push('/hire');
@@ -495,5 +497,17 @@ class _BillboardCard extends StatelessWidget {
 				),
 			),
 		);
+	}
+}
+
+class _UserAvatar extends StatelessWidget {
+	@override
+	Widget build(BuildContext context) {
+		final u = FirebaseAuth.instance.currentUser;
+		final url = u?.photoURL;
+		if (url != null && url.isNotEmpty) {
+			return ClipOval(child: CachedNetworkImage(imageUrl: url, width: 28, height: 28, fit: BoxFit.cover));
+		}
+		return const Icon(Icons.person);
 	}
 }

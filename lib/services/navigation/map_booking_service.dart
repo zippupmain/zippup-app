@@ -23,6 +23,7 @@ class MapBookingService {
 	// Tracking variables
 	LatLng? _driverLocation;
 	Timer? _trackingTimer;
+	StreamSubscription<Position>? _positionSub;
 
 	// Getters
 	LatLng? get currentLocation => _currentLocation;
@@ -34,33 +35,55 @@ class MapBookingService {
 		try {
 			final serviceEnabled = await Geolocator.isLocationServiceEnabled();
 			if (!serviceEnabled) {
-				throw Exception('Location services are disabled.');
+				_currentAddress = 'Location services disabled';
+				currentAddressNotifier.value = _currentAddress;
+				return;
 			}
 
 			LocationPermission permission = await Geolocator.checkPermission();
 			if (permission == LocationPermission.denied) {
 				permission = await Geolocator.requestPermission();
-				if (permission == LocationPermission.denied) {
-					throw Exception('Location permissions are denied');
-				}
 			}
 			if (permission == LocationPermission.deniedForever) {
-				throw Exception('Location permissions are permanently denied');
+				_currentAddress = 'Location permission denied';
+				currentAddressNotifier.value = _currentAddress;
+				return;
 			}
 
-			final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-			_currentLocation = LatLng(position.latitude, position.longitude);
-			currentLocationNotifier.value = _currentLocation;
-
-			// Get address from coordinates
-			final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-			if (placemarks.isNotEmpty) {
-				final place = placemarks[0];
-				_currentAddress = [place.street, place.locality, place.country].where((e) => (e ?? '').toString().trim().isNotEmpty).join(', ');
-			} else {
-				_currentAddress = 'Address unavailable';
+			final last = await Geolocator.getLastKnownPosition();
+			if (last != null) {
+				_currentLocation = LatLng(last.latitude, last.longitude);
+				currentLocationNotifier.value = _currentLocation;
+				_markCurrentLocationMarker();
 			}
-			currentAddressNotifier.value = _currentAddress;
+			// Try to get a fresh position with timeout
+			final fresh = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high).timeout(const Duration(seconds: 6), onTimeout: () => last);
+			if (fresh != null) {
+				_currentLocation = LatLng(fresh.latitude, fresh.longitude);
+				currentLocationNotifier.value = _currentLocation;
+				_markCurrentLocationMarker();
+				// Get address from coordinates
+				try {
+					final placemarks = await placemarkFromCoordinates(fresh.latitude, fresh.longitude);
+					if (placemarks.isNotEmpty) {
+						final place = placemarks[0];
+						_currentAddress = [place.street, place.locality, place.country].where((e) => (e ?? '').toString().trim().isNotEmpty).join(', ');
+					} else {
+						_currentAddress = 'Address unavailable';
+					}
+					currentAddressNotifier.value = _currentAddress;
+				} catch (_) {
+					_currentAddress = 'Address unavailable';
+					currentAddressNotifier.value = _currentAddress;
+				}
+			}
+			// Subscribe to updates to keep marker in sync
+			_positionSub?.cancel();
+			_positionSub = Geolocator.getPositionStream(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10)).listen((p) {
+				_currentLocation = LatLng(p.latitude, p.longitude);
+				currentLocationNotifier.value = _currentLocation;
+				_markCurrentLocationMarker();
+			});
 		} catch (e) {
 			debugPrint('Location error: $e');
 			_currentAddress = 'Location unavailable';
@@ -68,17 +91,24 @@ class MapBookingService {
 		}
 	}
 
-	/// Initialize the map view by centering and adding simulated nearby markers
-	Future<void> populateInitialMarkers() async {
+	void _markCurrentLocationMarker() {
 		if (_currentLocation == null) return;
-		final set = <Marker>{};
-		// Add current location marker
+		final set = Set<Marker>.from(markersNotifier.value);
+		set.removeWhere((m) => m.markerId == const MarkerId('current_location'));
 		set.add(Marker(
 			markerId: const MarkerId('current_location'),
 			position: _currentLocation!,
 			infoWindow: const InfoWindow(title: 'Your Location'),
-			icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+			icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
 		));
+		markersNotifier.value = set;
+	}
+
+	/// Initialize the map view by centering and adding simulated nearby markers
+	Future<void> populateInitialMarkers() async {
+		if (_currentLocation == null) return;
+		final set = <Marker>{};
+		// current location will be added by _markCurrentLocationMarker
 		// Add simulated nearby markers
 		final rng = Random();
 		for (int i = 0; i < 5; i++) {
@@ -92,6 +122,7 @@ class MapBookingService {
 			));
 		}
 		markersNotifier.value = set;
+		_markCurrentLocationMarker();
 	}
 
 	/// Start live tracking for a booking
@@ -121,6 +152,15 @@ class MapBookingService {
 				infoWindow: const InfoWindow(title: 'Destination'),
 				icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
 			));
+			// user marker
+			if (_currentLocation != null) {
+				set.add(Marker(
+					markerId: const MarkerId('current_location'),
+					position: _currentLocation!,
+					infoWindow: const InfoWindow(title: 'You'),
+					icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+				));
+			}
 			markersNotifier.value = set;
 		}
 
@@ -183,5 +223,6 @@ class MapBookingService {
 	/// Dispose resources
 	void dispose() {
 		_trackingTimer?.cancel();
+		_positionSub?.cancel();
 	}
 }
