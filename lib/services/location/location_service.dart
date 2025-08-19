@@ -64,7 +64,7 @@ class LocationService {
 	}
 
 	static Future<String?> reverseGeocode(Position p) async {
-		// Prefer platform geocoding where supported; fallback to Cloud Function
+		// Prefer platform geocoding where supported
 		if (!kIsWeb) {
 			try {
 				final places = await gc.placemarkFromCoordinates(p.latitude, p.longitude);
@@ -76,32 +76,26 @@ class LocationService {
 						.join(', ');
 				}
 			} catch (_) {
-				// fall through to cloud
+				// fall through
 			}
 		}
+		// Use open reverse geocoding (Nominatim) on web or as fallback
 		try {
-			final fn = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('geocode');
-			final res = await fn.call({'lat': p.latitude, 'lng': p.longitude});
-			final data = Map<String, dynamic>.from(res.data as Map);
-			return data['address']?.toString();
+			final uri = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${p.latitude}&lon=${p.longitude}');
+			final client = HttpClient();
+			final req = await client.getUrl(uri);
+			req.headers.set('User-Agent', 'ZippUp/1.0');
+			final resp = await req.close();
+			final body = await resp.transform(const Utf8Decoder()).join();
+			final json = jsonDecode(body) as Map<String, dynamic>;
+			return (json['display_name'] as String?) ?? 'Address unavailable';
 		} catch (_) {
-			// Web fallback to Nominatim if callable blocked by CORS
-			try {
-				final uri = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${p.latitude}&lon=${p.longitude}');
-				final client = HttpClient();
-				final req = await client.getUrl(uri);
-				req.headers.set('User-Agent', 'ZippUp/1.0');
-				final resp = await req.close();
-				final body = await resp.transform(const Utf8Decoder()).join();
-				final json = jsonDecode(body) as Map<String, dynamic>;
-				return (json['display_name'] as String?) ?? 'Address unavailable';
-			} catch (_) {
-				return null;
-			}
+			return null;
 		}
 	}
 
 	static Future<void> updateUserLocationProfile(Position p) async {
+		if (kIsWeb) return; // skip on web to avoid CORS
 		try {
 			final fn = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('geocode');
 			final res = await fn.call({'lat': p.latitude, 'lng': p.longitude});
@@ -116,8 +110,6 @@ class LocationService {
 				'country': country,
 				'countryCode': countryCode,
 			}, SetOptions(merge: true));
-		} catch (_) {
-			// ignore failures on web to avoid crash
-		}
+		} catch (_) {}
 	}
 }
