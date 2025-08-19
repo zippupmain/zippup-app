@@ -50,7 +50,10 @@ class MapBookingService {
 				return;
 			}
 
-			final last = await Geolocator.getLastKnownPosition();
+			Position? last;
+			if (!kIsWeb) {
+				try { last = await Geolocator.getLastKnownPosition(); } catch (_) { last = null; }
+			}
 			if (last != null) {
 				_currentLocation = LatLng(last.latitude, last.longitude);
 				currentLocationNotifier.value = _currentLocation;
@@ -93,13 +96,15 @@ class MapBookingService {
 					currentAddressNotifier.value = _currentAddress;
 				}
 			}
-			// Subscribe to updates to keep marker in sync
+			// Subscribe to updates to keep marker in sync (guard on web)
 			_positionSub?.cancel();
-			_positionSub = Geolocator.getPositionStream(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10)).listen((p) {
-				_currentLocation = LatLng(p.latitude, p.longitude);
-				currentLocationNotifier.value = _currentLocation;
-				_markCurrentLocationMarker();
-			});
+			try {
+				_positionSub = Geolocator.getPositionStream(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10)).listen((p) {
+					_currentLocation = LatLng(p.latitude, p.longitude);
+					currentLocationNotifier.value = _currentLocation;
+					_markCurrentLocationMarker();
+				});
+			} catch (_) {/* ignore on web if unsupported */}
 		} catch (e) {
 			debugPrint('Location error: $e');
 			_currentAddress = 'Location unavailable';
