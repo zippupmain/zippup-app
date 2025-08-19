@@ -75,6 +75,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			}
 			final name = _name.text.trim();
 			await u.updateDisplayName(name);
+			// Save private profile
 			await FirebaseFirestore.instance.collection('users').doc(u.uid).set({
 				'uid': u.uid,
 				'name': name,
@@ -82,6 +83,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 				'photoUrl': url,
 				'updatedAt': FieldValue.serverTimestamp(),
 			}, SetOptions(merge: true));
+			// Save public profile (name + photo only)
+			await FirebaseFirestore.instance.collection('public_profiles').doc(u.uid).set({
+				'name': name,
+				'photoUrl': url,
+				'updatedAt': FieldValue.serverTimestamp(),
+			});
 			await u.reload();
 			final doc = await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
 			final fresh = (doc.data() ?? const {})['photoUrl']?.toString() ?? url;

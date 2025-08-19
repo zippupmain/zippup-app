@@ -81,8 +81,8 @@ class _TransportScreenState extends State<TransportScreen> {
 			}
 			final km = meters / 1000.0;
 			final mins = (seconds / 60).round();
-			final base = _type == 'bike' ? 300.0 : _type == 'truck' ? 1500.0 : 700.0;
-			final perKm = _type == 'bike' ? 100.0 : _type == 'truck' ? 350.0 : 200.0;
+			final base = _type == 'bike' ? 300.0 : _type == 'bus' ? 900.0 : _type == 'tricycle' ? 500.0 : 700.0;
+			final perKm = _type == 'bike' ? 100.0 : _type == 'bus' ? 220.0 : _type == 'tricycle' ? 140.0 : 200.0;
 			final perMin = 15.0;
 			setState(() {
 				_fare = base + km * perKm + mins * perMin;
@@ -155,12 +155,13 @@ class _TransportScreenState extends State<TransportScreen> {
 				padding: const EdgeInsets.all(16),
 				children: [
 					ToggleButtons(
-						isSelected: ['taxi', 'bike', 'truck'].map((e) => _type == e).toList(),
-						onPressed: (i) => setState(() => _type = ['taxi', 'bike', 'truck'][i]),
+						isSelected: ['taxi', 'bus', 'tricycle', 'bike'].map((e) => _type == e).toList(),
+						onPressed: (i) => setState(() => _type = ['taxi', 'bus', 'tricycle', 'bike'][i]),
 						children: const [
 							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Taxi')),
+							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Bus')),
+							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Tricycle')),
 							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Bike')),
-							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Truck')),
 						],
 					),
 					const SizedBox(height: 12),
