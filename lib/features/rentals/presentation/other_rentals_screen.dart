@@ -16,6 +16,8 @@ class _OtherRentalsScreenState extends State<OtherRentalsScreen> {
 	String _selected = 'Equipment';
 	final TextEditingController _days = TextEditingController(text: '1');
 	DateTime? _startDate;
+	TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
+	TimeOfDay _endTime = const TimeOfDay(hour: 9, minute: 0);
 	geo.Position? _me;
 	String _sort = 'nearest';
 
@@ -57,11 +59,25 @@ class _OtherRentalsScreenState extends State<OtherRentalsScreen> {
 		setState(() => _startDate = picked);
 	}
 
+	Future<void> _pickTime({required bool isStart}) async {
+		final base = isStart ? _startTime : _endTime;
+		final picked = await showTimePicker(context: context, initialTime: base);
+		if (picked == null) return;
+		setState(() { if (isStart) _startTime = picked; else _endTime = picked; });
+	}
+
 	Future<void> _bookProvider(String providerId, Map<String, dynamic> provider) async {
 		try {
 			final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
 			final daily = (provider['dailyPrice'] is num) ? (provider['dailyPrice'] as num).toDouble() : 0.0;
 			final total = daily * _numDays;
+			DateTime? startDateTime;
+			DateTime? endDateTime;
+			if (_startDate != null) {
+				startDateTime = DateTime(_startDate!.year, _startDate!.month, _startDate!.day, _startTime.hour, _startTime.minute);
+				endDateTime = startDateTime.add(Duration(days: _numDays));
+				endDateTime = DateTime(endDateTime.year, endDateTime.month, endDateTime.day, _endTime.hour, _endTime.minute);
+			}
 			await FirebaseFirestore.instance.collection('rental_requests').add({
 				'userId': uid,
 				'providerId': providerId,
@@ -72,6 +88,10 @@ class _OtherRentalsScreenState extends State<OtherRentalsScreen> {
 				'numDays': _numDays,
 				'dailyPrice': daily,
 				'totalPrice': total,
+				'startTime': '${_startTime.hour}:${_startTime.minute.toString().padLeft(2,'0')}',
+				'endTime': '${_endTime.hour}:${_endTime.minute.toString().padLeft(2,'0')}',
+				'startDateTime': startDateTime?.toIso8601String(),
+				'endDateTime': endDateTime?.toIso8601String(),
 				'status': 'requested',
 				'createdAt': DateTime.now().toIso8601String(),
 			});
@@ -97,7 +117,12 @@ class _OtherRentalsScreenState extends State<OtherRentalsScreen> {
 				Padding(
 					padding: const EdgeInsets.symmetric(horizontal: 16),
 					child: Row(children: [
-						Expanded(child: ListTile(title: const Text('Start date'), subtitle: Text(_startDate == null ? 'Choose' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}'), onTap: _pickStartDate)),
+						OutlinedButton.icon(onPressed: _pickStartDate, icon: const Icon(Icons.calendar_today), label: Text(_startDate == null ? 'Select date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}')),
+						const SizedBox(width: 8),
+						OutlinedButton.icon(onPressed: () => _pickTime(isStart: true), icon: const Icon(Icons.schedule), label: Text('Start ${_startTime.format(context)}')),
+						const SizedBox(width: 8),
+						OutlinedButton.icon(onPressed: () => _pickTime(isStart: false), icon: const Icon(Icons.schedule_outlined), label: Text('End ${_endTime.format(context)}')),
+						const Spacer(),
 						SizedBox(
 							width: 120,
 							child: TextField(
