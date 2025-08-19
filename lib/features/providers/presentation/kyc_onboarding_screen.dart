@@ -144,7 +144,7 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 					TextField(controller: _idNumber, decoration: const InputDecoration(labelText: 'ID number')),
 					ListTile(title: const Text('ID photo'), trailing: const Icon(Icons.upload_file), subtitle: Text(_idImageBytes != null || _idImageFile != null ? 'Selected' : 'Not uploaded'), onTap: () => _chooseSourceAndPick((src) => _pickSingle(src, (b,f){ _idImageBytes=b; _idImageFile=f; }))),
 					ListTile(title: const Text('Proof of address/bank (multi)'), trailing: const Icon(Icons.upload_file), subtitle: Text('${_proofBytes.length + _proofFiles.length} selected'), onTap: _pickMultiProof),
-					ListTile(title: const Text('Selfie (face verification)'), trailing: const Icon(Icons.camera_alt_outlined), subtitle: Text(_selfieBytes != null || _selfieFile != null ? 'Selected' : 'Not captured'), onTap: () => _chooseSourceAndPick((src) => _pickSingle(src, (b,f){ _selfieBytes=b; _selfieFile=f; }))),
+					ListTile(title: const Text('Capture selfie now'), trailing: const Icon(Icons.camera_alt_outlined), subtitle: Text(_selfieBytes != null || _selfieFile != null ? 'Captured' : 'Not captured'), onTap: () => _pickSingle(ImageSource.camera, (b,f){ _selfieBytes=b; _selfieFile=f; })),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _saving ? null : _submit, child: Text(_saving ? 'Submitting...' : 'Submit')),
 				],
