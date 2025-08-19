@@ -16,6 +16,9 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 	String _selected = 'Apartment';
 	final TextEditingController _days = TextEditingController(text: '1');
 	DateTime? _startDate;
+	DateTime? _endDate;
+	bool _useEndDate = false;
+	bool _yearlyApartment = false;
 	TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
 	TimeOfDay _endTime = const TimeOfDay(hour: 9, minute: 0);
 	geo.Position? _me;
@@ -48,6 +51,11 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 	}
 
 	int get _numDays {
+		if (_yearlyApartment && _selected == 'Apartment') return 365;
+		if (_useEndDate && _startDate != null && _endDate != null) {
+			final diff = _endDate!.difference(_startDate!).inDays;
+			return diff <= 0 ? 1 : diff;
+		}
 		final v = int.tryParse(_days.text.trim());
 		return v == null || v <= 0 ? 1 : v;
 	}
@@ -57,6 +65,13 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 		final picked = await showDatePicker(context: context, firstDate: now, lastDate: now.add(const Duration(days: 365)), initialDate: _startDate ?? now);
 		if (picked == null) return;
 		setState(() => _startDate = picked);
+	}
+
+	Future<void> _pickEndDate() async {
+		final base = _startDate ?? DateTime.now();
+		final picked = await showDatePicker(context: context, firstDate: base, lastDate: base.add(const Duration(days: 365*2)), initialDate: _endDate ?? base.add(const Duration(days: 1)));
+		if (picked == null) return;
+		setState(() => _endDate = picked);
 	}
 
 	Future<void> _pickTime({required bool isStart}) async {
@@ -75,8 +90,12 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 			DateTime? endDateTime;
 			if (_startDate != null) {
 				startDateTime = DateTime(_startDate!.year, _startDate!.month, _startDate!.day, _startTime.hour, _startTime.minute);
-				endDateTime = startDateTime.add(Duration(days: _numDays));
-				endDateTime = DateTime(endDateTime.year, endDateTime.month, endDateTime.day, _endTime.hour, _endTime.minute);
+				if (_useEndDate && _endDate != null) {
+					endDateTime = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, _endTime.hour, _endTime.minute);
+				} else {
+					endDateTime = startDateTime.add(Duration(days: _numDays));
+					endDateTime = DateTime(endDateTime.year, endDateTime.month, endDateTime.day, _endTime.hour, _endTime.minute);
+				}
 			}
 			await FirebaseFirestore.instance.collection('rental_requests').add({
 				'userId': uid,
@@ -85,6 +104,7 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 				'subcategory': 'Houses',
 				'rentalSubtype': _selected,
 				'startDate': _startDate?.toIso8601String(),
+				'endDate': _endDate?.toIso8601String(),
 				'numDays': _numDays,
 				'dailyPrice': daily,
 				'totalPrice': total,
@@ -92,6 +112,8 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 				'endTime': '${_endTime.hour}:${_endTime.minute.toString().padLeft(2,'0')}',
 				'startDateTime': startDateTime?.toIso8601String(),
 				'endDateTime': endDateTime?.toIso8601String(),
+				'yearly': _yearlyApartment && _selected == 'Apartment',
+				'useEndDate': _useEndDate,
 				'status': 'requested',
 				'createdAt': DateTime.now().toIso8601String(),
 			});
@@ -112,37 +134,55 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 				SingleChildScrollView(
 					scrollDirection: Axis.horizontal,
 					padding: const EdgeInsets.all(8),
-					child: Wrap(spacing: 8, children: _subtypes.map((t) => ChoiceChip(label: Text(t), selected: _selected == t, onSelected: (_) => setState(() => _selected = t))).toList()),
+					child: Wrap(spacing: 8, children: _subtypes.map((t) => ChoiceChip(label: Text(t), selected: _selected == t, onSelected: (_) => setState(() { _selected = t; if (_selected != 'Apartment') _yearlyApartment = false; }))).toList()),
 				),
 				Padding(
 					padding: const EdgeInsets.symmetric(horizontal: 16),
-					child: Row(children: [
-						OutlinedButton.icon(onPressed: _pickStartDate, icon: const Icon(Icons.calendar_today), label: Text(_startDate == null ? 'Select date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}')),
-						const SizedBox(width: 8),
-						OutlinedButton.icon(onPressed: () => _pickTime(isStart: true), icon: const Icon(Icons.schedule), label: Text('Start ${_startTime.format(context)}')),
-						const SizedBox(width: 8),
-						OutlinedButton.icon(onPressed: () => _pickTime(isStart: false), icon: const Icon(Icons.schedule_outlined), label: Text('End ${_endTime.format(context)}')),
-						const Spacer(),
-						SizedBox(
-							width: 120,
-							child: TextField(
-								controller: _days,
-								keyboardType: TextInputType.number,
-								decoration: const InputDecoration(labelText: 'Days'),
-								onChanged: (_) => setState(() {}),
+					child: Column(children: [
+						Row(children: [
+							OutlinedButton.icon(onPressed: _pickStartDate, icon: const Icon(Icons.calendar_today), label: Text(_startDate == null ? 'Select start date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}')),
+							const SizedBox(width: 8),
+							if (_useEndDate)
+								OutlinedButton.icon(onPressed: _pickEndDate, icon: const Icon(Icons.calendar_month), label: Text(_endDate == null ? 'Select end date' : '${_endDate!.year}-${_endDate!.month.toString().padLeft(2,'0')}-${_endDate!.day.toString().padLeft(2,'0')}')),
+							const Spacer(),
+							if (!_useEndDate && !(_yearlyApartment && _selected == 'Apartment'))
+								SizedBox(
+									width: 120,
+									child: TextField(
+										controller: _days,
+										keyboardType: TextInputType.number,
+										decoration: const InputDecoration(labelText: 'Days'),
+										onChanged: (_) => setState(() {}),
+									),
+								),
+						]),
+						Row(children: [
+							OutlinedButton.icon(onPressed: () => _pickTime(isStart: true), icon: const Icon(Icons.schedule), label: Text('Start ${_startTime.format(context)}')),
+							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: () => _pickTime(isStart: false), icon: const Icon(Icons.schedule_outlined), label: Text('End ${_endTime.format(context)}')),
+							const Spacer(),
+							DropdownButton<String>(
+								value: _sort,
+								items: const [
+									DropdownMenuItem(value: 'nearest', child: Text('Nearest')),
+									DropdownMenuItem(value: 'price_asc', child: Text('Price: Low to High')),
+									DropdownMenuItem(value: 'price_desc', child: Text('Price: High to Low')),
+									DropdownMenuItem(value: 'rating', child: Text('Rating')),
+								],
+								onChanged: (v) => setState(() => _sort = v ?? 'nearest'),
 							),
+						]),
+						SwitchListTile(
+							title: const Text('Pick end date'),
+							value: _useEndDate,
+							onChanged: (v) => setState(() { _useEndDate = v; if (v) { _yearlyApartment = false; } }),
 						),
-						const SizedBox(width: 12),
-						DropdownButton<String>(
-							value: _sort,
-							items: const [
-								DropdownMenuItem(value: 'nearest', child: Text('Nearest')),
-								DropdownMenuItem(value: 'price_asc', child: Text('Price: Low to High')),
-								DropdownMenuItem(value: 'price_desc', child: Text('Price: High to Low')),
-								DropdownMenuItem(value: 'rating', child: Text('Rating')),
-							],
-							onChanged: (v) => setState(() => _sort = v ?? 'nearest'),
-						),
+						if (_selected == 'Apartment')
+							SwitchListTile(
+								title: const Text('Yearly (365 days)'),
+								value: _yearlyApartment,
+								onChanged: (v) => setState(() { _yearlyApartment = v; if (v) { _useEndDate = false; _days.text = '365'; } }),
+							),
 					]),
 				),
 				const Divider(height: 1),
