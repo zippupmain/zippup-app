@@ -53,85 +53,89 @@ import 'package:zippup/features/rentals/presentation/vehicle_rentals_screen.dart
 import 'package:zippup/features/rentals/presentation/rentals_hub_screen.dart';
 import 'package:zippup/features/rentals/presentation/house_rentals_screen.dart';
 import 'package:zippup/features/rentals/presentation/other_rentals_screen.dart';
+// Added provider onboarding/management imports
+import 'package:zippup/features/providers/presentation/kyc_onboarding_screen.dart';
+import 'package:zippup/features/providers/presentation/business_profiles_screen.dart';
+import 'package:zippup/features/providers/presentation/create_service_profile_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     routes: <RouteBase>[
-      				GoRoute(
-				path: '/',
-				name: 'home',
-				builder: (context, state) => const AuthGate(child: HomeScreen()),
-			),
+				GoRoute(
+					path: '/',
+					name: 'home',
+					builder: (context, state) => const AuthGate(child: HomeScreen()),
+				),
       GoRoute(
         path: '/panic',
         name: 'panic',
         builder: (context, state) => const PanicScreen(),
       ),
-      				GoRoute(
-				path: '/transport',
-				name: 'transport',
-				builder: (context, state) => const TransportScreen(),
-			),
-      				GoRoute(
-				path: '/food',
-				name: 'food',
-				builder: (context, state) => const FoodScreen(),
-			),
-      				GoRoute(
-				path: '/hire',
-				name: 'hire',
-				builder: (context, state) => const HireScreen(),
-			),
-      				GoRoute(
-				path: '/marketplace',
-				name: 'marketplace',
-				builder: (context, state) => const MarketplaceScreen(),
-			),
-			GoRoute(
-				path: '/cart',
-				name: 'cart',
-				builder: (context, state) => const CartScreen(),
-			),
-			GoRoute(
-				path: '/marketplace/add',
-				name: 'addListing',
-				builder: (context, state) => const AddListingScreen(),
-			),
-      				GoRoute(
-				path: '/digital',
-				name: 'digital',
-				builder: (context, state) => const DigitalScreen(),
-			),
-			GoRoute(
-				path: '/courier',
-				name: 'courierDashboard',
-				builder: (context, state) => const CourierDashboardScreen(),
-			),
-      				GoRoute(
-				path: '/profile',
-				name: 'profile',
-				builder: (context, state) => const ProfileScreen(),
-			),
-			GoRoute(
-				path: '/profile/settings',
-				name: 'profileSettings',
-				builder: (context, state) => const ProfileSettingsScreen(),
-			),
-			GoRoute(
-				path: '/profile/apply-provider',
-				name: 'applyProvider',
-				builder: (context, state) => const ApplyProviderScreen(),
-			),
-			GoRoute(
-				path: '/profile/emergency-contacts',
-				name: 'emergencyContacts',
-				builder: (context, state) => const EmergencyContactsScreen(),
-			),
-			GoRoute(
-				path: '/admin/applications',
-				name: 'adminApplications',
-				builder: (context, state) => const AdminApplicationsScreen(),
-			),
+				GoRoute(
+					path: '/transport',
+					name: 'transport',
+					builder: (context, state) => const TransportScreen(),
+				),
+				GoRoute(
+					path: '/food',
+					name: 'food',
+					builder: (context, state) => const FoodScreen(),
+				),
+				GoRoute(
+					path: '/hire',
+					name: 'hire',
+					builder: (context, state) => const HireScreen(),
+				),
+				GoRoute(
+					path: '/marketplace',
+					name: 'marketplace',
+					builder: (context, state) => const MarketplaceScreen(),
+				),
+				GoRoute(
+					path: '/cart',
+					name: 'cart',
+					builder: (context, state) => const CartScreen(),
+				),
+				GoRoute(
+					path: '/marketplace/add',
+					name: 'addListing',
+					builder: (context, state) => const AddListingScreen(),
+				),
+				GoRoute(
+					path: '/digital',
+					name: 'digital',
+					builder: (context, state) => const DigitalScreen(),
+				),
+				GoRoute(
+					path: '/courier',
+					name: 'courierDashboard',
+					builder: (context, state) => const CourierDashboardScreen(),
+				),
+				GoRoute(
+					path: '/profile',
+					name: 'profile',
+					builder: (context, state) => const ProfileScreen(),
+				),
+				GoRoute(
+					path: '/profile/settings',
+					name: 'profileSettings',
+					builder: (context, state) => const ProfileSettingsScreen(),
+				),
+				GoRoute(
+					path: '/profile/apply-provider',
+					name: 'applyProvider',
+					builder: (context, state) => const ApplyProviderScreen(),
+				),
+				GoRoute(
+					path: '/profile/emergency-contacts',
+					name: 'emergencyContacts',
+					builder: (context, state) => const EmergencyContactsScreen(),
+				),
+				GoRoute(
+					path: '/admin/applications',
+					name: 'adminApplications',
+					builder: (context, state) => const AdminApplicationsScreen(),
+				),
       GoRoute(
         path: '/admin/dashboard',
         name: 'vendorAdmin',
@@ -142,76 +146,76 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'driverDelivery',
         builder: (context, state) => DriverDeliveryScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
       ),
-			GoRoute(
-				path: '/chat/:threadId',
-				name: 'chat',
-				builder: (context, state) => ChatScreen(threadId: state.pathParameters['threadId']!, title: state.uri.queryParameters['title'] ?? 'Chat'),
-			),
-			GoRoute(
-				path: '/food/vendors/:category',
-				name: 'foodVendors',
-				builder: (context, state) => VendorListScreen(category: state.pathParameters['category'] ?? 'fast_food'),
-			),
-			GoRoute(
-				path: '/bookings',
-				name: 'myBookings',
-				builder: (context, state) => const MyBookingsScreen(),
-			),
-			GoRoute(
-				path: '/track',
-				name: 'trackOrder',
-				builder: (context, state) => TrackOrderScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
-			),
-			GoRoute(
-				path: '/track/ride',
-				name: 'trackRide',
-				builder: (context, state) => RideTrackScreen(rideId: state.uri.queryParameters['rideId'] ?? ''),
-			),
-			GoRoute(
-				path: '/search',
-				name: 'search',
-				builder: (context, state) => SearchResultsScreen(query: state.uri.queryParameters['q'] ?? ''),
-			),
-			GoRoute(
-				path: '/emergency',
-				name: 'emergency',
-				builder: (context, state) => const EmergencyScreen(),
-			),
-			GoRoute(
-				path: '/others',
-				name: 'others',
-				builder: (context, state) => const OthersScreen(),
-			),
-			GoRoute(
-				path: '/others/events',
-				name: 'othersEvents',
-				builder: (context, state) => const OthersSearchScreen(kind: 'events'),
-			),
-			GoRoute(
-				path: '/others/tickets',
-				name: 'othersTickets',
-				builder: (context, state) => const OthersSearchScreen(kind: 'tickets'),
-			),
-			GoRoute(
-				path: '/others/tutors',
-				name: 'othersTutors',
-				builder: (context, state) => const OthersSearchScreen(kind: 'tutors'),
-			),
-			GoRoute(
-				path: '/vendor',
-				name: 'vendorDetail',
-				builder: (context, state) => VendorDetailScreen(vendorId: state.uri.queryParameters['vendorId'] ?? ''),
-			),
-			GoRoute(
-				path: '/provider',
-				name: 'providerDetail',
-				builder: (context, state) => ProviderDetailScreen(providerId: state.uri.queryParameters['providerId'] ?? ''),
-			),
-			GoRoute(
-				path: '/listing',
-				name: 'productDetail',
-				builder: (context, state) => ProductDetailScreen(productId: state.uri.queryParameters['productId'] ?? ''),
-			),
+				GoRoute(
+					path: '/chat/:threadId',
+					name: 'chat',
+					builder: (context, state) => ChatScreen(threadId: state.pathParameters['threadId']!, title: state.uri.queryParameters['title'] ?? 'Chat'),
+				),
+				GoRoute(
+					path: '/food/vendors/:category',
+					name: 'foodVendors',
+					builder: (context, state) => VendorListScreen(category: state.pathParameters['category'] ?? 'fast_food'),
+				),
+				GoRoute(
+					path: '/bookings',
+					name: 'myBookings',
+					builder: (context, state) => const MyBookingsScreen(),
+				),
+				GoRoute(
+					path: '/track',
+					name: 'trackOrder',
+					builder: (context, state) => TrackOrderScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
+				),
+				GoRoute(
+					path: '/track/ride',
+					name: 'trackRide',
+					builder: (context, state) => RideTrackScreen(rideId: state.uri.queryParameters['rideId'] ?? ''),
+				),
+				GoRoute(
+					path: '/search',
+					name: 'search',
+					builder: (context, state) => SearchResultsScreen(query: state.uri.queryParameters['q'] ?? ''),
+				),
+				GoRoute(
+					path: '/emergency',
+					name: 'emergency',
+					builder: (context, state) => const EmergencyScreen(),
+				),
+				GoRoute(
+					path: '/others',
+					name: 'others',
+					builder: (context, state) => const OthersScreen(),
+				),
+				GoRoute(
+					path: '/others/events',
+					name: 'othersEvents',
+					builder: (context, state) => const OthersSearchScreen(kind: 'events'),
+				),
+				GoRoute(
+					path: '/others/tickets',
+					name: 'othersTickets',
+					builder: (context, state) => const OthersSearchScreen(kind: 'tickets'),
+				),
+				GoRoute(
+					path: '/others/tutors',
+					name: 'othersTutors',
+					builder: (context, state) => const OthersSearchScreen(kind: 'tutors'),
+				),
+				GoRoute(
+					path: '/vendor',
+					name: 'vendorDetail',
+					builder: (context, state) => VendorDetailScreen(vendorId: state.uri.queryParameters['vendorId'] ?? ''),
+				),
+				GoRoute(
+					path: '/provider',
+					name: 'providerDetail',
+					builder: (context, state) => ProviderDetailScreen(providerId: state.uri.queryParameters['providerId'] ?? ''),
+				),
+				GoRoute(
+					path: '/listing',
+					name: 'productDetail',
+					builder: (context, state) => ProductDetailScreen(productId: state.uri.queryParameters['productId'] ?? ''),
+				),
       GoRoute(
         path: '/personal',
         name: 'personal',
@@ -336,6 +340,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/rentals/others',
         name: 'rentalOthers',
         builder: (context, state) => const OtherRentalsScreen(),
+      ),
+      // New provider routes
+      GoRoute(
+        path: '/providers/kyc',
+        name: 'providersKyc',
+        builder: (context, state) => const KycOnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/providers',
+        name: 'businessProfiles',
+        builder: (context, state) => const BusinessProfilesScreen(),
+      ),
+      GoRoute(
+        path: '/providers/create',
+        name: 'createServiceProfile',
+        builder: (context, state) => const CreateServiceProfileScreen(),
       ),
     ],
   );

@@ -34,32 +34,35 @@ class MarketplaceScreen extends StatelessWidget {
 				title: const Text('Marketplace'),
 				bottom: PreferredSize(
 					preferredSize: const Size.fromHeight(110),
-					child: Column(children: [
-						Padding(
-							padding: const EdgeInsets.fromLTRB(8,8,8,4),
-							child: TextField(
-								controller: controller,
-								textInputAction: TextInputAction.search,
-								onSubmitted: (v) => _goSearch(context, v),
-								decoration: InputDecoration(
-									filled: true,
-									hintText: 'Search items or sellers...',
-									prefixIcon: IconButton(icon: const Icon(Icons.search), onPressed: () => _goSearch(context, controller.text)),
-									border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+					child: Column(
+						children: [
+							Padding(
+								padding: const EdgeInsets.fromLTRB(8,8,8,4),
+								child: TextField(
+									controller: controller,
+									textInputAction: TextInputAction.search,
+									onSubmitted: (v) => _goSearch(context, v),
+									decoration: InputDecoration(
+										filled: true,
+										hintText: 'Search items or sellers...',
+										prefixIcon: IconButton(icon: const Icon(Icons.search), onPressed: () => _goSearch(context, controller.text)),
+										border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+									),
 								),
 							),
-						Padding(
-							padding: const EdgeInsets.fromLTRB(8,0,8,8),
-							child: Align(
-								alignment: Alignment.centerRight,
-								child: FilledButton.icon(
-									icon: const Icon(Icons.add),
-									label: const Text('Manage products'),
-									onPressed: () => context.pushNamed('addListing'),
+							Padding(
+								padding: const EdgeInsets.fromLTRB(8,0,8,8),
+								child: Align(
+									alignment: Alignment.centerRight,
+									child: FilledButton.icon(
+										icon: const Icon(Icons.add),
+										label: const Text('Manage products'),
+										onPressed: () => context.pushNamed('addListing'),
+									),
 								),
 							),
-						),
-					]),
+						],
+					),
 				),
 			),
 			body: StreamBuilder<List<Product>>(
@@ -82,9 +85,24 @@ class MarketplaceScreen extends StatelessWidget {
 								leading: firstImage != null ? ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(firstImage, width: 56, height: 56, fit: BoxFit.cover)) : const Icon(Icons.image_not_supported),
 								title: Text(p.title),
 								subtitle: Text('${p.category} • ${p.price.toStringAsFixed(2)}'),
-								trailing: TextButton(onPressed: () { /* TODO: edit listing if owner */ }, child: const Text('Edit')),
+								trailing: PopupMenuButton<String>(
+									onSelected: (val) async {
+										if (val == 'edit') {
+											context.push('/marketplace/add?listingId=${Uri.encodeComponent(p.id)}');
+										} else if (val == 'sold') {
+											await FirebaseFirestore.instance.collection('listings').doc(p.id).update({'status': 'sold'});
+										} else if (val == 'delete') {
+											await FirebaseFirestore.instance.collection('listings').doc(p.id).delete();
+										}
+									},
+									itemBuilder: (context) => const [
+										PopupMenuItem(value: 'edit', child: Text('Edit')),
+										PopupMenuItem(value: 'sold', child: Text('Mark as sold')),
+										PopupMenuItem(value: 'delete', child: Text('Delete')),
+									],
+								),
 							);
-						},
+					},
 					);
 				},
 			),

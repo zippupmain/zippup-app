@@ -75,9 +75,13 @@ class _VendorAdminScreenState extends State<VendorAdminScreen> {
 								itemBuilder: (context, i) {
 									final d = docs[i].data();
 									final id = docs[i].id;
+									final buyer = (d['buyerId'] ?? 'unknown').toString();
+									final category = (d['category'] ?? 'other').toString();
+									final from = 'From: $buyer • $category';
 									return ListTile(
 										title: Text('Order #$id'),
-										subtitle: Text('Status: ${d['status']}'),
+										subtitle: Text('Status: ${d['status']}\n$from'),
+										isThreeLine: true,
 										trailing: Wrap(spacing: 6, children: [
 											TextButton(onPressed: () => _update(id, 'accepted'), child: const Text('Accept')),
 											TextButton(onPressed: () => _decline(id), child: const Text('Decline')),
@@ -86,10 +90,10 @@ class _VendorAdminScreenState extends State<VendorAdminScreen> {
 											TextButton(onPressed: () => _assign(id), child: const Text('Assign driver')),
 											TextButton(onPressed: () => _enterCode(id), child: const Text('Enter code')),
 										]),
-								);
+									);
 							},
-						);
-					},
+							);
+						},
 					),
 				),
 				Padding(
@@ -97,7 +101,7 @@ class _VendorAdminScreenState extends State<VendorAdminScreen> {
 					child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 						TextField(controller: _driverId, decoration: const InputDecoration(labelText: 'Driver ID for assignment')),
 						TextField(controller: _deliveryCode, decoration: const InputDecoration(labelText: 'Delivery code from customer')),
-						TextField(controller: _complaint, decoration: const InputDecoration(labelText: 'Complain or query')), 
+						TextField(controller: _complaint, decoration: const InputDecoration(labelText: 'Complain or query')),
 						Align(alignment: Alignment.centerRight, child: TextButton(onPressed: () => _complainOn(''), child: const Text('Submit complaint'))),
 					]),
 				),
