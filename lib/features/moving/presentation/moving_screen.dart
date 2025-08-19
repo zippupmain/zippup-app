@@ -45,7 +45,8 @@ class _MovingScreenState extends State<MovingScreen> {
 			if (_scheduled) {
 				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Moving request scheduled')));
 			} else {
-				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request sent. We\'ll notify you when a mover accepts.')));
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request sent. Opening live tracking...')));
+				Navigator.of(context).pushNamed('/live');
 			}
 		} catch (e) {
 			if (mounted) {

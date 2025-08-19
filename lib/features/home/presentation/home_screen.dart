@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
 				slivers: [
 					SliverAppBar(
 						pinned: true,
-						expandedHeight: 190,
+						expandedHeight: 150,
 						flexibleSpace: FlexibleSpaceBar(
 							background: Stack(children: [
 								Container(
@@ -171,13 +171,13 @@ class _HomeScreenState extends State<HomeScreen> {
 									alignment: Alignment.topCenter,
 									child: SafeArea(
 										child: Padding(
-											padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
+											padding: const EdgeInsets.only(top: 6, left: 12, right: 12),
 											child: Container(
 												decoration: BoxDecoration(
 													color: Colors.black.withOpacity(0.35),
 													borderRadius: BorderRadius.circular(20),
 												),
-												padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+												padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
 												child: Row(children: [
 													const Icon(Icons.location_on_outlined, size: 18, color: Colors.white),
 													const SizedBox(width: 6),
@@ -191,8 +191,8 @@ class _HomeScreenState extends State<HomeScreen> {
 								Align(
 									alignment: Alignment.bottomCenter,
 									child: Padding(
-										padding: const EdgeInsets.only(bottom: 12),
-										child: _BillboardCarousel(height: 130),
+										padding: const EdgeInsets.only(bottom: 8),
+										child: _BillboardCarousel(height: 110),
 									),
 								),
 							]),
@@ -247,7 +247,6 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Ride', Icons.directions_car_filled, 'transport', Color(0xFFFFE5E5), Colors.black),
 		_QuickAction('Food', Icons.local_fire_department, 'food', Color(0xFFE8F5E9), Colors.black),
 		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFFFF7E0), Colors.black),
-		_QuickAction('Live Map', Icons.navigation, 'liveMap', Color(0xFFE3F2FD), Colors.black),
 		_QuickAction('Market(P)', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.black),
 		_QuickAction('Digital', Icons.devices_other, 'digital', Color(0xFFE8F5E9), Colors.black),
 		_QuickAction('Emergency', Icons.emergency_share, 'emergency', Color(0xFFFFE5E5), Colors.black),
@@ -391,7 +390,7 @@ class _BillboardCarousel extends StatefulWidget {
 }
 
 class _BillboardCarouselState extends State<_BillboardCarousel> {
-	final PageController _controller = PageController(viewportFraction: 0.9);
+	final PageController _controller = PageController(viewportFraction: 0.88);
 	int _index = 0;
 	@override
 	void initState() {

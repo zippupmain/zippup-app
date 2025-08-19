@@ -18,6 +18,14 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 	void initState() {
 		super.initState();
 		_init();
+		_mapService.currentLocationNotifier.addListener(_onLocationUpdate);
+	}
+
+	void _onLocationUpdate() {
+		final loc = _mapService.currentLocationNotifier.value;
+		if (loc != null && _mapController != null) {
+			_mapController!.animateCamera(CameraUpdate.newLatLngZoom(loc, 15));
+		}
 	}
 
 	Future<void> _init() async {
@@ -158,6 +166,7 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 	@override
 	void dispose() {
 		_mapController?.dispose();
+		_mapService.currentLocationNotifier.removeListener(_onLocationUpdate);
 		_mapService.dispose();
 		super.dispose();
 	}

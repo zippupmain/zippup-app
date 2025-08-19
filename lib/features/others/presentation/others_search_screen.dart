@@ -110,16 +110,8 @@ class _OthersSearchScreenState extends State<OthersSearchScreen> {
 			});
 			if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request submitted')));
 			if (!scheduled && widget.kind != 'tickets') {
-				// One-off listener to auto-navigate when provider accepts/assigns/enroute (not for tickets)
-				final sub = FirebaseFirestore.instance.collection('orders').doc(ref.id).snapshots().listen((doc) {
-					final d = doc.data() ?? {};
-					final status = (d['status'] ?? '').toString();
-					if (status == 'accepted' || status == 'assigned' || status == 'enroute') {
-						if (mounted) context.pushNamed('trackOrder', queryParameters: {'orderId': ref.id});
-					}
-				});
-				// Cancel the subscription after 10 minutes to avoid leaks
-				Future.delayed(const Duration(minutes: 10)).then((_) => sub.cancel());
+				// Navigate to live map for immediate tracking UI
+				if (mounted) context.push('/live');
 			}
 		} finally {
 			if (mounted) setState(() => _submitting = false);
