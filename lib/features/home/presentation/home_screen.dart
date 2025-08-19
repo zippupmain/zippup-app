@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
 				slivers: [
 					SliverAppBar(
 						pinned: true,
-						expandedHeight: 150,
+						expandedHeight: 120,
 						flexibleSpace: FlexibleSpaceBar(
 							background: Stack(children: [
 								Container(
@@ -186,14 +186,6 @@ class _HomeScreenState extends State<HomeScreen> {
 												]),
 											),
 										),
-									),
-								),
-								Align(
-									alignment: Alignment.bottomCenter,
-									child: Padding(
-										padding: const EdgeInsets.only(bottom: 8),
-										child: _BillboardCarousel(height: 110),
-									),
 								),
 							]),
 						),
@@ -207,14 +199,8 @@ class _HomeScreenState extends State<HomeScreen> {
 					SliverToBoxAdapter(child: _QuickActions()),
 					SliverToBoxAdapter(
 						child: Padding(
-							padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-							child: _BillboardCarousel(height: 140),
-						),
-					),
-					SliverToBoxAdapter(
-						child: Padding(
-							padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-							child: _BillboardCarousel(height: 140),
+							padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+							child: _BillboardCarousel(height: 120),
 						),
 					),
 				],
@@ -504,7 +490,15 @@ class _UserAvatar extends StatelessWidget {
 		final u = FirebaseAuth.instance.currentUser;
 		final url = u?.photoURL;
 		if (url != null && url.isNotEmpty) {
-			return ClipOval(child: CachedNetworkImage(imageUrl: url, width: 28, height: 28, fit: BoxFit.cover));
+			return ClipOval(
+				child: Image.network(
+					url,
+					width: 28,
+					height: 28,
+					fit: BoxFit.cover,
+					errorBuilder: (_, __, ___) => const Icon(Icons.person),
+				),
+			);
 		}
 		return const Icon(Icons.person);
 	}
