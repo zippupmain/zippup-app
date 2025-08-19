@@ -30,6 +30,18 @@ class MapBookingService {
 	String get currentAddress => _currentAddress;
 	Set<Marker> get markers => markersNotifier.value;
 
+	LatLng get _fallbackLatLng => const LatLng(6.45407, 3.39467); // Lagos island
+
+	void _ensureFallbackIfNull() {
+		if (_currentLocation == null) {
+			_currentLocation = _fallbackLatLng;
+			currentLocationNotifier.value = _currentLocation;
+			_currentAddress = 'Location unavailable';
+			currentAddressNotifier.value = _currentAddress;
+			_markCurrentLocationMarker();
+		}
+	}
+
 	/// Initialize location services and get current position
 	Future<void> initializeLocation() async {
 		try {
@@ -37,6 +49,7 @@ class MapBookingService {
 			if (!serviceEnabled) {
 				_currentAddress = 'Location services disabled';
 				currentAddressNotifier.value = _currentAddress;
+				_ensureFallbackIfNull();
 				return;
 			}
 
@@ -44,9 +57,10 @@ class MapBookingService {
 			if (permission == LocationPermission.denied) {
 				permission = await Geolocator.requestPermission();
 			}
-			if (permission == LocationPermission.deniedForever) {
+			if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
 				_currentAddress = 'Location permission denied';
 				currentAddressNotifier.value = _currentAddress;
+				_ensureFallbackIfNull();
 				return;
 			}
 
@@ -65,8 +79,8 @@ class MapBookingService {
 				.timeout(
 					const Duration(seconds: 6),
 					onTimeout: () => last ?? Position(
-						longitude: 0,
-						latitude: 0,
+						longitude: _fallbackLatLng.longitude,
+						latitude: _fallbackLatLng.latitude,
 						timestamp: DateTime.now(),
 						accuracy: 0,
 						altitude: 0,
@@ -96,6 +110,7 @@ class MapBookingService {
 					currentAddressNotifier.value = _currentAddress;
 				}
 			}
+			_ensureFallbackIfNull();
 			// Subscribe to updates to keep marker in sync (guard on web)
 			_positionSub?.cancel();
 			try {
@@ -109,6 +124,7 @@ class MapBookingService {
 			debugPrint('Location error: $e');
 			_currentAddress = 'Location unavailable';
 			currentAddressNotifier.value = _currentAddress;
+			_ensureFallbackIfNull();
 		}
 	}
 
@@ -127,9 +143,8 @@ class MapBookingService {
 
 	/// Initialize the map view by centering and adding simulated nearby markers
 	Future<void> populateInitialMarkers() async {
-		if (_currentLocation == null) return;
+		if (_currentLocation == null) _ensureFallbackIfNull();
 		final set = <Marker>{};
-		// current location will be added by _markCurrentLocationMarker
 		// Add simulated nearby markers
 		final rng = Random();
 		for (int i = 0; i < 5; i++) {
@@ -152,6 +167,7 @@ class MapBookingService {
 		String? orderId,
 		required void Function(String) onDriverArrived,
 	}) {
+		if (_currentLocation == null) _ensureFallbackIfNull();
 		if (_currentLocation == null) return;
 		_driverLocation = LatLng(_currentLocation!.latitude + 0.01, _currentLocation!.longitude + 0.01);
 
