@@ -33,29 +33,34 @@ class MarketplaceScreen extends StatelessWidget {
 			appBar: AppBar(
 				title: const Text('Marketplace'),
 				bottom: PreferredSize(
-					preferredSize: const Size.fromHeight(56),
-					child: Padding(
-						padding: const EdgeInsets.all(8.0),
-						child: TextField(
-							controller: controller,
-							textInputAction: TextInputAction.search,
-							onSubmitted: (v) => _goSearch(context, v),
-							decoration: InputDecoration(
-								filled: true,
-								hintText: 'Search items or sellers...',
-								prefixIcon: IconButton(icon: const Icon(Icons.search), onPressed: () => _goSearch(context, controller.text)),
-								border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+					preferredSize: const Size.fromHeight(110),
+					child: Column(children: [
+						Padding(
+							padding: const EdgeInsets.fromLTRB(8,8,8,4),
+							child: TextField(
+								controller: controller,
+								textInputAction: TextInputAction.search,
+								onSubmitted: (v) => _goSearch(context, v),
+								decoration: InputDecoration(
+									filled: true,
+									hintText: 'Search items or sellers...',
+									prefixIcon: IconButton(icon: const Icon(Icons.search), onPressed: () => _goSearch(context, controller.text)),
+									border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+								),
+							),
+						Padding(
+							padding: const EdgeInsets.fromLTRB(8,0,8,8),
+							child: Align(
+								alignment: Alignment.centerRight,
+								child: FilledButton.icon(
+									icon: const Icon(Icons.add),
+									label: const Text('Manage products'),
+									onPressed: () => context.pushNamed('addListing'),
+								),
 							),
 						),
-					),
+					]),
 				),
-			),
-			floatingActionButton: FloatingActionButton.extended(
-				onPressed: () async {
-					await context.pushNamed('addListing');
-				},
-				label: const Text('Add'),
-				icon: const Icon(Icons.add),
 			),
 			body: StreamBuilder<List<Product>>(
 				stream: _streamProducts(),
