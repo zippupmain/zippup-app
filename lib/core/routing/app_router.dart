@@ -50,6 +50,9 @@ import 'package:zippup/features/notifications/presentation/notifications_screen.
 import 'package:zippup/features/navigation/map_booking_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_screen.dart';
 import 'package:zippup/features/rentals/presentation/vehicle_rentals_screen.dart';
+import 'package:zippup/features/rentals/presentation/rentals_hub_screen.dart';
+import 'package:zippup/features/rentals/presentation/house_rentals_screen.dart';
+import 'package:zippup/features/rentals/presentation/other_rentals_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -317,7 +320,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/rentals',
         name: 'rentals',
+        builder: (context, state) => const RentalsHubScreen(),
+      ),
+      GoRoute(
+        path: '/rentals/vehicles',
+        name: 'rentalVehicles',
         builder: (context, state) => const VehicleRentalsScreen(),
+      ),
+      GoRoute(
+        path: '/rentals/houses',
+        name: 'rentalHouses',
+        builder: (context, state) => const HouseRentalsScreen(),
+      ),
+      GoRoute(
+        path: '/rentals/others',
+        name: 'rentalOthers',
+        builder: (context, state) => const OtherRentalsScreen(),
       ),
     ],
   );
