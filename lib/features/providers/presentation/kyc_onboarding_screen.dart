@@ -30,8 +30,8 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 	File? _selfieFile;
 	bool _saving = false;
 
-	Future<void> _pickSingle(void Function(Uint8List?, File?) setter) async {
-		final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+	Future<void> _pickSingle(ImageSource source, void Function(Uint8List?, File?) setter) async {
+		final x = await ImagePicker().pickImage(source: source, imageQuality: 85);
 		if (x == null) return;
 		try {
 			final b = await x.readAsBytes();
@@ -40,6 +40,19 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 			setter(null, File(x.path));
 		}
 		setState(() {});
+	}
+
+	Future<void> _chooseSourceAndPick(void Function(ImageSource) onPick) async {
+		final src = await showModalBottomSheet<ImageSource>(
+			context: context,
+			builder: (context) => SafeArea(
+				child: Wrap(children: [
+					ListTile(leading: const Icon(Icons.photo_camera), title: const Text('Take photo'), onTap: () => Navigator.pop(context, ImageSource.camera)),
+					ListTile(leading: const Icon(Icons.photo_library), title: const Text('Upload from gallery'), onTap: () => Navigator.pop(context, ImageSource.gallery)),
+				]),
+			),
+		);
+		if (src != null) onPick(src);
 	}
 
 	Future<void> _pickMultiProof() async {
@@ -125,13 +138,13 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 					TextField(controller: _address, decoration: const InputDecoration(labelText: 'Address')),
 					DropdownButtonFormField<String>(value: _idType, items: const [
 						DropdownMenuItem(value: 'National ID', child: Text('National ID')),
-						DropdownMenuItem(value: 'Passport', child: Text('Passport')),
-						DropdownMenuItem(value: 'Driver License', child: Text('Driver License')),
+						DropdownMenuItem(value: 'Passport', child: Text('International Passport')),
+						DropdownMenuItem(value: 'Driver License', child: Text('Driver’s License')),
 					], onChanged: (v) => setState(() => _idType = v ?? 'National ID'), decoration: const InputDecoration(labelText: 'ID type')),
 					TextField(controller: _idNumber, decoration: const InputDecoration(labelText: 'ID number')),
-					ListTile(title: const Text('Upload ID photo'), trailing: const Icon(Icons.upload_file), subtitle: Text(_idImageBytes != null || _idImageFile != null ? 'Selected' : 'Not uploaded'), onTap: () => _pickSingle((b,f){ _idImageBytes=b; _idImageFile=f; })),
-					ListTile(title: const Text('Upload proof of address/bank (multi)'), trailing: const Icon(Icons.upload_file), subtitle: Text('${_proofBytes.length + _proofFiles.length} selected'), onTap: _pickMultiProof),
-					ListTile(title: const Text('Upload selfie (face verification)'), trailing: const Icon(Icons.camera_alt_outlined), subtitle: Text(_selfieBytes != null || _selfieFile != null ? 'Selected' : 'Not uploaded'), onTap: () => _pickSingle((b,f){ _selfieBytes=b; _selfieFile=f; })),
+					ListTile(title: const Text('ID photo'), trailing: const Icon(Icons.upload_file), subtitle: Text(_idImageBytes != null || _idImageFile != null ? 'Selected' : 'Not uploaded'), onTap: () => _chooseSourceAndPick((src) => _pickSingle(src, (b,f){ _idImageBytes=b; _idImageFile=f; }))),
+					ListTile(title: const Text('Proof of address/bank (multi)'), trailing: const Icon(Icons.upload_file), subtitle: Text('${_proofBytes.length + _proofFiles.length} selected'), onTap: _pickMultiProof),
+					ListTile(title: const Text('Selfie (face verification)'), trailing: const Icon(Icons.camera_alt_outlined), subtitle: Text(_selfieBytes != null || _selfieFile != null ? 'Selected' : 'Not captured'), onTap: () => _chooseSourceAndPick((src) => _pickSingle(src, (b,f){ _selfieBytes=b; _selfieFile=f; }))),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _saving ? null : _submit, child: Text(_saving ? 'Submitting...' : 'Submit')),
 				],
