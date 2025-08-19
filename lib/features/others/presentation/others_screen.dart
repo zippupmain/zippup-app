@@ -10,7 +10,7 @@ class OthersScreen extends StatelessWidget {
 			(const Icon(Icons.event), 'Events planning', '/others/events'),
 			(const Icon(Icons.confirmation_number), 'Live event tickets', '/others/tickets'),
 			(const Icon(Icons.school), 'Tutors', '/others/tutors'),
-			(const Icon(Icons.drive_eta), 'Personal driver', '/others/tutors'),
+			(const Icon(Icons.drive_eta), 'Personal driver', '/personal'),
 		];
 		return Scaffold(
 			appBar: AppBar(title: const Text('Others')),
