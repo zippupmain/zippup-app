@@ -63,7 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 						),
 					ListTile(leading: const Icon(Icons.person), title: const Text('Profile settings'), onTap: () => context.push('/profile/settings')),
 					ListTile(leading: const Icon(Icons.assignment_outlined), title: const Text('My Bookings'), onTap: () => context.push('/bookings')),
-					ListTile(leading: const Icon(Icons.verified_user), title: const Text('Apply as Service Provider / Vendor'), onTap: () => context.push('/profile/apply-provider')),
+					ListTile(leading: const Icon(Icons.verified_user), title: const Text('Apply as Service Provider / Vendor'), onTap: () => context.push('/providers/kyc')),
 					if (_approved) ListTile(leading: const Icon(Icons.admin_panel_settings), title: const Text('Vendor Admin'), onTap: () => context.push('/admin/dashboard')),
 					if (_isPlatformAdmin) ListTile(leading: const Icon(Icons.shield), title: const Text('Platform Admin'), onTap: () => context.push('/admin/platform')),
 					ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Wallet'), onTap: () => context.push('/wallet')),
