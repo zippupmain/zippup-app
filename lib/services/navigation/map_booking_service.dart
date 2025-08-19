@@ -57,7 +57,21 @@ class MapBookingService {
 				_markCurrentLocationMarker();
 			}
 			// Try to get a fresh position with timeout
-			final fresh = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high).timeout(const Duration(seconds: 6), onTimeout: () => last);
+			final fresh = await Geolocator
+				.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+				.timeout(
+					const Duration(seconds: 6),
+					onTimeout: () => last ?? Position(
+						longitude: 0,
+						latitude: 0,
+						timestamp: DateTime.now(),
+						accuracy: 0,
+						altitude: 0,
+						heading: 0,
+						speed: 0,
+						speedAccuracy: 0,
+					),
+				);
 			if (fresh != null) {
 				_currentLocation = LatLng(fresh.latitude, fresh.longitude);
 				currentLocationNotifier.value = _currentLocation;

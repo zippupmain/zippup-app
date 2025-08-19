@@ -11,7 +11,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // Temporary stubs to unblock build; replace with real implementations
 Widget _PositionedUnreadDot() => const SizedBox.shrink();
-Widget _UserAvatar() => const Icon(Icons.person);
 Widget _HomeSearchBar() => const _HomeSearchBarWidget();
 Widget _Promotions() => const SizedBox.shrink();
 Widget _DynamicCard({required int index}) => const SizedBox.shrink();
