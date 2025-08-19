@@ -69,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 					ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Wallet'), onTap: () => context.push('/wallet')),
 					ListTile(leading: const Icon(Icons.local_activity), title: const Text('Promo & vouchers'), onTap: () => context.push('/promos')),
 					ListTile(leading: const Icon(Icons.language), title: const Text('Languages'), onTap: () => context.push('/languages')),
-					ListTile(leading: const Icon(Icons.business), title: const Text('Business profile'), onTap: () => context.push('/business')),
+					ListTile(leading: const Icon(Icons.business), title: const Text('Business profiles hub'), onTap: () => context.push('/providers')),
 					ListTile(leading: const Icon(Icons.help_outline), title: const Text('Help / Report'), onTap: () => context.push('/support')),
 					ListTile(leading: const Icon(Icons.manage_accounts), title: const Text('Manage account'), onTap: () => context.push('/manage-accounts')),
 					ListTile(leading: const Icon(Icons.star_rate), title: const Text('Rate ZippUp'), onTap: () => context.push('/rate')),
