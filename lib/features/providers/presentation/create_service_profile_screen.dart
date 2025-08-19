@@ -14,6 +14,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	String? _category;
 	String? _subcategory;
 	String _status = 'draft';
+	String _type = 'individual';
 	bool _saving = false;
 
 	final Map<String, List<String>> _cats = const {
@@ -26,20 +27,44 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'marketplace': ['Electronics','Vehicles','Property','Services'],
 	};
 
+	Future<bool> _isKycApproved(String uid) async {
+		final doc = await FirebaseFirestore.instance.collection('_onboarding').doc(uid).get();
+		if (!doc.exists) return false;
+		final status = (doc.data()?['status'] ?? '').toString();
+		return status.toLowerCase() == 'approved';
+	}
+
 	Future<void> _save() async {
 		setState(() => _saving = true);
 		try {
 			final uid = FirebaseAuth.instance.currentUser!.uid;
-			await FirebaseFirestore.instance.collection('business_profiles').doc(uid).collection('profiles').add({
+			final kycOk = await _isKycApproved(uid);
+			if (!kycOk) {
+				if (mounted) {
+					ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please complete KYC verification before creating a business profile.')));
+					Navigator.of(context).pushNamed('/providers/kyc');
+				}
+				return;
+			}
+			final ref = await FirebaseFirestore.instance.collection('business_profiles').doc(uid).collection('profiles').add({
 				'title': _title.text.trim(),
 				'description': _desc.text.trim(),
 				'category': _category,
 				'subcategory': _subcategory,
+				'type': _type,
 				'status': _status,
 				'createdAt': DateTime.now().toIso8601String(),
 			});
 			if (!mounted) return;
-			Navigator.pop(context);
+			// Route to extra registration forms for specific categories
+			final isVehicleRental = _category == 'rentals' && _subcategory == 'Vehicle';
+			if (_category == 'transport' || _category == 'food' || isVehicleRental) {
+				final params = <String, String>{'category': _category ?? ''};
+				if (isVehicleRental) params['subcategory'] = 'Vehicle';
+				Navigator.of(context).pushNamed('/profile/apply-provider', arguments: params);
+				return;
+			}
+			Navigator.pop(context, ref.id);
 		} catch (e) {
 			if (mounted) {
 				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e')));
@@ -53,7 +78,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	Widget build(BuildContext context) {
 		final subs = _category == null ? const <String>[] : (_cats[_category] ?? const <String>[]);
 		return Scaffold(
-			appBar: AppBar(title: const Text('Create service profile')),
+			appBar: AppBar(title: const Text('Create business profile')),
 			body: ListView(padding: const EdgeInsets.all(16), children: [
 				DropdownButtonFormField<String>(
 					value: _category,
@@ -68,10 +93,19 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						decoration: const InputDecoration(labelText: 'Subcategory'),
 						onChanged: (v) => setState(() => _subcategory = v),
 					),
-				TextField(controller: _title, decoration: const InputDecoration(labelText: 'Title')),
+				DropdownButtonFormField<String>(
+					value: _type,
+					items: const [
+						DropdownMenuItem(value: 'individual', child: Text('Individual')),
+						DropdownMenuItem(value: 'company', child: Text('Company')),
+					],
+					decoration: const InputDecoration(labelText: 'Type'),
+					onChanged: (v) => setState(() => _type = v ?? 'individual'),
+				),
+				TextField(controller: _title, decoration: const InputDecoration(labelText: 'Business title')),
 				TextField(controller: _desc, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
 				const SizedBox(height: 12),
-				FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving...' : 'Save')),
+				FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving...' : 'Create')),
 			]),
 		);
 	}

@@ -1,29 +1,21 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class BusinessProfileScreen extends StatelessWidget {
 	const BusinessProfileScreen({super.key});
 	@override
 	Widget build(BuildContext context) {
-		final uid = FirebaseAuth.instance.currentUser!.uid;
 		return Scaffold(
 			appBar: AppBar(title: const Text('Business profile')),
-			body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-				stream: FirebaseFirestore.instance.collection('providers').where('ownerId', isEqualTo: uid).snapshots(),
-				builder: (context, snap) {
-					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-					final docs = snap.data!.docs;
-					if (docs.isEmpty) return const Center(child: Text('No business found'));
-					return ListView.separated(
-						itemCount: docs.length,
-						separatorBuilder: (_, __) => const Divider(height: 1),
-						itemBuilder: (context, i) {
-							final d = docs[i].data();
-							return ListTile(title: Text(d['name'] ?? 'Business'), subtitle: Text(d['category'] ?? ''));
-						},
-					);
-				},
+			body: Center(
+				child: Padding(
+					padding: const EdgeInsets.all(24),
+					child: Column(mainAxisSize: MainAxisSize.min, children: [
+						const Text('Manage your business profiles in the new hub'),
+						const SizedBox(height: 12),
+						FilledButton.icon(onPressed: () => context.push('/providers'), icon: const Icon(Icons.business_center), label: const Text('Open Business Profiles')),
+					]),
+				),
 			),
 		);
 	}

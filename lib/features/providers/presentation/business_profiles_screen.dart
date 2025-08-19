@@ -16,17 +16,29 @@ class BusinessProfilesScreen extends StatelessWidget {
 				builder: (context, snap) {
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
 					final docs = snap.data!.docs;
+					if (docs.isEmpty) {
+						return Center(
+							child: Padding(
+								padding: const EdgeInsets.all(24),
+								child: Column(mainAxisSize: MainAxisSize.min, children: [
+									const Text('No business profiles yet'),
+									const SizedBox(height: 12),
+									FilledButton.icon(onPressed: () => context.push('/providers/create'), icon: const Icon(Icons.add_business), label: const Text('Create business profile')),
+								]),
+							),
+						);
+					}
 					return ListView(
 						children: [
 							Padding(
 								padding: const EdgeInsets.all(16),
-								child: FilledButton.icon(onPressed: () => context.push('/providers/create'), icon: const Icon(Icons.add), label: const Text('Create profile')),
+								child: FilledButton.icon(onPressed: () => context.push('/providers/create'), icon: const Icon(Icons.add_business), label: const Text('Create business profile')),
 							),
 							...docs.map((d) {
 								final p = d.data();
 								return ListTile(
 									title: Text(p['title']?.toString() ?? 'Untitled'),
-									subtitle: Text('${p['category'] ?? ''} • ${p['subcategory'] ?? ''} • ${p['status'] ?? 'draft'}'),
+									subtitle: Text('${p['category'] ?? ''} • ${p['subcategory'] ?? ''} • ${p['type'] ?? 'individual'} • ${p['status'] ?? 'draft'}'),
 									trailing: IconButton(icon: const Icon(Icons.edit), onPressed: () => context.push('/providers/create?profileId=${d.id}')),
 								);
 							}),
