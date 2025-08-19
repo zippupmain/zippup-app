@@ -489,8 +489,12 @@ class _UserAvatar extends StatelessWidget {
 	@override
 	Widget build(BuildContext context) {
 		final u = FirebaseAuth.instance.currentUser;
-		final url = u?.photoURL;
+		String? url = u?.photoURL;
 		if (url != null && url.isNotEmpty) {
+			// Rewrite storage domain if needed for web CORS
+			if (url.contains('firebasestorage.app')) {
+				url = url.replaceFirst('firebasestorage.app', 'appspot.com');
+			}
 			return ClipOval(
 				child: Image.network(
 					url,
