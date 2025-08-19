@@ -17,6 +17,7 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 	final TextEditingController _days = TextEditingController(text: '1');
 	DateTime? _startDate;
 	geo.Position? _me;
+	String _sort = 'nearest';
 
 	@override
 	void initState() {
@@ -30,12 +31,17 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 		setState(() => _me = p);
 	}
 
-	String _distanceText(Map<String, dynamic> p) {
+	double _distanceKm(Map<String, dynamic> p) {
 		final lat = (p['lat'] as num?)?.toDouble();
 		final lng = (p['lng'] as num?)?.toDouble();
-		if (_me == null || lat == null || lng == null) return '';
+		if (_me == null || lat == null || lng == null) return 1e9;
 		final meters = geo.Geolocator.distanceBetween(_me!.latitude, _me!.longitude, lat, lng);
-		final km = meters / 1000.0;
+		return meters / 1000.0;
+	}
+
+	String _distanceText(Map<String, dynamic> p) {
+		final km = _distanceKm(p);
+		if (km >= 1e9) return '';
 		return '${km.toStringAsFixed(km < 10 ? 1 : 0)} km away';
 	}
 
@@ -93,13 +99,24 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 					child: Row(children: [
 						Expanded(child: ListTile(title: const Text('Start date'), subtitle: Text(_startDate == null ? 'Choose' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}'), onTap: _pickStartDate)),
 						SizedBox(
-							width: 140,
+							width: 120,
 							child: TextField(
 								controller: _days,
 								keyboardType: TextInputType.number,
 								decoration: const InputDecoration(labelText: 'Days'),
 								onChanged: (_) => setState(() {}),
 							),
+						),
+						const SizedBox(width: 12),
+						DropdownButton<String>(
+							value: _sort,
+							items: const [
+								DropdownMenuItem(value: 'nearest', child: Text('Nearest')),
+								DropdownMenuItem(value: 'price_asc', child: Text('Price: Low to High')),
+								DropdownMenuItem(value: 'price_desc', child: Text('Price: High to Low')),
+								DropdownMenuItem(value: 'rating', child: Text('Rating')),
+							],
+							onChanged: (v) => setState(() => _sort = v ?? 'nearest'),
 						),
 					]),
 				),
@@ -119,6 +136,27 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 								final subtype = (data['rentalSubtype'] ?? '').toString().toLowerCase();
 								return subtype == _selected.toLowerCase();
 							}).toList();
+							docs.sort((a, b) {
+								final pa = a.data();
+								final pb = b.data();
+								final da = (pa['dailyPrice'] is num) ? (pa['dailyPrice'] as num).toDouble() : 0.0;
+								final db = (pb['dailyPrice'] is num) ? (pb['dailyPrice'] as num).toDouble() : 0.0;
+								final ra = (pa['rating'] is num) ? (pa['rating'] as num).toDouble() : 0.0;
+								final rb = (pb['rating'] is num) ? (pb['rating'] as num).toDouble() : 0.0;
+								final na = _distanceKm(pa);
+								final nb = _distanceKm(pb);
+								switch (_sort) {
+									case 'price_asc':
+										return da.compareTo(db);
+									case 'price_desc':
+										return db.compareTo(da);
+									case 'rating':
+										return rb.compareTo(ra);
+									case 'nearest':
+									default:
+										return na.compareTo(nb);
+								}
+							});
 							if (docs.isEmpty) return const Center(child: Text('No providers yet'));
 							return ListView.separated(
 								itemCount: docs.length,
