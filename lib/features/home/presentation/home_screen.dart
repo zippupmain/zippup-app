@@ -20,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
 	String _locationText = 'Detecting location…';
 	String _greet = '';
 	bool _isPlatformAdmin = false;
+	StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSub;
 
 	@override
 	void initState() {
@@ -27,9 +28,25 @@ class _HomeScreenState extends State<HomeScreen> {
 		_fetchLocation();
 		_setGreeting();
 		_checkAdmin();
-		FirebaseAuth.instance.authStateChanges().listen((_) {
+		FirebaseAuth.instance.authStateChanges().listen((user) {
 			_setGreeting();
 			_checkAdmin();
+			_bindUserListener(user?.uid);
+		});
+		_bindUserListener(FirebaseAuth.instance.currentUser?.uid);
+	}
+
+	void _bindUserListener(String? uid) {
+		_userSub?.cancel();
+		if (uid == null) return;
+		_userSub = FirebaseFirestore.instance.collection('users').doc(uid).snapshots().listen((snap) {
+			final data = snap.data() ?? const {};
+			final name = (data['name']?.toString() ?? '').trim();
+			if (name.isNotEmpty) {
+				final h = DateTime.now().hour;
+				final prefix = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+				if (mounted) setState(() => _greet = '$prefix $name');
+			}
 		});
 	}
 
@@ -212,6 +229,8 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Emergency', Icons.emergency_share, 'emergency', Color(0xFFFFE5E5), Colors.black),
 		_QuickAction('Others', Icons.category, 'others', Color(0xFFFFE5E5), Colors.black),
 		_QuickAction('Personal', Icons.face_3, 'personal', Color(0xFFFFFFFF), Colors.black),
+		_QuickAction('Moving', Icons.local_shipping, 'moving', Color(0xFFE3F2FD), Colors.black),
+		_QuickAction('Rentals', Icons.key, 'rentals', Color(0xFFFFF3E0), Colors.black),
 	];
 
 	@override
@@ -246,245 +265,6 @@ class _QuickActions extends StatelessWidget {
 					);
 				},
 			),
-		);
-	}
-}
-
-class _EmergencyActions extends StatelessWidget {
-	final List<_QuickAction> items = const [
-		_QuickAction('Ambulance', Icons.medical_services, 'panic', Color(0xFFFFE5E5), Colors.red),
-		_QuickAction('Fire', Icons.local_fire_department, 'panic', Color(0xFFFFE5E5), Colors.red),
-		_QuickAction('Towing', Icons.local_shipping, 'panic', Color(0xFFE0F7FA), Colors.blueGrey),
-		_QuickAction('Security', Icons.shield_outlined, 'panic', Color(0xFFE8F5E9), Colors.green),
-		_QuickAction('Roadside', Icons.build_circle, 'transport', Color(0xFFFFF7E0), Colors.amber),
-	];
-	@override
-	Widget build(BuildContext context) {
-		return Padding(
-			padding: const EdgeInsets.all(16),
-			child: Column(
-				children: items
-					.map((e) => ListTile(leading: Icon(e.icon, color: e.iconColor), title: Text(e.title), onTap: () => context.push('/panic')))
-					.toList(),
-			),
-		);
-	}
-}
-
-class _DynamicCard extends StatelessWidget {
-	final int index;
-	const _DynamicCard({required this.index});
-	@override
-	Widget build(BuildContext context) {
-		return InkWell(
-			onTap: () => context.push('/marketplace'),
-			child: Container(
-				margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-				decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))]),
-				child: ListTile(
-					leading: CircleAvatar(backgroundColor: Colors.blue.shade50, child: const Icon(Icons.campaign)),
-					title: Text('Billboard ${index + 1}'),
-					subtitle: const Text('Colorful dynamic billboard content'),
-				),
-			),
-		);
-	}
-}
-
-class _QuickAction {
-	final String title;
-	final IconData icon;
-	final String routeName;
-	final Color bg;
-	final Color iconColor;
-	const _QuickAction(this.title, this.icon, this.routeName, this.bg, this.iconColor);
-}
-
-class _Promotions extends StatefulWidget {
-	@override
-	State<_Promotions> createState() => _PromotionsState();
-}
-
-class _PromotionsState extends State<_Promotions> {
-	final _ctrl = ScrollController();
-	Timer? _ticker;
-	final List<String> _items = const [
-		'🍔 10% off first food order',
-		'🚗 Taxi & truck booking',
-		'🛠️ Hire verified providers',
-		'💳 Pay securely',
-		'🛍️ Marketplace deals',
-		'🎁 Refer friends, earn coupons',
-	];
-
-	void _goFor(String text) {
-		final t = text.toLowerCase();
-		if (t.contains('taxi') || t.contains('truck')) context.push('/transport');
-		else if (t.contains('food') || t.contains('order')) context.push('/food');
-		else if (t.contains('hire') || t.contains('verified')) context.push('/hire');
-		else if (t.contains('market')) context.push('/marketplace');
-		else context.push('/search?q=${Uri.encodeComponent(text)}');
-	}
-
-	@override
-	void initState() {
-		super.initState();
-		_ticker = Timer.periodic(const Duration(milliseconds: 25), (_) {
-			if (!_ctrl.hasClients) return;
-			final max = _ctrl.position.maxScrollExtent;
-			final next = _ctrl.offset + 1;
-			if (next >= max) {
-				_ctrl.jumpTo(0);
-			} else {
-				_ctrl.jumpTo(next);
-			}
-		});
-	}
-
-	@override
-	void dispose() {
-		_ticker?.cancel();
-		_ctrl.dispose();
-		super.dispose();
-	}
-
-	@override
-	Widget build(BuildContext context) {
-		final data = [..._items, ..._items];
-		return SizedBox(
-			height: 140,
-			child: Container(
-				color: Colors.white,
-				child: ListView.separated(
-					controller: _ctrl,
-					scrollDirection: Axis.horizontal,
-					physics: const NeverScrollableScrollPhysics(),
-					padding: const EdgeInsets.all(16),
-					itemBuilder: (context, index) {
-						final text = data[index % data.length];
-						return InkWell(
-							onTap: () => _goFor(text),
-							child: Container(
-								width: 260,
-								decoration: BoxDecoration(
-									color: Colors.white,
-									borderRadius: BorderRadius.circular(12),
-									border: Border.all(color: Colors.black12),
-								),
-								padding: const EdgeInsets.all(12),
-								child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-							),
-						);
-					},
-					separatorBuilder: (_, __) => const SizedBox(width: 12),
-					itemCount: data.length,
-				),
-			),
-		);
-	}
-}
-
-class _HomeSearchBar extends StatefulWidget {
-	@override
-	State<_HomeSearchBar> createState() => _HomeSearchBarState();
-}
-
-class _HomeSearchBarState extends State<_HomeSearchBar> {
-	final controller = TextEditingController();
-	final stt.SpeechToText _stt = stt.SpeechToText();
-	Future<void> _voice() async {
-		final ok = await _stt.initialize(options: [stt.SpeechToText.androidIntentLookup]);
-		if (!ok) return;
-		await _stt.listen(onResult: (res) {
-			if (res.finalResult) {
-				controller.text = res.recognizedWords;
-				_go();
-				_stt.stop();
-			}
-		});
-	}
-	void _go() {
-		final q = controller.text.trim();
-		if (q.isEmpty) return;
-		context.push('/search?q=${Uri.encodeComponent(q)}');
-	}
-	@override
-	Widget build(BuildContext context) {
-		return TextField(
-			controller: controller,
-			textInputAction: TextInputAction.search,
-			onSubmitted: (_) => _go(),
-			decoration: InputDecoration(
-				filled: true,
-				hintText: 'Search services, vendors, items...',
-				prefixIcon: IconButton(icon: const Icon(Icons.search), onPressed: _go),
-				suffixIcon: IconButton(icon: const Icon(Icons.mic_none), onPressed: _voice),
-				border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-			),
-		);
-	}
-}
-
-class _PositionedUnreadDot extends StatelessWidget {
-	@override
-	Widget build(BuildContext context) {
-		return StreamBuilder<int>(
-			stream: FirebaseFirestore.instance.collection('notifications').where('read', isEqualTo: false).snapshots().map((snapshot) => snapshot.docs.length),
-			builder: (context, snapshot) {
-				final count = snapshot.data ?? 0;
-				if (count == 0) return const SizedBox.shrink();
-				return Positioned(
-					right: 0,
-					top: 0,
-					child: Container(
-						padding: const EdgeInsets.all(2),
-						decoration: BoxDecoration(
-							color: Colors.red,
-							borderRadius: BorderRadius.circular(6),
-						),
-						constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
-						child: Text(
-							count.toString(),
-							style: const TextStyle(color: Colors.white, fontSize: 8),
-							textAlign: TextAlign.center,
-						),
-					),
-				);
-			},
-		);
-	}
-}
-
-class _UserAvatar extends StatelessWidget {
-	@override
-	Widget build(BuildContext context) {
-		final uid = FirebaseAuth.instance.currentUser?.uid;
-		if (uid == null) return const CircleAvatar(child: Icon(Icons.person_outline));
-		return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-			stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
-			builder: (context, snap) {
-				String fs = '';
-				if (snap.hasData) {
-					final data = (snap.data!.data() ?? const {});
-					fs = (data['photoUrl']?.toString() ?? '').trim();
-				}
-				final authUrl = (FirebaseAuth.instance.currentUser?.photoURL ?? '').trim();
-				final url = fs.isNotEmpty ? fs : authUrl;
-				if (url.isEmpty) return const CircleAvatar(child: Icon(Icons.person_outline));
-				return CircleAvatar(
-					backgroundColor: Colors.grey.shade200,
-					radius: 16,
-					child: ClipOval(
-						child: Image.network(
-							url,
-							width: 32,
-							height: 32,
-							fit: BoxFit.cover,
-							errorBuilder: (context, error, stack) => const Icon(Icons.person_outline),
-						),
-					),
-				);
-			},
 		);
 	}
 }

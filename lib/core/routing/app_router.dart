@@ -48,6 +48,8 @@ import 'package:zippup/features/admin/presentation/admin_users_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_menu_screen.dart';
 import 'package:zippup/features/notifications/presentation/notifications_screen.dart';
 import 'package:zippup/features/navigation/map_booking_screen.dart';
+import 'package:zippup/features/moving/presentation/moving_screen.dart';
+import 'package:zippup/features/rentals/presentation/vehicle_rentals_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -306,6 +308,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/dev/map-booking',
         name: 'mapBookingDev',
         builder: (context, state) => const MapBookingScreen(),
+      ),
+      GoRoute(
+        path: '/moving',
+        name: 'moving',
+        builder: (context, state) => const MovingScreen(),
+      ),
+      GoRoute(
+        path: '/rentals',
+        name: 'rentals',
+        builder: (context, state) => const VehicleRentalsScreen(),
       ),
     ],
   );

@@ -26,9 +26,18 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	Uint8List? _idBytes;
 	Uint8List? _bizBytes;
 	bool _saving = false;
+	// Vehicle details for Ride & Moving
+	final _vehicleBrand = TextEditingController();
+	final _vehicleColor = TextEditingController();
+	final _vehiclePlate = TextEditingController();
+	final _vehicleSeats = TextEditingController();
+	final List<Uint8List> _vehiclePhotos = [];
+	final List<File> _vehiclePhotoFiles = [];
 
 	final Map<String, List<String>> _subcategories = const {
-		'transport': ['Taxi', 'Bike', 'Truck', 'Courier'],
+		'transport': ['Taxi', 'Bike', 'Bus', 'Tricycle', 'Courier'],
+		'moving': ['Truck', 'Backie/Pickup', 'Courier'],
+		'rentals': ['Luxury car', 'Normal car', 'Bus', 'Truck', 'Tractor'],
 		'food': ['Fast Food', 'Local', 'Grocery'],
 		'groceries': ['Grocery Store'],
 		'hire': ['Home', 'Tech', 'Construction', 'Auto', 'Personal'],
@@ -37,6 +46,17 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 		'personal': ['Makeup', 'Hair', 'Nails', 'Pedicure', 'Massage', 'Barbing', 'Hair styling'],
 		'others': ['Events planning', 'Live event tickets', 'Tutors'],
 	};
+
+	Future<void> _pickVehiclePhotos() async {
+		final picker = ImagePicker();
+		final images = await picker.pickMultiImage(imageQuality: 85);
+		if (images.isEmpty) return;
+		for (final img in images) {
+			try { _vehiclePhotos.add(await img.readAsBytes()); }
+			catch (_) { _vehiclePhotoFiles.add(File(img.path)); }
+		}
+		setState(() {});
+	}
 
 	Future<void> _pickId() async {
 		final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
@@ -57,6 +77,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 			final uid = FirebaseAuth.instance.currentUser!.uid;
 			String? idUrl;
 			String? bizUrl;
+			final List<String> vehicleUrls = [];
 			if (_idBytes != null || _idDoc != null) {
 				final ref = FirebaseStorage.instance.ref('applications/$uid/id_${DateTime.now().millisecondsSinceEpoch}.jpg');
 				if (_idBytes != null) { await ref.putData(_idBytes!, SettableMetadata(contentType: 'image/jpeg')); }
@@ -69,6 +90,19 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				else if (_bizDoc != null) { await ref.putFile(_bizDoc!); }
 				bizUrl = await ref.getDownloadURL();
 			}
+			// Upload vehicle photos if applicable
+			if (['transport','moving','rentals'].contains(_category) && (_vehiclePhotos.isNotEmpty || _vehiclePhotoFiles.isNotEmpty)) {
+				for (int i = 0; i < _vehiclePhotos.length; i++) {
+					final ref = FirebaseStorage.instance.ref('applications/$uid/vehicle_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
+					await ref.putData(_vehiclePhotos[i], SettableMetadata(contentType: 'image/jpeg'));
+					vehicleUrls.add(await ref.getDownloadURL());
+				}
+				for (int j = 0; j < _vehiclePhotoFiles.length; j++) {
+					final ref = FirebaseStorage.instance.ref('applications/$uid/vehicle_file_${DateTime.now().millisecondsSinceEpoch}_$j.jpg');
+					await ref.putFile(_vehiclePhotoFiles[j]);
+					vehicleUrls.add(await ref.getDownloadURL());
+				}
+			}
 			await FirebaseFirestore.instance.collection('applications').doc(uid).set({
 				'applicantId': uid,
 				'name': _name.text.trim(),
@@ -79,6 +113,11 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'title': _title.text.trim(),
 				'idUrl': idUrl,
 				'bizUrl': bizUrl,
+				'vehicleBrand': _vehicleBrand.text.trim().isEmpty ? null : _vehicleBrand.text.trim(),
+				'vehicleColor': _vehicleColor.text.trim().isEmpty ? null : _vehicleColor.text.trim(),
+				'vehiclePlate': _vehiclePlate.text.trim().isEmpty ? null : _vehiclePlate.text.trim(),
+				'vehicleSeats': _vehicleSeats.text.trim().isEmpty ? null : int.tryParse(_vehicleSeats.text.trim()),
+				'vehiclePhotoUrls': vehicleUrls,
 				'status': 'pending',
 				'createdAt': DateTime.now().toIso8601String(),
 			});
@@ -107,6 +146,8 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 					AddressField(controller: _address, label: 'Address'),
 					DropdownButtonFormField(value: _category, items: const [
 						DropdownMenuItem(value: 'transport', child: Text('Transport')),
+						DropdownMenuItem(value: 'moving', child: Text('Moving')),
+						DropdownMenuItem(value: 'rentals', child: Text('Vehicle Rentals')),
 						DropdownMenuItem(value: 'food', child: Text('Food')),
 						DropdownMenuItem(value: 'groceries', child: Text('Groceries')),
 						DropdownMenuItem(value: 'hire', child: Text('Hire')),
@@ -127,6 +168,15 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 						DropdownMenuItem(value: 'company', child: Text('Company')),
 					], onChanged: (v) => setState(() => _type = v as String), decoration: const InputDecoration(labelText: 'Type')),
 					TextField(controller: _title, decoration: const InputDecoration(labelText: 'Service title')),
+					if (['transport','moving','rentals'].contains(_category)) ...[
+						const SizedBox(height: 8),
+						const Text('Vehicle details', style: TextStyle(fontWeight: FontWeight.bold)),
+						TextField(controller: _vehicleBrand, decoration: const InputDecoration(labelText: 'Brand / make')),
+						TextField(controller: _vehicleColor, decoration: const InputDecoration(labelText: 'Color')),
+						TextField(controller: _vehiclePlate, decoration: const InputDecoration(labelText: 'Plate number')),
+						TextField(controller: _vehicleSeats, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Number of seats / carriage')),
+						ListTile(title: const Text('Upload 360° vehicle photos (multi-select)'), trailing: const Icon(Icons.upload_file), onTap: _pickVehiclePhotos, subtitle: Text('${_vehiclePhotos.length + _vehiclePhotoFiles.length} selected')),
+					],
 					const SizedBox(height: 8),
 					ListTile(title: const Text('Upload ID/Passport'), trailing: const Icon(Icons.upload_file), onTap: _pickId, subtitle: Text(_idDoc?.path.split('/').last ?? (_idBytes != null ? 'Selected' : 'Not uploaded'))),
 					ListTile(title: const Text('Upload business document (registration/permits)'), trailing: const Icon(Icons.upload_file), onTap: _pickBiz, subtitle: Text(_bizDoc?.path.split('/').last ?? (_bizBytes != null ? 'Selected' : 'Not uploaded'))),

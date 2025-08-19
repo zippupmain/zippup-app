@@ -12,16 +12,18 @@ class NotificationsService {
 	final FlutterLocalNotificationsPlugin _local = FlutterLocalNotificationsPlugin();
 
 	Future<void> init() async {
-		// On web, FCM requires setup and local notifications are not used the same way; skip local init
-		if (!kIsWeb) {
-			// Request permission on Apple platforms; Android auto-permits
-			await _messaging.requestPermission(alert: true, badge: true, sound: true);
-
-			const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-			const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
-			const InitializationSettings initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
-			await _local.initialize(initSettings);
+		// Skip notifications setup on Web to avoid requiring service worker/VAPID at startup
+		if (kIsWeb) {
+			return;
 		}
+
+		// Request permission on Apple platforms; Android auto-permits
+		await _messaging.requestPermission(alert: true, badge: true, sound: true);
+
+		const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+		const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
+		const InitializationSettings initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
+		await _local.initialize(initSettings);
 
 		// Register token
 		final token = await _messaging.getToken();
@@ -29,7 +31,6 @@ class NotificationsService {
 		_messaging.onTokenRefresh.listen(_saveToken);
 
 		FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-			if (kIsWeb) return; // do not use local notifications on web
 			final title = message.notification?.title ?? 'ZippUp';
 			final body = message.notification?.body ?? '';
 			_showLocalNotification(title, body);

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum RideType { taxi, bike, truck }
+enum RideType { taxi, bike, courier, bus, tricycle }
 
 enum RideStatus { requested, accepted, arriving, arrived, enroute, completed, cancelled }
 

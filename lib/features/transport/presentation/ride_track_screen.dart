@@ -6,6 +6,7 @@ import 'package:zippup/common/models/ride.dart';
 import 'package:zippup/features/orders/widgets/status_timeline.dart';
 import 'package:zippup/features/transport/providers/ride_service.dart';
 import 'package:zippup/services/location/distance_service.dart';
+import 'package:go_router/go_router.dart';
 
 class RideTrackScreen extends StatefulWidget {
 	const RideTrackScreen({super.key, required this.rideId});
@@ -106,10 +107,7 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 			),
 		);
 		if (go == true && mounted) {
-			Navigator.pop(context);
-			// redirect to transport to select another provider
-			// ignore: use_build_context_synchronously
-			Navigator.of(context).pushNamed('/transport');
+			context.push('/transport');
 		} else {
 			_waitingSince = DateTime.now();
 		}
@@ -168,17 +166,17 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 					final markers = <Marker>{};
 					if (pickupLat != null && pickupLng != null) {
 						final pos = LatLng(pickupLat, pickupLng);
-						markers.add(const Marker(markerId: MarkerId('pickup'), infoWindow: InfoWindow(title: 'Pickup')));
+						markers.add(Marker(markerId: const MarkerId('pickup'), position: pos, infoWindow: const InfoWindow(title: 'Pickup')));
 						center ??= pos;
 					}
 					if (destLat != null && destLng != null) {
 						final pos = LatLng(destLat, destLng);
-						markers.add(const Marker(markerId: MarkerId('dest'), infoWindow: InfoWindow(title: 'Destination')));
+						markers.add(Marker(markerId: const MarkerId('dest'), position: pos, infoWindow: const InfoWindow(title: 'Destination')));
 						center ??= pos;
 					}
 					if (driverLat != null && driverLng != null) {
 						final pos = LatLng(driverLat, driverLng);
-						markers.add(const Marker(markerId: MarkerId('driver'), infoWindow: InfoWindow(title: 'Driver')));
+						markers.add(Marker(markerId: const MarkerId('driver'), position: pos, infoWindow: const InfoWindow(title: 'Driver')));
 						center = pos;
 					}
 
@@ -216,7 +214,7 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 									} catch (_) {
 										return const Center(child: Text('Map failed to load. Check API key/config.'));
 									}
-								}),
+							}),
 							),
 							Padding(
 								padding: const EdgeInsets.all(16),
