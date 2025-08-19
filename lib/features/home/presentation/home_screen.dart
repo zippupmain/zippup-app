@@ -9,6 +9,20 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// Temporary stubs to unblock build; replace with real implementations
+Widget _PositionedUnreadDot() => const SizedBox.shrink();
+Widget _UserAvatar() => const Icon(Icons.person);
+Widget _HomeSearchBar() => const SizedBox.shrink();
+Widget _Promotions() => const SizedBox.shrink();
+Widget _DynamicCard({required int index}) => const SizedBox.shrink();
+
+// Temporary stubs to unblock build; replace with real implementations
+Widget _PositionedUnreadDot() => const SizedBox.shrink();
+Widget _UserAvatar() => const Icon(Icons.person);
+Widget _HomeSearchBar() => const SizedBox.shrink();
+Widget _Promotions() => const SizedBox.shrink();
+Widget _DynamicCard({required int index}) => const SizedBox.shrink();
+
 class HomeScreen extends StatefulWidget {
 	const HomeScreen({super.key});
 	@override
@@ -267,4 +281,24 @@ class _QuickActions extends StatelessWidget {
 			),
 		);
 	}
+}
+
+class _QuickAction {
+	final String title;
+	final IconData icon;
+	final String routeName;
+	final Color bg;
+	final Color iconColor;
+
+	const _QuickAction(this.title, this.icon, this.routeName, this.bg, this.iconColor);
+}
+
+class _QuickAction {
+	final String title;
+	final IconData icon;
+	final String routeName;
+	final Color bg;
+	final Color iconColor;
+
+	const _QuickAction(this.title, this.icon, this.routeName, this.bg, this.iconColor);
 }
