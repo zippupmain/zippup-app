@@ -30,14 +30,14 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	final _vehicleBrand = TextEditingController();
 	final _vehicleColor = TextEditingController();
 	final _vehiclePlate = TextEditingController();
-	final _vehicleSeats = TextEditingController();
+	final _vehicleModel = TextEditingController();
 	final List<Uint8List> _vehiclePhotos = [];
 	final List<File> _vehiclePhotoFiles = [];
 
 	final Map<String, List<String>> _subcategories = const {
 		'transport': ['Taxi', 'Bike', 'Bus', 'Tricycle', 'Courier'],
 		'moving': ['Truck', 'Backie/Pickup', 'Courier'],
-		'rentals': ['Luxury car', 'Normal car', 'Bus', 'Truck', 'Tractor'],
+		'rentals': ['Vehicle', 'Houses', 'Other rentals'],
 		'food': ['Fast Food', 'Local', 'Grocery'],
 		'groceries': ['Grocery Store'],
 		'hire': ['Home', 'Tech', 'Construction', 'Auto', 'Personal'],
@@ -116,7 +116,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'vehicleBrand': _vehicleBrand.text.trim().isEmpty ? null : _vehicleBrand.text.trim(),
 				'vehicleColor': _vehicleColor.text.trim().isEmpty ? null : _vehicleColor.text.trim(),
 				'vehiclePlate': _vehiclePlate.text.trim().isEmpty ? null : _vehiclePlate.text.trim(),
-				'vehicleSeats': _vehicleSeats.text.trim().isEmpty ? null : int.tryParse(_vehicleSeats.text.trim()),
+				'vehicleModel': _vehicleModel.text.trim().isEmpty ? null : _vehicleModel.text.trim(),
 				'vehiclePhotoUrls': vehicleUrls,
 				'status': 'pending',
 				'createdAt': DateTime.now().toIso8601String(),
@@ -147,7 +147,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 					DropdownButtonFormField(value: _category, items: const [
 						DropdownMenuItem(value: 'transport', child: Text('Transport')),
 						DropdownMenuItem(value: 'moving', child: Text('Moving')),
-						DropdownMenuItem(value: 'rentals', child: Text('Vehicle Rentals')),
+						DropdownMenuItem(value: 'rentals', child: Text('Rentals')),
 						DropdownMenuItem(value: 'food', child: Text('Food')),
 						DropdownMenuItem(value: 'groceries', child: Text('Groceries')),
 						DropdownMenuItem(value: 'hire', child: Text('Hire')),
@@ -174,7 +174,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 						TextField(controller: _vehicleBrand, decoration: const InputDecoration(labelText: 'Brand / make')),
 						TextField(controller: _vehicleColor, decoration: const InputDecoration(labelText: 'Color')),
 						TextField(controller: _vehiclePlate, decoration: const InputDecoration(labelText: 'Plate number')),
-						TextField(controller: _vehicleSeats, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Number of seats / carriage')),
+						TextField(controller: _vehicleModel, decoration: const InputDecoration(labelText: 'Model (e.g., 911 Mercedes)')),
 						ListTile(title: const Text('Upload 360° vehicle photos (multi-select)'), trailing: const Icon(Icons.upload_file), onTap: _pickVehiclePhotos, subtitle: Text('${_vehiclePhotos.length + _vehiclePhotoFiles.length} selected')),
 					],
 					const SizedBox(height: 8),

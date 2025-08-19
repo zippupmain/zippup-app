@@ -12,7 +12,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 // Temporary stubs to unblock build; replace with real implementations
 Widget _PositionedUnreadDot() => const SizedBox.shrink();
 Widget _UserAvatar() => const Icon(Icons.person);
-Widget _HomeSearchBar() => const SizedBox.shrink();
+Widget _HomeSearchBar() => const _HomeSearchBarWidget();
 Widget _Promotions() => const SizedBox.shrink();
 Widget _DynamicCard({required int index}) => const SizedBox.shrink();
 
@@ -151,27 +151,26 @@ class _HomeScreenState extends State<HomeScreen> {
 				slivers: [
 					SliverAppBar(
 						pinned: true,
-						expandedHeight: 160,
+						expandedHeight: 190,
 						flexibleSpace: FlexibleSpaceBar(
-							titlePadding: const EdgeInsetsDirectional.only(start: 16, bottom: 12),
-							title: Column(
-								crossAxisAlignment: CrossAxisAlignment.start,
-								mainAxisSize: MainAxisSize.min,
-								children: [
-									Text(_greet, style: const TextStyle(fontSize: 11)),
-									const SizedBox(height: 2),
-									const Text('One Tap. All Services.', style: TextStyle(fontSize: 11)),
-								],
-							),
-							background: const DecoratedBox(
-								decoration: BoxDecoration(
-									gradient: LinearGradient(
-										colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-										begin: Alignment.topLeft,
-										end: Alignment.bottomRight,
+							background: Stack(children: [
+								Container(
+									decoration: const BoxDecoration(
+										gradient: LinearGradient(
+											colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+											begin: Alignment.topLeft,
+											end: Alignment.bottomRight,
+										),
 									),
 								),
-							),
+								Align(
+									alignment: Alignment.bottomCenter,
+									child: Padding(
+										padding: const EdgeInsets.only(bottom: 12),
+										child: const _BillboardCarousel(height: 130),
+									),
+								),
+							]),
 						),
 					),
 					SliverToBoxAdapter(
@@ -194,11 +193,16 @@ class _HomeScreenState extends State<HomeScreen> {
 						),
 					),
 					SliverToBoxAdapter(child: _QuickActions()),
-					SliverToBoxAdapter(child: _Promotions()),
-					SliverList(
-						delegate: SliverChildBuilderDelegate(
-							(context, index) => _DynamicCard(index: index),
-							childCount: 8,
+					SliverToBoxAdapter(
+						child: Padding(
+							padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+							child: const _BillboardCarousel(height: 140),
+						),
+					),
+					SliverToBoxAdapter(
+						child: Padding(
+							padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+							child: const _BillboardCarousel(height: 140),
 						),
 					),
 				],
@@ -244,33 +248,41 @@ class _QuickActions extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return Padding(
 			padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-			child: GridView.builder(
-				itemCount: actions.length,
-				shrinkWrap: true,
-				physics: const NeverScrollableScrollPhysics(),
-				gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-					crossAxisCount: 4,
-					childAspectRatio: .9,
-					mainAxisSpacing: 10,
-					crossAxisSpacing: 10,
+			child: Container(
+				decoration: BoxDecoration(
+					color: Colors.white,
+					borderRadius: BorderRadius.circular(12),
+					boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,2))],
 				),
-				itemBuilder: (context, i) {
-					final a = actions[i];
-					return InkWell(
-						onTap: () => context.pushNamed(a.routeName),
-						child: Column(
-							children: [
-								Container(
-									decoration: BoxDecoration(color: a.bg, shape: BoxShape.circle),
-									padding: const EdgeInsets.all(12),
-									child: Icon(a.icon, color: a.iconColor),
-								),
-								const SizedBox(height: 6),
-								Text(a.title, style: const TextStyle(fontSize: 12)),
-							],
-						),
-					);
-				},
+				padding: const EdgeInsets.all(8),
+				child: GridView.builder(
+					itemCount: actions.length,
+					shrinkWrap: true,
+					physics: const NeverScrollableScrollPhysics(),
+					gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+						crossAxisCount: 4,
+						childAspectRatio: .9,
+						mainAxisSpacing: 10,
+						crossAxisSpacing: 10,
+					),
+					itemBuilder: (context, i) {
+						final a = actions[i];
+						return InkWell(
+							onTap: () => context.pushNamed(a.routeName),
+							child: Column(
+								children: [
+									Container(
+										decoration: BoxDecoration(color: a.bg, shape: BoxShape.circle),
+										padding: const EdgeInsets.all(12),
+										child: Icon(a.icon, color: a.iconColor),
+									),
+									const SizedBox(height: 6),
+									Text(a.title, style: const TextStyle(fontSize: 12, color: Colors.black)),
+								],
+							),
+						);
+					},
+				),
 			),
 		);
 	}
@@ -284,4 +296,186 @@ class _QuickAction {
 	final Color iconColor;
 
 	const _QuickAction(this.title, this.icon, this.routeName, this.bg, this.iconColor);
+}
+
+class _HomeSearchBarWidget extends StatefulWidget {
+	const _HomeSearchBarWidget();
+	@override
+	State<_HomeSearchBarWidget> createState() => _HomeSearchBarWidgetState();
+}
+
+class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
+	final TextEditingController _controller = TextEditingController();
+	stt.SpeechToText? _speech;
+	bool _listening = false;
+
+	@override
+	void initState() {
+		super.initState();
+		_speech = stt.SpeechToText();
+	}
+
+	Future<void> _toggleListen() async {
+		if (_listening) {
+			_speech?.stop();
+			setState(() => _listening = false);
+			return;
+		}
+		final available = await _speech!.initialize(onStatus: (_) {}, onError: (_) {});
+		if (!available) return;
+		setState(() => _listening = true);
+		_speech!.listen(onResult: (r) {
+			_controller.text = r.recognizedWords;
+			_controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
+		});
+	}
+
+	void _submit() {
+		final q = _controller.text.trim();
+		if (q.isEmpty) return;
+		if (context.mounted) context.pushNamed('search', queryParameters: {'q': q});
+	}
+
+	@override
+	Widget build(BuildContext context) {
+		return Container(
+			decoration: BoxDecoration(
+				color: Colors.white,
+				borderRadius: BorderRadius.circular(12),
+				boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,2))],
+			),
+			padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+			child: Row(children: [
+				const Icon(Icons.search, color: Colors.black54),
+				const SizedBox(width: 8),
+				Expanded(
+					child: TextField(
+						controller: _controller,
+						decoration: const InputDecoration(border: InputBorder.none, hintText: 'Search services, food, vendors, listings...'),
+						textInputAction: TextInputAction.search,
+						onSubmitted: (_) => _submit(),
+					),
+				),
+				IconButton(
+					tooltip: _listening ? 'Stop' : 'Voice search',
+					onPressed: _toggleListen,
+					icon: Icon(_listening ? Icons.mic : Icons.mic_none, color: _listening ? Colors.red : Colors.black54),
+				),
+				IconButton(
+					onPressed: _submit,
+					icon: const Icon(Icons.arrow_forward, color: Colors.black54),
+				),
+			]),
+		);
+	}
+}
+
+class _BillboardCarousel extends StatefulWidget {
+	final double height;
+	const _BillboardCarousel({required this.height});
+	@override
+	State<_BillboardCarousel> createState() => _BillboardCarouselState();
+}
+
+class _BillboardCarouselState extends State<_BillboardCarousel> {
+	final PageController _controller = PageController(viewportFraction: 0.9);
+	int _index = 0;
+	@override
+	void initState() {
+		super.initState();
+		Future.microtask(() async {
+			while (mounted) {
+				await Future.delayed(const Duration(seconds: 4));
+				if (!mounted) break;
+				_index++;
+				_controller.animateToPage(_index % 5, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+			}
+		});
+	}
+	@override
+	Widget build(BuildContext context) {
+		return SizedBox(
+			height: widget.height,
+			child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+				stream: FirebaseFirestore.instance.collection('promos').orderBy('createdAt', descending: true).limit(5).snapshots(),
+				builder: (context, snapshot) {
+					final docs = snapshot.data?.docs ?? const [];
+					if (docs.isEmpty) {
+						return PageView.builder(
+							controller: _controller,
+							itemBuilder: (_, i) => const _BillboardCard(
+								title: 'ZippUp! One Tap. All Services.',
+								subtitle: 'Everything you need, in one app.',
+								imageUrl: null,
+							),
+							itemCount: 5,
+						);
+					}
+					return PageView.builder(
+						controller: _controller,
+						itemCount: docs.length,
+						itemBuilder: (context, i) {
+							final data = docs[i].data();
+							return _BillboardCard(
+								title: (data['title'] ?? '').toString(),
+								subtitle: (data['subtitle'] ?? '').toString(),
+								imageUrl: (data['imageUrl'] ?? '').toString().isEmpty ? null : (data['imageUrl'] as String),
+							);
+						},
+					);
+				},
+			),
+		);
+	}
+}
+
+class _BillboardCard extends StatelessWidget {
+	final String title;
+	final String subtitle;
+	final String? imageUrl;
+	const _BillboardCard({required this.title, required this.subtitle, required this.imageUrl});
+	@override
+	Widget build(BuildContext context) {
+		return Padding(
+			padding: const EdgeInsets.symmetric(horizontal: 6),
+			child: Container(
+				decoration: BoxDecoration(
+					borderRadius: BorderRadius.circular(12),
+					gradient: imageUrl == null
+						? const LinearGradient(colors: [Color(0xFF00C6FF), Color(0xFF0072FF)])
+						: null,
+					color: imageUrl == null ? null : Colors.white,
+					boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,2))],
+				),
+				clipBehavior: Clip.antiAlias,
+				child: Stack(
+					fit: StackFit.expand,
+					children: [
+						if (imageUrl != null)
+							CachedNetworkImage(imageUrl: imageUrl!, fit: BoxFit.cover),
+						Container(
+							decoration: BoxDecoration(
+								gradient: LinearGradient(
+									colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.5)],
+									begin: Alignment.topCenter,
+									end: Alignment.bottomCenter,
+								),
+							),
+						),
+					Padding(
+						padding: const EdgeInsets.all(12),
+						child: Column(
+							crossAxisAlignment: CrossAxisAlignment.start,
+							children: [
+								Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+								const SizedBox(height: 4),
+								Text(subtitle, style: const TextStyle(color: Colors.white, fontSize: 12)),
+							],
+						),
+					),
+				],
+				),
+			),
+		);
+	}
 }

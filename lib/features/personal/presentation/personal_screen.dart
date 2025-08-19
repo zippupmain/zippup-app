@@ -13,7 +13,8 @@ class PersonalScreen extends StatelessWidget {
 			('Pedicure', Icons.spa),
 			('Massage', Icons.spa_outlined),
 			('Barbing', Icons.content_cut),
-			('Hair styling', Icons.face)
+			('Hair styling', Icons.face),
+			('Personal driver', Icons.drive_eta),
 		];
 		return Scaffold(
 			appBar: AppBar(title: const Text('Personal Services'), backgroundColor: Colors.white, foregroundColor: Colors.black),
