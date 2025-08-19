@@ -50,7 +50,9 @@
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Your location is used to show nearby services and for emergency alerts.</string>
 		<key>NSCameraUsageDescription</key>
-		<string>Camera may be used for verification.</string>
+		<string>We use your camera to capture a live selfie and ID for KYC verification.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>We access your photo library if you choose to upload documents from gallery.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>Microphone may be used during emergency verification.</string>
 		<key>UIStatusBarHidden</key>

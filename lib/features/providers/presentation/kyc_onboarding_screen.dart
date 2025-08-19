@@ -7,6 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class KycOnboardingScreen extends StatefulWidget {
 	const KycOnboardingScreen({super.key});
@@ -68,6 +69,21 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 		setState(() {});
 	}
 
+	Future<void> _captureSelfie() async {
+		var status = await Permission.camera.status;
+		if (!status.isGranted) {
+			status = await Permission.camera.request();
+		}
+		if (status.isGranted) {
+			await _pickSingle(ImageSource.camera, (b, f) { _selfieBytes = b; _selfieFile = f; });
+		} else {
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera permission denied. You can upload a selfie from gallery instead.')));
+			}
+			await _pickSingle(ImageSource.gallery, (b, f) { _selfieBytes = b; _selfieFile = f; });
+		}
+	}
+
 	Future<void> _submit() async {
 		setState(() => _saving = true);
 		try {
@@ -112,6 +128,14 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 				'status': 'pending',
 				'createdAt': DateTime.now().toIso8601String(),
 			});
+			await FirebaseFirestore.instance.collection('notifications').add({
+				'userId': uid,
+				'title': 'KYC submitted',
+				'body': 'We are reviewing your documents. You will be notified with the result shortly.',
+				'route': '/notifications',
+				'createdAt': DateTime.now().toIso8601String(),
+				'read': false,
+			});
 			if (mounted) {
 				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Submitted for review')));
 				Navigator.pop(context);
@@ -144,7 +168,7 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 					TextField(controller: _idNumber, decoration: const InputDecoration(labelText: 'ID number')),
 					ListTile(title: const Text('ID photo'), trailing: const Icon(Icons.upload_file), subtitle: Text(_idImageBytes != null || _idImageFile != null ? 'Selected' : 'Not uploaded'), onTap: () => _chooseSourceAndPick((src) => _pickSingle(src, (b,f){ _idImageBytes=b; _idImageFile=f; }))),
 					ListTile(title: const Text('Proof of address/bank (multi)'), trailing: const Icon(Icons.upload_file), subtitle: Text('${_proofBytes.length + _proofFiles.length} selected'), onTap: _pickMultiProof),
-					ListTile(title: const Text('Capture selfie now'), trailing: const Icon(Icons.camera_alt_outlined), subtitle: Text(_selfieBytes != null || _selfieFile != null ? 'Captured' : 'Not captured'), onTap: () => _pickSingle(ImageSource.camera, (b,f){ _selfieBytes=b; _selfieFile=f; })),
+					ListTile(title: const Text('Capture selfie now'), trailing: const Icon(Icons.camera_alt_outlined), subtitle: Text(_selfieBytes != null || _selfieFile != null ? 'Captured' : 'Not captured'), onTap: _captureSelfie),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _saving ? null : _submit, child: Text(_saving ? 'Submitting...' : 'Submit')),
 				],

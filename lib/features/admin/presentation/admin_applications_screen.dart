@@ -6,6 +6,15 @@ class AdminApplicationsScreen extends StatelessWidget {
 
 	Future<void> _approve(BuildContext context, String uid, Map<String, dynamic> app) async {
 		await FirebaseFirestore.instance.collection('applications').doc(uid).update({'status': 'approved', 'approvedAt': DateTime.now().toIso8601String()});
+		await FirebaseFirestore.instance.collection('_onboarding').doc(uid).set({'status': 'approved'}, SetOptions(merge: true));
+		await FirebaseFirestore.instance.collection('notifications').add({
+			'userId': uid,
+			'title': 'KYC approved',
+			'body': 'Your KYC has been approved. You can now create and manage business profiles.',
+			'route': '/providers',
+			'createdAt': DateTime.now().toIso8601String(),
+			'read': false,
+		});
 		await FirebaseFirestore.instance.collection('vendors').doc(uid).set({
 			'name': app['name'],
 			'address': app['address'],
@@ -19,6 +28,15 @@ class AdminApplicationsScreen extends StatelessWidget {
 
 	Future<void> _decline(BuildContext context, String uid) async {
 		await FirebaseFirestore.instance.collection('applications').doc(uid).update({'status': 'declined', 'declinedAt': DateTime.now().toIso8601String()});
+		await FirebaseFirestore.instance.collection('_onboarding').doc(uid).set({'status': 'declined', 'reason': 'Please re-upload clearer documents'}, SetOptions(merge: true));
+		await FirebaseFirestore.instance.collection('notifications').add({
+			'userId': uid,
+			'title': 'KYC declined',
+			'body': 'Your KYC was declined. Tap to update your details and resubmit.',
+			'route': '/providers/kyc',
+			'createdAt': DateTime.now().toIso8601String(),
+			'read': false,
+		});
 		if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Declined')));
 	}
 
