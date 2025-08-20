@@ -1,0 +1,1 @@
+const String stripePublishableKeyWeb = 'pk_test_replace_with_your_key';

@@ -20,7 +20,7 @@ class LocationService {
 		if (permission == LocationPermission.denied) {
 			permission = await Geolocator.requestPermission();
 		}
-		if (permission == LocationPermission.deniedForever) {
+		if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
 			await Geolocator.openAppSettings();
 			return false;
 		}
@@ -31,7 +31,10 @@ class LocationService {
 		try {
 			final hasPermission = await ensurePermissions();
 			if (!hasPermission) {
-				final last = await Geolocator.getLastKnownPosition();
+				Position? last;
+				if (!kIsWeb) {
+					try { last = await Geolocator.getLastKnownPosition(); } catch (_) { last = null; }
+				}
 				if (last != null) return last;
 				return _fallbackTestPosition();
 			}

@@ -8,6 +8,7 @@ import 'package:zippup/core/theme/app_theme.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:zippup/services/notifications/notifications_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:zippup/core/config/payments_config.dart';
 
 Future<void> main() async {
 	WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,10 @@ Future<void> main() async {
 		if (stripeKey != null && stripeKey.isNotEmpty) {
 			Stripe.publishableKey = stripeKey;
 		}
+	}
+	// Configure Stripe on web from config
+	if (kIsWeb && (Stripe.publishableKey.isEmpty)) {
+		Stripe.publishableKey = stripePublishableKeyWeb;
 	}
 	await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 	// Initialize notifications (skip on web)
