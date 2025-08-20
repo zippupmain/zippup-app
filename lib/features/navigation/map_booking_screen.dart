@@ -169,7 +169,8 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 			serviceType: 'Plumber',
 			onTrackingStarted: (orderId) {
 				setState(() => _isTracking = true);
-				_showTrackingDialog(orderId, _mapService.currentLocation!);
+				final dest = _mapService.currentLocation ?? const LatLng(0, 0);
+				_showTrackingDialog(orderId, dest);
 			},
 		);
 		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Service booking requested')));

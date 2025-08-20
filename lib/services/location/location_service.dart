@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geocoding/geocoding.dart' as gc;
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
 
 class LocationService {
 	static Future<bool> ensurePermissions() async {
@@ -85,13 +85,12 @@ class LocationService {
 		// Use open reverse geocoding (Nominatim) on web or as fallback
 		try {
 			final uri = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${p.latitude}&lon=${p.longitude}');
-			final client = HttpClient();
-			final req = await client.getUrl(uri);
-			req.headers.set('User-Agent', 'ZippUp/1.0');
-			final resp = await req.close();
-			final body = await resp.transform(const Utf8Decoder()).join();
-			final json = jsonDecode(body) as Map<String, dynamic>;
-			return (json['display_name'] as String?) ?? 'Address unavailable';
+			final resp = await http.get(uri, headers: {'User-Agent': 'ZippUp/1.0'});
+			if (resp.statusCode == 200) {
+				final json = jsonDecode(resp.body) as Map<String, dynamic>;
+				return (json['display_name'] as String?) ?? 'Address unavailable';
+			}
+			return null;
 		} catch (_) {
 			return null;
 		}
