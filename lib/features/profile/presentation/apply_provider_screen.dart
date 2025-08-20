@@ -63,15 +63,19 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	}
 
 	Future<void> _pickId() async {
-		final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (f == null) return;
-		try { _idBytes = await f.readAsBytes(); _idDoc = null; } catch (_) { _idDoc = File(f.path); _idBytes = null; }
+		final idPick = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+		if (idPick != null) {
+			try { _idBytes = await idPick.readAsBytes(); _idDoc = null; }
+			catch (_) { _idDoc = File(idPick.path); _idBytes = null; }
+		}
 		setState(() {});
 	}
 	Future<void> _pickBiz() async {
-		final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (f == null) return;
-		try { _bizBytes = await f.readAsBytes(); _bizDoc = null; } catch (_) { _bizDoc = File(f.path); _bizBytes = null; }
+		final bizPick = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+		if (bizPick != null) {
+			try { _bizBytes = await bizPick.readAsBytes(); _bizDoc = null; }
+			catch (_) { _bizDoc = File(bizPick.path); _bizBytes = null; }
+		}
 		setState(() {});
 	}
 
@@ -83,15 +87,15 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 			String? bizUrl;
 			final List<String> vehicleUrls = [];
 			if (_idBytes != null || _idDoc != null) {
-				final ref = FirebaseStorage.instance.ref('applications/$uid/id_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				if (_idBytes != null) { await ref.putData(_idBytes!, SettableMetadata(contentType: 'image/jpeg')); }
-				else if (_idDoc != null) { await ref.putFile(_idDoc!); }
+				final ref = FirebaseStorage.instance.ref('providers/$uid/id.jpg');
+				if (_idBytes != null) await ref.putData(_idBytes!, SettableMetadata(contentType: 'image/jpeg'));
+				else await ref.putFile(_idDoc!);
 				idUrl = await ref.getDownloadURL();
 			}
 			if (_bizBytes != null || _bizDoc != null) {
-				final ref = FirebaseStorage.instance.ref('applications/$uid/biz_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				if (_bizBytes != null) { await ref.putData(_bizBytes!, SettableMetadata(contentType: 'image/jpeg')); }
-				else if (_bizDoc != null) { await ref.putFile(_bizDoc!); }
+				final ref = FirebaseStorage.instance.ref('providers/$uid/biz.jpg');
+				if (_bizBytes != null) await ref.putData(_bizBytes!, SettableMetadata(contentType: 'image/jpeg'));
+				else await ref.putFile(_bizDoc!);
 				bizUrl = await ref.getDownloadURL();
 			}
 			// Upload vehicle photos if applicable

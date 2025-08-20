@@ -1,6 +1,5 @@
 import 'dart:io' if (dart.library.html) 'dart:html' as html; // to satisfy analyzer on web
 import 'package:flutter/foundation.dart' show kIsWeb;
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -21,6 +20,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
 	final _price = TextEditingController();
 	final _desc = TextEditingController();
 	final List<File> _images = [];
+	final List<Uint8List> _imageBytes = [];
 	bool _saving = false;
 
 	final _categories = const [
@@ -28,10 +28,16 @@ class _AddListingScreenState extends State<AddListingScreen> {
 	];
 
 	Future<void> _pickImage() async {
-		if (_images.length >= 10) return;
+		if (_images.length + _imageBytes.length >= 10) return;
 		final picker = ImagePicker();
-		final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (file != null && !kIsWeb) setState(() => _images.add(File(file.path)));
+		final x = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+		if (x == null) return;
+		if (kIsWeb) {
+			final b = await x.readAsBytes();
+			setState(() => _imageBytes.add(b));
+		} else {
+			setState(() => _images.add(File(x.path)));
+		}
 	}
 
 	Future<void> _save() async {
@@ -42,6 +48,11 @@ class _AddListingScreenState extends State<AddListingScreen> {
 			for (final file in _images) {
 				final fileName = 'listings/${DateTime.now().millisecondsSinceEpoch}_${urls.length}.jpg';
 				final task = await FirebaseStorage.instance.ref(fileName).putFile(file);
+				urls.add(await task.ref.getDownloadURL());
+			}
+			for (final b in _imageBytes) {
+				final fileName = 'listings/${DateTime.now().millisecondsSinceEpoch}_${urls.length}.jpg';
+				final task = await FirebaseStorage.instance.ref(fileName).putData(b, SettableMetadata(contentType: 'image/jpeg'));
 				urls.add(await task.ref.getDownloadURL());
 			}
 			await FirebaseFirestore.instance.collection('listings').add({
@@ -68,44 +79,21 @@ class _AddListingScreenState extends State<AddListingScreen> {
 			body: Form(
 				key: _formKey,
 				child: ListView(
-					padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-					children: [
-						GestureDetector(
-							onTap: _pickImage,
-							child: SizedBox(
-								height: 120,
-								child: ListView.separated(
-									scrollDirection: Axis.horizontal,
-									itemBuilder: (context, i) => AspectRatio(
-										aspectRatio: 1,
-										child: Container(
-											color: Colors.grey.shade200,
-											child: i < _images.length ? Image.file(_images[i], fit: BoxFit.cover) : const Icon(Icons.add_a_photo),
-										),
-									),
-									separatorBuilder: (_, __) => const SizedBox(width: 8),
-									itemCount: _images.length < 10 ? _images.length + 1 : 10,
-								),
-							),
-						),
-						TextFormField(controller: _title, decoration: const InputDecoration(labelText: 'Title'), validator: (v) => v!.isEmpty ? 'Required' : null),
-						DropdownButtonFormField<String>(
-							value: _category,
-							items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-							decoration: const InputDecoration(labelText: 'Category'),
-							onChanged: (v) => setState(() => _category = v),
-							validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
-						),
-						TextFormField(controller: _price, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Required' : null),
-						TextFormField(controller: _desc, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
-					],
-				),
-			),
-			bottomSheet: SafeArea(
-				child: Container(
-					color: Theme.of(context).scaffoldBackgroundColor,
 					padding: const EdgeInsets.all(16),
-					child: FilledButton(onPressed: _saving ? null : _save, child: const Text('Save')),
+					children: [
+						TextFormField(controller: _title, decoration: const InputDecoration(labelText: 'Title'), validator: (v) => (v==null||v.trim().isEmpty)?'Required':null),
+						DropdownButtonFormField<String>(value: _category, decoration: const InputDecoration(labelText: 'Category'), items: _categories.map((c)=>DropdownMenuItem(value:c, child: Text(c))).toList(), onChanged: (v)=> setState(()=> _category=v)),
+						TextFormField(controller: _price, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.number),
+						TextFormField(controller: _desc, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
+						const SizedBox(height: 8),
+						Wrap(spacing: 8, runSpacing: 8, children: [
+							..._images.map((f)=>Container(width:72,height:72,color:Colors.black12,child: const Icon(Icons.image))).toList(),
+							..._imageBytes.map((b)=>Container(width:72,height:72,color:Colors.black12,child: const Icon(Icons.image))).toList(),
+							OutlinedButton.icon(onPressed: _pickImage, icon: const Icon(Icons.add), label: const Text('Add image')),
+						]),
+						const SizedBox(height: 12),
+						FilledButton(onPressed: _saving?null:_save, child: Text(_saving? 'Saving…':'Save')),
+					],
 				),
 			),
 		);

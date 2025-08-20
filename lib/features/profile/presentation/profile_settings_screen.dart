@@ -68,10 +68,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 				} else if (_photoFile != null) {
 					await ref.putFile(_photoFile!);
 				}
-				final baseUrl = await ref.getDownloadURL();
-				final ts = DateTime.now().millisecondsSinceEpoch;
-				url = baseUrl.contains('?') ? '$baseUrl&v=$ts' : '$baseUrl?v=$ts';
-				await u.updatePhotoURL(url);
+				url = await ref.getDownloadURL();
 			}
 			final name = _name.text.trim();
 			await u.updateDisplayName(name);
