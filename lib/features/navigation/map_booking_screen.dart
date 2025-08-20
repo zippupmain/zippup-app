@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:zippup/services/navigation/map_booking_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_map/flutter_map.dart' as lm;
+import 'package:latlong2/latlong.dart' as ll;
 
 class MapBookingScreen extends StatefulWidget {
 	const MapBookingScreen({super.key});
@@ -23,15 +26,55 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 
 	void _onLocationUpdate() {
 		final loc = _mapService.currentLocationNotifier.value;
-		if (loc != null && _mapController != null) {
+		if (!kIsWeb && loc != null && _mapController != null) {
 			_mapController!.animateCamera(CameraUpdate.newLatLngZoom(loc, 15));
 		}
+		setState(() {});
 	}
 
 	Future<void> _init() async {
 		await _mapService.initializeLocation();
 		await _mapService.populateInitialMarkers();
 		if (mounted) setState(() {});
+	}
+
+	Widget _buildMap() {
+		final current = _mapService.currentLocation;
+		if (kIsWeb) {
+			final center = current == null ? const ll.LatLng(0, 0) : ll.LatLng(current.latitude, current.longitude);
+			final markers = _mapService.markers.map((m) => lm.Marker(
+				point: ll.LatLng(m.position.latitude, m.position.longitude),
+				width: 40,
+				height: 40,
+				builder: (_) => const Icon(Icons.location_on, color: Colors.redAccent),
+			)).toList();
+			return lm.FlutterMap(
+				options: lm.MapOptions(initialCenter: center, initialZoom: current != null ? 15 : 2),
+				children: [
+					lm.TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', subdomains: const ['a','b','c']),
+					lm.MarkerLayer(markers: markers),
+				],
+			);
+		}
+		// Mobile: Google Map
+		return ValueListenableBuilder<Set<Marker>>(
+			valueListenable: _mapService.markersNotifier,
+			builder: (context, markers, _) {
+				final initial = _mapService.currentLocation ?? const LatLng(0, 0);
+				return GoogleMap(
+					initialCameraPosition: CameraPosition(target: initial, zoom: _mapService.currentLocation != null ? 15 : 2),
+					markers: markers,
+					onMapCreated: (c) {
+						_mapController = c;
+						if (_mapService.currentLocation != null) {
+							c.animateCamera(CameraUpdate.newLatLngZoom(_mapService.currentLocation!, 15));
+						}
+					},
+					myLocationEnabled: true,
+					myLocationButtonEnabled: true,
+				);
+			},
+		);
 	}
 
 	@override
@@ -50,26 +93,7 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 				// Map
 				Expanded(
 					child: Column(children: [
-						Expanded(
-							child: ValueListenableBuilder<Set<Marker>>(
-								valueListenable: _mapService.markersNotifier,
-								builder: (context, markers, _) {
-									final initial = _mapService.currentLocation ?? const LatLng(0, 0);
-									return GoogleMap(
-										initialCameraPosition: CameraPosition(target: initial, zoom: _mapService.currentLocation != null ? 15 : 2),
-										markers: markers,
-										onMapCreated: (c) {
-											_mapController = c;
-											if (_mapService.currentLocation != null) {
-												c.animateCamera(CameraUpdate.newLatLngZoom(_mapService.currentLocation!, 15));
-											}
-										},
-										myLocationEnabled: true,
-										myLocationButtonEnabled: true,
-									);
-								},
-							),
-						),
+						Expanded(child: _buildMap()),
 						if (_mapService.currentLocation == null)
 							Padding(
 								padding: const EdgeInsets.all(8),
@@ -142,22 +166,24 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 				content: SizedBox(
 					height: 300,
 					width: double.maxFinite,
-					child: ValueListenableBuilder<Set<Marker>>(
-						valueListenable: _mapService.markersNotifier,
-						builder: (context, markers, _) {
-							return GoogleMap(
-								initialCameraPosition: CameraPosition(target: _mapService.currentLocation ?? const LatLng(0, 0), zoom: 15),
-								markers: markers,
-								onMapCreated: (controller) {
-									_mapService.startLiveTracking(
-										destination: destination,
-										orderId: orderId,
-										onDriverArrived: (id) {
-											Navigator.pop(context);
-											ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Driver has arrived!')));
-											setState(() => _isTracking = false);
-										},
-									);
+					child: kIsWeb
+						? _buildMap()
+						: ValueListenableBuilder<Set<Marker>>(
+							valueListenable: _mapService.markersNotifier,
+							builder: (context, markers, _) {
+								return GoogleMap(
+									initialCameraPosition: CameraPosition(target: _mapService.currentLocation ?? const LatLng(0, 0), zoom: 15),
+									markers: markers,
+									onMapCreated: (controller) {
+										_mapService.startLiveTracking(
+											destination: destination,
+											orderId: orderId,
+											onDriverArrived: (id) {
+												Navigator.pop(context);
+												ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Driver has arrived!')));
+												setState(() => _isTracking = false);
+											},
+										);
 								},
 							);
 						},
