@@ -1,4 +1,9 @@
 {
+  "projects": {
+    "default": "zippup-3b5c6"
+  }
+}
+{
 	"projects": {
 		"default": "zippup-3b5c6"
 	}
