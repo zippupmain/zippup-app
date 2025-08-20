@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 // Temporary stubs to unblock build; replace with real implementations
 Widget _PositionedUnreadDot() => const SizedBox.shrink();
@@ -311,7 +312,9 @@ class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
 	@override
 	void initState() {
 		super.initState();
-		_speech = stt.SpeechToText();
+		if (!kIsWeb) {
+			_speech = stt.SpeechToText();
+		}
 	}
 
 	Future<void> _toggleListen() async {
@@ -320,6 +323,7 @@ class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
 			setState(() => _listening = false);
 			return;
 		}
+		if (_speech == null) return;
 		final available = await _speech!.initialize(onStatus: (_) {}, onError: (_) {});
 		if (!available) return;
 		setState(() => _listening = true);
@@ -357,8 +361,8 @@ class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
 				),
 				IconButton(
 					tooltip: _listening ? 'Stop' : 'Voice search',
-					onPressed: _toggleListen,
-					icon: Icon(_listening ? Icons.mic : Icons.mic_none, color: _listening ? Colors.red : Colors.black54),
+					onPressed: kIsWeb ? null : _toggleListen,
+					icon: Icon(_listening ? Icons.stop : Icons.mic_none_rounded),
 				),
 				IconButton(
 					onPressed: _submit,
