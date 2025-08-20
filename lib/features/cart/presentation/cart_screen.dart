@@ -77,13 +77,17 @@ class CartScreen extends ConsumerWidget {
 		final currency = 'NGN';
 		late String url;
 		final payloadItems = items.map((e) => {'id': e.id, 'vendorId': e.vendorId, 'title': e.title, 'price': e.price, 'quantity': e.quantity}).toList();
-		if (provider == 'stripe') {
-			url = await service.createStripeCheckout(amount: total, currency: currency, items: payloadItems);
-		} else {
-			url = await service.createFlutterwaveCheckout(amount: total, currency: currency, items: payloadItems);
-		}
-		if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
-			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open checkout')));
+		try {
+			if (provider == 'stripe') {
+				url = await service.createStripeCheckout(amount: total, currency: currency, items: payloadItems);
+			} else {
+				url = await service.createFlutterwaveCheckout(amount: total, currency: currency, items: payloadItems);
+			}
+			if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open checkout')));
+			}
+		} catch (e) {
+			ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Checkout failed: $e')));
 		}
 	}
 }
