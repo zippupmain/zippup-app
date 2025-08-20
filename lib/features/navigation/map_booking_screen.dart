@@ -49,24 +49,37 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 				),
 				// Map
 				Expanded(
-					child: ValueListenableBuilder<Set<Marker>>(
-						valueListenable: _mapService.markersNotifier,
-						builder: (context, markers, _) {
-							final initial = _mapService.currentLocation ?? const LatLng(0, 0);
-							return GoogleMap(
-								initialCameraPosition: CameraPosition(target: initial, zoom: _mapService.currentLocation != null ? 15 : 2),
-								markers: markers,
-								onMapCreated: (c) {
-									_mapController = c;
-									if (_mapService.currentLocation != null) {
-										c.animateCamera(CameraUpdate.newLatLngZoom(_mapService.currentLocation!, 15));
-									}
+					child: Column(children: [
+						Expanded(
+							child: ValueListenableBuilder<Set<Marker>>(
+								valueListenable: _mapService.markersNotifier,
+								builder: (context, markers, _) {
+									final initial = _mapService.currentLocation ?? const LatLng(0, 0);
+									return GoogleMap(
+										initialCameraPosition: CameraPosition(target: initial, zoom: _mapService.currentLocation != null ? 15 : 2),
+										markers: markers,
+										onMapCreated: (c) {
+											_mapController = c;
+											if (_mapService.currentLocation != null) {
+												c.animateCamera(CameraUpdate.newLatLngZoom(_mapService.currentLocation!, 15));
+											}
+										},
+										myLocationEnabled: true,
+										myLocationButtonEnabled: true,
+									);
 								},
-								myLocationEnabled: true,
-								myLocationButtonEnabled: true,
-							);
-						},
-					),
+							),
+						),
+						if (_mapService.currentLocation == null)
+							Padding(
+								padding: const EdgeInsets.all(8),
+								child: TextButton.icon(
+									icon: const Icon(Icons.my_location),
+									label: const Text('Enable location / Retry'),
+									onPressed: () async { await _mapService.initializeLocation(); await _mapService.populateInitialMarkers(); setState(() {}); },
+								),
+							),
+					]),
 				),
 				// Booking controls
 				Padding(
