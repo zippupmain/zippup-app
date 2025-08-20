@@ -45,6 +45,10 @@
       document.getElementById("splash-branding")?.remove();
       document.body.style.background = "transparent";
     }
+    // Hide splash when the first Flutter frame is rendered
+    window.addEventListener('flutter-first-frame', removeSplashFromWeb);
+    // Fallback: hide splash after 12s to avoid getting stuck on errors
+    setTimeout(removeSplashFromWeb, 12000);
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -55,9 +59,6 @@
     <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
     <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
   </picture>
-
-  <!-- Optional: web Firebase config (safe if present) -->
-  <script type="module" src="/firebase-config.js"></script>
 
   <!-- Flutter bootstrap (loads your app) -->
   <script src="flutter_bootstrap.js" async></script>
