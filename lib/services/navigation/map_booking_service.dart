@@ -301,4 +301,24 @@ class MapBookingService {
 	Future<dynamic> _importHtml() async {
 		return HtmlCompat();
 	}
+
+	List<Map<String, Object>> simulatedNearbyDrivers() {
+		final rng = Random();
+		final kinds = ['Ride / Taxi', 'Truck / Backie'];
+		return List.generate(6, (i) {
+			final km = (0.4 + rng.nextDouble() * 2.0);
+			final eta = 3 + rng.nextInt(10);
+			final fare = (5 + rng.nextInt(12)).toString();
+			final seats = rng.nextBool() ? 4 : 2;
+			return {
+				'id': 'drv_${i + 1}',
+				'name': 'Driver ${i + 1}',
+				'kind': kinds[rng.nextInt(kinds.length)],
+				'distance': '${km.toStringAsFixed(1)} km',
+				'eta': '${eta}m',
+				'fare': ' 24$fare-${int.parse(fare) + 3}',
+				'seats': seats,
+			};
+		});
+	}
 }

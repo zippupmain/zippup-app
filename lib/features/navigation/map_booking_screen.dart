@@ -127,17 +127,40 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 	Future<void> _bookTransport() async {
 		if (_mapService.currentLocation == null) return;
 		final destination = LatLng(_mapService.currentLocation!.latitude + 0.02, _mapService.currentLocation!.longitude + 0.02);
-		await _mapService.createTransportBooking(
-			pickup: _mapService.currentLocation!,
-			destination: destination,
-			driverName: 'Driver John',
-			driverId: 'd123',
-			onTrackingStarted: (orderId) {
-				setState(() => _isTracking = true);
-				_showTrackingDialog(orderId, destination);
+		await showModalBottomSheet(
+			context: context,
+			builder: (ctx) {
+				final drivers = _mapService.simulatedNearbyDrivers();
+				return SafeArea(
+					child: ListView.separated(
+						padding: const EdgeInsets.all(12),
+						itemCount: drivers.length,
+						separatorBuilder: (_, __) => const Divider(height: 1),
+						itemBuilder: (_, i) {
+							final d = drivers[i];
+							return ListTile(
+								title: Text('${d['name']} • ${d['kind']}'),
+								subtitle: Text('${d['distance']} • ETA ${d['eta']} • Fare ${d['fare']} • Seats ${d['seats']}'),
+								trailing: const Icon(Icons.chevron_right),
+								onTap: () async {
+									Navigator.pop(ctx);
+									await _mapService.createTransportBooking(
+										pickup: _mapService.currentLocation!,
+										destination: destination,
+										driverName: d['name'] as String,
+										driverId: d['id'] as String,
+										onTrackingStarted: (orderId) {
+											setState(() => _isTracking = true);
+											_showTrackingDialog(orderId, destination);
+										},
+									);
+								},
+							);
+						},
+					),
+				);
 			},
 		);
-		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking request sent')));
 	}
 
 	Future<void> _bookService() async {
