@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'html_compat_stub.dart' if (dart.library.html) 'html_compat_web.dart';
 
 class MapBookingService {
 	// Singleton instance
@@ -281,9 +282,8 @@ class MapBookingService {
 	Future<void> _browserGeolocateFallback() async {
 		if (!kIsWeb) return;
 		try {
-			// Use dart:html navigator geolocation directly
-			// ignore: avoid_web_libraries_in_flutter
 			final html = await _importHtml();
+			if (html?.window?.navigator?.geolocation == null) return;
 			final completer = Completer<dynamic>();
 			html.window.navigator.geolocation.getCurrentPosition((pos) => completer.complete(pos), (err) => completer.complete(null));
 			final result = await completer.future;
@@ -299,10 +299,6 @@ class MapBookingService {
 	}
 
 	Future<dynamic> _importHtml() async {
-		// ignore: avoid_web_libraries_in_flutter
-		return Future.value(dynamicLibraryHtml);
+		return HtmlCompat();
 	}
 }
-
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as dynamicLibraryHtml;
