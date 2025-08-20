@@ -42,11 +42,11 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 		final current = _mapService.currentLocation;
 		if (kIsWeb) {
 			final center = current == null ? const ll.LatLng(0, 0) : ll.LatLng(current.latitude, current.longitude);
-			final markers = _mapService.markers.map((m) => lm.Marker(
+			final markers = _mapService.markers.map<lm.Marker>((m) => lm.Marker(
 				point: ll.LatLng(m.position.latitude, m.position.longitude),
 				width: 40,
 				height: 40,
-				builder: (_) => const Icon(Icons.location_on, color: Colors.redAccent),
+				child: const Icon(Icons.location_on, color: Colors.redAccent),
 			)).toList();
 			return lm.FlutterMap(
 				options: lm.MapOptions(initialCenter: center, initialZoom: current != null ? 15 : 2),
