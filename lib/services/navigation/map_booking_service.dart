@@ -60,6 +60,10 @@ class MapBookingService {
 			if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
 				_currentAddress = 'Location permission denied';
 				currentAddressNotifier.value = _currentAddress;
+				// Web explicit prompt fallback
+				if (kIsWeb) {
+					await _browserGeolocateFallback();
+				}
 				_ensureFallbackIfNull();
 				return;
 			}
@@ -74,23 +78,31 @@ class MapBookingService {
 				_markCurrentLocationMarker();
 			}
 			// Try to get a fresh position with timeout
-			final fresh = await Geolocator
-				.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
-				.timeout(
-					const Duration(seconds: 6),
-					onTimeout: () => last ?? Position(
-						longitude: _fallbackLatLng.longitude,
-						latitude: _fallbackLatLng.latitude,
-						timestamp: DateTime.now(),
-						accuracy: 0,
-						altitude: 0,
-						heading: 0,
-						speed: 0,
-						speedAccuracy: 0,
-						altitudeAccuracy: 0,
-						headingAccuracy: 0,
-					),
-				);
+			Position? fresh;
+			try {
+				fresh = await Geolocator
+					.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+					.timeout(
+						const Duration(seconds: 6),
+						onTimeout: () => last ?? Position(
+							longitude: _fallbackLatLng.longitude,
+							latitude: _fallbackLatLng.latitude,
+							timestamp: DateTime.now(),
+							accuracy: 0,
+							altitude: 0,
+							heading: 0,
+							speed: 0,
+							speedAccuracy: 0,
+							altitudeAccuracy: 0,
+							headingAccuracy: 0,
+						),
+					);
+			} catch (_) {
+				fresh = null;
+			}
+			if (kIsWeb && (fresh == null || (fresh.latitude == 0 && fresh.longitude == 0))) {
+				await _browserGeolocateFallback();
+			}
 			if (fresh != null) {
 				_currentLocation = LatLng(fresh.latitude, fresh.longitude);
 				currentLocationNotifier.value = _currentLocation;
@@ -124,6 +136,9 @@ class MapBookingService {
 			debugPrint('Location error: $e');
 			_currentAddress = 'Location unavailable';
 			currentAddressNotifier.value = _currentAddress;
+			if (kIsWeb) {
+				await _browserGeolocateFallback();
+			}
 			_ensureFallbackIfNull();
 		}
 	}
@@ -262,4 +277,32 @@ class MapBookingService {
 		_trackingTimer?.cancel();
 		_positionSub?.cancel();
 	}
+
+	Future<void> _browserGeolocateFallback() async {
+		if (!kIsWeb) return;
+		try {
+			// Use dart:html navigator geolocation directly
+			// ignore: avoid_web_libraries_in_flutter
+			final html = await _importHtml();
+			final completer = Completer<dynamic>();
+			html.window.navigator.geolocation.getCurrentPosition((pos) => completer.complete(pos), (err) => completer.complete(null));
+			final result = await completer.future;
+			if (result != null) {
+				final coords = result.coords;
+				_currentLocation = LatLng(coords.latitude as double, coords.longitude as double);
+				currentLocationNotifier.value = _currentLocation;
+				_markCurrentLocationMarker();
+				_currentAddress = 'Location acquired';
+				currentAddressNotifier.value = _currentAddress;
+			}
+		} catch (_) {}
+	}
+
+	Future<dynamic> _importHtml() async {
+		// ignore: avoid_web_libraries_in_flutter
+		return Future.value(dynamicLibraryHtml);
+	}
 }
+
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as dynamicLibraryHtml;
