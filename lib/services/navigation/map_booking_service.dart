@@ -259,7 +259,9 @@ class MapBookingService {
 	}) async {
 		await Future.delayed(const Duration(seconds: 1));
 		final orderId = 'ride-${DateTime.now().millisecondsSinceEpoch}';
-		Future.delayed(const Duration(seconds: 3), () => onTrackingStarted(orderId));
+		Future.delayed(const Duration(seconds: 3), () {
+			try { onTrackingStarted(orderId); } catch (_) {}
+		});
 	}
 
 	/// Create a service booking (simulated)
@@ -270,7 +272,9 @@ class MapBookingService {
 	}) async {
 		await Future.delayed(const Duration(seconds: 1));
 		final orderId = 'svc-${DateTime.now().millisecondsSinceEpoch}';
-		Future.delayed(const Duration(seconds: 10), () => onTrackingStarted(orderId));
+		Future.delayed(const Duration(seconds: 10), () {
+			try { onTrackingStarted(orderId); } catch (_) {}
+		});
 	}
 
 	/// Dispose resources
