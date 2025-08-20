@@ -49,6 +49,15 @@
     window.addEventListener('flutter-first-frame', removeSplashFromWeb);
     // Fallback: hide splash after 12s to avoid getting stuck on errors
     setTimeout(removeSplashFromWeb, 12000);
+    // Proactively unregister old service workers and clear caches to avoid stale white-screen
+    (function() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs){ regs.forEach(function(r){ r.unregister(); }); });
+      }
+      if (window.caches && window.caches.keys) {
+        caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
+      }
+    })();
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
