@@ -1,5 +1,4 @@
-import 'dart:io' if (dart.library.html) 'dart:html' as html; // to satisfy analyzer on web
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -19,7 +18,6 @@ class _AddListingScreenState extends State<AddListingScreen> {
 	String? _category;
 	final _price = TextEditingController();
 	final _desc = TextEditingController();
-	final List<File> _images = [];
 	final List<Uint8List> _imageBytes = [];
 	bool _saving = false;
 
@@ -28,16 +26,12 @@ class _AddListingScreenState extends State<AddListingScreen> {
 	];
 
 	Future<void> _pickImage() async {
-		if (_images.length + _imageBytes.length >= 10) return;
+		if (_imageBytes.length >= 10) return;
 		final picker = ImagePicker();
 		final x = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
 		if (x == null) return;
-		if (kIsWeb) {
-			final b = await x.readAsBytes();
-			setState(() => _imageBytes.add(b));
-		} else {
-			setState(() => _images.add(File(x.path)));
-		}
+		final b = await x.readAsBytes();
+		setState(() => _imageBytes.add(b));
 	}
 
 	Future<void> _save() async {
@@ -45,11 +39,6 @@ class _AddListingScreenState extends State<AddListingScreen> {
 		setState(() => _saving = true);
 		try {
 			final urls = <String>[];
-			for (final file in _images) {
-				final fileName = 'listings/${DateTime.now().millisecondsSinceEpoch}_${urls.length}.jpg';
-				final task = await FirebaseStorage.instance.ref(fileName).putFile(file);
-				urls.add(await task.ref.getDownloadURL());
-			}
 			for (final b in _imageBytes) {
 				final fileName = 'listings/${DateTime.now().millisecondsSinceEpoch}_${urls.length}.jpg';
 				final task = await FirebaseStorage.instance.ref(fileName).putData(b, SettableMetadata(contentType: 'image/jpeg'));
@@ -87,8 +76,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
 						TextFormField(controller: _desc, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
 						const SizedBox(height: 8),
 						Wrap(spacing: 8, runSpacing: 8, children: [
-							..._images.map((f)=>Container(width:72,height:72,color:Colors.black12,child: const Icon(Icons.image))).toList(),
-							..._imageBytes.map((b)=>Container(width:72,height:72,color:Colors.black12,child: const Icon(Icons.image))).toList(),
+							..._imageBytes.map((b)=>Container(width:72,height:72,decoration:BoxDecoration(borderRadius: BorderRadius.circular(8), color: Colors.black12), child: const Icon(Icons.image))).toList(),
 							OutlinedButton.icon(onPressed: _pickImage, icon: const Icon(Icons.add), label: const Text('Add image')),
 						]),
 						const SizedBox(height: 12),

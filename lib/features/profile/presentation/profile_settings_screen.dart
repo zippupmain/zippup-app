@@ -1,4 +1,3 @@
-import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,8 +16,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 	final _name = TextEditingController();
 	final _phone = TextEditingController();
 	String? _photoUrl;
-	File? _photoFile; // mobile/desktop
-	Uint8List? _photoBytes; // web
+	Uint8List? _photoBytes; // web & mobile compatible
 	bool _saving = false;
 
 	@override
@@ -47,12 +45,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 	Future<void> _pickPhoto() async {
 		final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
 		if (f == null) return;
-		if (kIsWeb) {
-			final bytes = await f.readAsBytes();
-			setState(() { _photoBytes = bytes; _photoFile = null; });
-		} else {
-			setState(() { _photoFile = File(f.path); _photoBytes = null; });
-		}
+		final bytes = await f.readAsBytes();
+		setState(() { _photoBytes = bytes; });
 	}
 
 	Future<void> _save() async {
@@ -61,13 +55,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			final u = FirebaseAuth.instance.currentUser;
 			if (u == null) return;
 			String? url = _photoUrl;
-			if (_photoBytes != null || _photoFile != null) {
+			if (_photoBytes != null) {
 				final ref = FirebaseStorage.instance.ref('users/${u.uid}/profile.jpg');
-				if (_photoBytes != null) {
-					await ref.putData(_photoBytes!, SettableMetadata(contentType: 'image/jpeg'));
-				} else if (_photoFile != null) {
-					await ref.putFile(_photoFile!);
-				}
+				await ref.putData(_photoBytes!, SettableMetadata(contentType: 'image/jpeg'));
 				url = await ref.getDownloadURL();
 			}
 			final name = _name.text.trim();
@@ -90,7 +80,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			final doc = await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
 			final fresh = (doc.data() ?? const {})['photoUrl']?.toString() ?? url;
 			if (!mounted) return;
-			setState(() { _photoUrl = fresh; _photoBytes = null; _photoFile = null; });
+			setState(() { _photoUrl = fresh; _photoBytes = null; });
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile saved')));
 		} catch (e) {
 			if (mounted) {
@@ -114,9 +104,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 		Widget avatarWidget() {
 			if (_photoBytes != null) {
 				return ClipOval(child: Image.memory(_photoBytes!, width: 72, height: 72, fit: BoxFit.cover));
-			}
-			if (_photoFile != null) {
-				return ClipOval(child: Image.file(_photoFile!, width: 72, height: 72, fit: BoxFit.cover));
 			}
 			if (_photoUrl != null && _photoUrl!.isNotEmpty) {
 				return ClipOval(

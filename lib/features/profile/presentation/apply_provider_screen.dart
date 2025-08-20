@@ -21,8 +21,6 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	String _category = 'transport';
 	String? _subcategory;
 	String _type = 'individual';
-	File? _idDoc;
-	File? _bizDoc;
 	Uint8List? _idBytes;
 	Uint8List? _bizBytes;
 	bool _saving = false;
@@ -32,7 +30,6 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	final _vehiclePlate = TextEditingController();
 	final _vehicleModel = TextEditingController();
 	final List<Uint8List> _vehiclePhotos = [];
-	final List<File> _vehiclePhotoFiles = [];
 	// Rentals hierarchy state and extra fields
 	String? _rentalSubtype;
 	final _description = TextEditingController();
@@ -56,27 +53,18 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 		final images = await picker.pickMultiImage(imageQuality: 85);
 		if (images.isEmpty) return;
 		for (final img in images) {
-			try { _vehiclePhotos.add(await img.readAsBytes()); }
-			catch (_) { _vehiclePhotoFiles.add(File(img.path)); }
+			_vehiclePhotos.add(await img.readAsBytes());
 		}
 		setState(() {});
 	}
 
 	Future<void> _pickId() async {
 		final idPick = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (idPick != null) {
-			try { _idBytes = await idPick.readAsBytes(); _idDoc = null; }
-			catch (_) { _idDoc = File(idPick.path); _idBytes = null; }
-		}
-		setState(() {});
+		if (idPick != null) { _idBytes = await idPick.readAsBytes(); setState(() {}); }
 	}
 	Future<void> _pickBiz() async {
 		final bizPick = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (bizPick != null) {
-			try { _bizBytes = await bizPick.readAsBytes(); _bizDoc = null; }
-			catch (_) { _bizDoc = File(bizPick.path); _bizBytes = null; }
-		}
-		setState(() {});
+		if (bizPick != null) { _bizBytes = await bizPick.readAsBytes(); setState(() {}); }
 	}
 
 	Future<void> _submit() async {
@@ -85,29 +73,21 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 			final uid = FirebaseAuth.instance.currentUser!.uid;
 			String? idUrl;
 			String? bizUrl;
-			final List<String> vehicleUrls = [];
-			if (_idBytes != null || _idDoc != null) {
+			if (_idBytes != null) {
 				final ref = FirebaseStorage.instance.ref('providers/$uid/id.jpg');
-				if (_idBytes != null) await ref.putData(_idBytes!, SettableMetadata(contentType: 'image/jpeg'));
-				else await ref.putFile(_idDoc!);
+				await ref.putData(_idBytes!, SettableMetadata(contentType: 'image/jpeg'));
 				idUrl = await ref.getDownloadURL();
 			}
-			if (_bizBytes != null || _bizDoc != null) {
+			if (_bizBytes != null) {
 				final ref = FirebaseStorage.instance.ref('providers/$uid/biz.jpg');
-				if (_bizBytes != null) await ref.putData(_bizBytes!, SettableMetadata(contentType: 'image/jpeg'));
-				else await ref.putFile(_bizDoc!);
+				await ref.putData(_bizBytes!, SettableMetadata(contentType: 'image/jpeg'));
 				bizUrl = await ref.getDownloadURL();
 			}
 			// Upload vehicle photos if applicable
-			if (['transport','moving','rentals'].contains(_category) && (_vehiclePhotos.isNotEmpty || _vehiclePhotoFiles.isNotEmpty)) {
+			if (['transport','moving','rentals'].contains(_category) && _vehiclePhotos.isNotEmpty) {
 				for (int i = 0; i < _vehiclePhotos.length; i++) {
 					final ref = FirebaseStorage.instance.ref('applications/$uid/vehicle_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
 					await ref.putData(_vehiclePhotos[i], SettableMetadata(contentType: 'image/jpeg'));
-					vehicleUrls.add(await ref.getDownloadURL());
-				}
-				for (int j = 0; j < _vehiclePhotoFiles.length; j++) {
-					final ref = FirebaseStorage.instance.ref('applications/$uid/vehicle_file_${DateTime.now().millisecondsSinceEpoch}_$j.jpg');
-					await ref.putFile(_vehiclePhotoFiles[j]);
 					vehicleUrls.add(await ref.getDownloadURL());
 				}
 			}
@@ -231,11 +211,11 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 						TextField(controller: _vehicleColor, decoration: const InputDecoration(labelText: 'Color')),
 						TextField(controller: _vehiclePlate, decoration: const InputDecoration(labelText: 'Plate number')),
 						TextField(controller: _vehicleModel, decoration: const InputDecoration(labelText: 'Model (e.g., 911 Mercedes)')),
-						ListTile(title: const Text('Upload 360° vehicle photos (multi-select)'), trailing: const Icon(Icons.upload_file), onTap: _pickVehiclePhotos, subtitle: Text('${_vehiclePhotos.length + _vehiclePhotoFiles.length} selected')),
+						ListTile(title: const Text('Upload 360° vehicle photos (multi-select)'), trailing: const Icon(Icons.upload_file), onTap: _pickVehiclePhotos, subtitle: Text('${_vehiclePhotos.length} selected')),
 					],
 					const SizedBox(height: 8),
-					ListTile(title: const Text('Upload ID/Passport'), trailing: const Icon(Icons.upload_file), onTap: _pickId, subtitle: Text(_idDoc?.path.split('/').last ?? (_idBytes != null ? 'Selected' : 'Not uploaded'))),
-					ListTile(title: const Text('Upload business document (registration/permits)'), trailing: const Icon(Icons.upload_file), onTap: _pickBiz, subtitle: Text(_bizDoc?.path.split('/').last ?? (_bizBytes != null ? 'Selected' : 'Not uploaded'))),
+					ListTile(title: const Text('Upload ID/Passport'), trailing: const Icon(Icons.upload_file), onTap: _pickId, subtitle: Text(_idBytes != null ? 'Selected' : 'Not uploaded')),
+					ListTile(title: const Text('Upload business document (registration/permits)'), trailing: const Icon(Icons.upload_file), onTap: _pickBiz, subtitle: Text(_bizBytes != null ? 'Selected' : 'Not uploaded')),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _saving ? null : _submit, child: const Text('Submit application')),
 				],

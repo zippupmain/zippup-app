@@ -1,4 +1,3 @@
-import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -24,22 +23,15 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 	String _idType = 'National ID';
 	final _idNumber = TextEditingController();
 	Uint8List? _idImageBytes;
-	File? _idImageFile;
 	final List<Uint8List> _proofBytes = [];
-	final List<File> _proofFiles = [];
 	Uint8List? _selfieBytes;
-	File? _selfieFile;
 	bool _saving = false;
 
-	Future<void> _pickSingle(ImageSource source, void Function(Uint8List?, File?) setter) async {
+	Future<void> _pickSingle(ImageSource source, void Function(Uint8List?) setter) async {
 		final x = await ImagePicker().pickImage(source: source, imageQuality: 85);
 		if (x == null) return;
-		try {
-			final b = await x.readAsBytes();
-			setter(b, null);
-		} catch (_) {
-			setter(null, File(x.path));
-		}
+		final b = await x.readAsBytes();
+		setter(b);
 		setState(() {});
 	}
 
@@ -59,12 +51,7 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 	Future<void> _pickMultiProof() async {
 		final list = await ImagePicker().pickMultiImage(imageQuality: 85);
 		for (final x in list) {
-			try {
-				final b = await x.readAsBytes();
-				_proofBytes.add(b);
-			} catch (_) {
-				_proofFiles.add(File(x.path));
-			}
+			_proofBytes.add(await x.readAsBytes());
 		}
 		setState(() {});
 	}
@@ -75,12 +62,12 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 			status = await Permission.camera.request();
 		}
 		if (status.isGranted) {
-			await _pickSingle(ImageSource.camera, (b, f) { _selfieBytes = b; _selfieFile = f; });
+			await _pickSingle(ImageSource.camera, (b) { _selfieBytes = b; });
 		} else {
 			if (mounted) {
 				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera permission denied. You can upload a selfie from gallery instead.')));
 			}
-			await _pickSingle(ImageSource.gallery, (b, f) { _selfieBytes = b; _selfieFile = f; });
+			await _pickSingle(ImageSource.gallery, (b) { _selfieBytes = b; });
 		}
 	}
 
@@ -91,10 +78,9 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 			String? idUrl;
 			String? selfieUrl;
 			final proofUrls = <String>[];
-			if (_idImageBytes != null || _idImageFile != null) {
+			if (_idImageBytes != null) {
 				final ref = FirebaseStorage.instance.ref('onboarding/$uid/id_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				if (_idImageBytes != null) { await ref.putData(_idImageBytes!, SettableMetadata(contentType: 'image/jpeg')); }
-				else { await ref.putFile(_idImageFile!); }
+				await ref.putData(_idImageBytes!, SettableMetadata(contentType: 'image/jpeg'));
 				idUrl = await ref.getDownloadURL();
 			}
 			for (int i = 0; i < _proofBytes.length; i++) {
@@ -102,15 +88,9 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 				await ref.putData(_proofBytes[i], SettableMetadata(contentType: 'image/jpeg'));
 				proofUrls.add(await ref.getDownloadURL());
 			}
-			for (int i = 0; i < _proofFiles.length; i++) {
-				final ref = FirebaseStorage.instance.ref('onboarding/$uid/proof_f$i.jpg');
-				await ref.putFile(_proofFiles[i]);
-				proofUrls.add(await ref.getDownloadURL());
-			}
-			if (_selfieBytes != null || _selfieFile != null) {
+			if (_selfieBytes != null) {
 				final ref = FirebaseStorage.instance.ref('onboarding/$uid/selfie_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				if (_selfieBytes != null) { await ref.putData(_selfieBytes!, SettableMetadata(contentType: 'image/jpeg')); }
-				else { await ref.putFile(_selfieFile!); }
+				await ref.putData(_selfieBytes!, SettableMetadata(contentType: 'image/jpeg'));
 				selfieUrl = await ref.getDownloadURL();
 			}
 
@@ -122,28 +102,16 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 				'address': _address.text.trim(),
 				'idType': _idType,
 				'idNumber': _idNumber.text.trim(),
-				'idUrl': idUrl,
-				'proofUrls': proofUrls,
+				'idDocUrl': idUrl,
 				'selfieUrl': selfieUrl,
+				'proofUrls': proofUrls,
+				'createdAt': FieldValue.serverTimestamp(),
 				'status': 'pending',
-				'createdAt': DateTime.now().toIso8601String(),
 			});
-			await FirebaseFirestore.instance.collection('notifications').add({
-				'userId': uid,
-				'title': 'KYC submitted',
-				'body': 'We are reviewing your documents. You will be notified with the result shortly.',
-				'route': '/notifications',
-				'createdAt': DateTime.now().toIso8601String(),
-				'read': false,
-			});
-			if (mounted) {
-				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Submitted for review')));
-				Navigator.pop(context);
-			}
+
+			if (mounted) Navigator.of(context).pop(true);
 		} catch (e) {
-			if (mounted) {
-				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submit failed: $e')));
-			}
+			if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit: $e')));
 		} finally {
 			if (mounted) setState(() => _saving = false);
 		}
@@ -152,7 +120,7 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Apply as Service Provider')),
+			appBar: AppBar(title: const Text('KYC Onboarding')),
 			body: ListView(
 				padding: const EdgeInsets.all(16),
 				children: [
@@ -160,17 +128,19 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 					TextField(controller: _email, decoration: const InputDecoration(labelText: 'Email')),
 					TextField(controller: _phone, decoration: const InputDecoration(labelText: 'Phone')),
 					TextField(controller: _address, decoration: const InputDecoration(labelText: 'Address')),
-					DropdownButtonFormField<String>(value: _idType, items: const [
-						DropdownMenuItem(value: 'National ID', child: Text('National ID')),
-						DropdownMenuItem(value: 'Passport', child: Text('International Passport')),
-						DropdownMenuItem(value: 'Driver License', child: Text('Driver’s License')),
-					], onChanged: (v) => setState(() => _idType = v ?? 'National ID'), decoration: const InputDecoration(labelText: 'ID type')),
+					DropdownButtonFormField<String>(value: _idType, items: const ['National ID','International Passport','Driver\'s License'].map((e)=>DropdownMenuItem(value:e, child: Text(e))).toList(), onChanged: (v)=> setState(()=> _idType=v??_idType)),
 					TextField(controller: _idNumber, decoration: const InputDecoration(labelText: 'ID number')),
-					ListTile(title: const Text('ID photo'), trailing: const Icon(Icons.upload_file), subtitle: Text(_idImageBytes != null || _idImageFile != null ? 'Selected' : 'Not uploaded'), onTap: () => _chooseSourceAndPick((src) => _pickSingle(src, (b,f){ _idImageBytes=b; _idImageFile=f; }))),
-					ListTile(title: const Text('Proof of address/bank (multi)'), trailing: const Icon(Icons.upload_file), subtitle: Text('${_proofBytes.length + _proofFiles.length} selected'), onTap: _pickMultiProof),
-					ListTile(title: const Text('Capture selfie now'), trailing: const Icon(Icons.camera_alt_outlined), subtitle: Text(_selfieBytes != null || _selfieFile != null ? 'Captured' : 'Not captured'), onTap: _captureSelfie),
+					Row(children: [
+						OutlinedButton.icon(onPressed: () => _chooseSourceAndPick((s)=> _pickSingle(s, (b){ _idImageBytes=b; })), icon: const Icon(Icons.image), label: const Text('Pick ID document')),
+					]),
+					Row(children: [
+						OutlinedButton.icon(onPressed: _pickMultiProof, icon: const Icon(Icons.file_copy), label: const Text('Add proof docs')),
+					]),
+					Row(children: [
+						OutlinedButton.icon(onPressed: _captureSelfie, icon: const Icon(Icons.camera_alt), label: const Text('Capture selfie')),
+					]),
 					const SizedBox(height: 12),
-					FilledButton(onPressed: _saving ? null : _submit, child: Text(_saving ? 'Submitting...' : 'Submit')),
+					FilledButton(onPressed: _saving?null:_submit, child: Text(_saving? 'Submitting…' : 'Submit')),
 				],
 			),
 		);
