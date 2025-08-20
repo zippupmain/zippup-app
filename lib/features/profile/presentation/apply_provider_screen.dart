@@ -30,6 +30,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	final _vehiclePlate = TextEditingController();
 	final _vehicleModel = TextEditingController();
 	final List<Uint8List> _vehiclePhotos = [];
+	final List<String> vehicleUrls = [];
 	// Rentals hierarchy state and extra fields
 	String? _rentalSubtype;
 	final _description = TextEditingController();
