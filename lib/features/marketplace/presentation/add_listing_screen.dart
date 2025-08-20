@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'dart:html' as html; // to satisfy analyzer on web
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,7 +31,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
 		if (_images.length >= 10) return;
 		final picker = ImagePicker();
 		final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-		if (file != null) setState(() => _images.add(File(file.path)));
+		if (file != null && !kIsWeb) setState(() => _images.add(File(file.path)));
 	}
 
 	Future<void> _save() async {
