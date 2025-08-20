@@ -9,9 +9,25 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:zippup/services/notifications/notifications_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:zippup/core/config/payments_config.dart';
+import 'dart:async';
+import 'dart:ui' as ui;
 
 Future<void> main() async {
 	WidgetsFlutterBinding.ensureInitialized();
+	FlutterError.onError = (FlutterErrorDetails details) {
+		// Log and continue
+		// ignore: avoid_print
+		print('FlutterError: ' + details.exceptionAsString());
+		// ignore: avoid_print
+		print(details.stack);
+	};
+	ui.PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+		// ignore: avoid_print
+		print('Top-level error: ' + error.toString());
+		// ignore: avoid_print
+		print(stack);
+		return true;
+	};
 	// Dotenv not used on web
 	if (!kIsWeb) {
 		await dotenv.load(fileName: '.env');
@@ -29,7 +45,14 @@ Future<void> main() async {
 	if (!kIsWeb) {
 		await NotificationsService.instance.init();
 	}
-	runApp(const ProviderScope(child: ZippUpApp()));
+	runZonedGuarded(() {
+		runApp(const ProviderScope(child: ZippUpApp()));
+	}, (error, stack) {
+		// ignore: avoid_print
+		print('Zone error: ' + error.toString());
+		// ignore: avoid_print
+		print(stack);
+	});
 }
 
 class ZippUpApp extends ConsumerWidget {
