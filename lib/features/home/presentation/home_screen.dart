@@ -179,24 +179,25 @@ class _HomeScreenState extends State<HomeScreen> {
 													borderRadius: BorderRadius.circular(20),
 												),
 												padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-												child: Row(children: [
-													const Icon(Icons.location_on_outlined, size: 18, color: Colors.white),
-													const SizedBox(width: 6),
-													Expanded(child: Text(_locationText, overflow: TextOverflow.ellipsis, maxLines: 1, style: const TextStyle(fontSize: 12, color: Colors.white))),
-													IconButton(onPressed: _fetchLocation, icon: const Icon(Icons.refresh, size: 18, color: Colors.white)),
-												]),
+												child: Column(
+													mainAxisSize: MainAxisSize.min,
+													crossAxisAlignment: CrossAxisAlignment.start,
+													children: [
+														Row(children: [
+															const Icon(Icons.location_on_outlined, size: 18, color: Colors.white),
+															const SizedBox(width: 6),
+															Expanded(child: Text(_locationText, overflow: TextOverflow.ellipsis, maxLines: 1, style: const TextStyle(fontSize: 12, color: Colors.white))),
+															IconButton(onPressed: _fetchLocation, icon: const Icon(Icons.refresh, size: 18, color: Colors.white)),
+														]),
+														const SizedBox(height: 2),
+														Text(_greet, style: const TextStyle(fontSize: 11, color: Colors.white70), overflow: TextOverflow.ellipsis, maxLines: 1),
+													],
+												),
 											),
 										),
 									),
 								),
 							]),
-						),
-					),
-					Padding(
-						padding: const EdgeInsets.only(top: 42),
-						child: Align(
-							alignment: Alignment.topCenter,
-							child: Text(_greet, style: const TextStyle(fontSize: 11, color: Colors.white70), overflow: TextOverflow.ellipsis, maxLines: 1),
 						),
 					),
 					SliverToBoxAdapter(
