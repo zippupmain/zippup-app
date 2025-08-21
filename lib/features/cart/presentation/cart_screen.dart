@@ -28,19 +28,20 @@ class CartScreen extends ConsumerWidget {
 						itemBuilder: (context, i) {
 							final item = items[i];
 							return ListTile(
+								isThreeLine: true,
 								title: Text(item.title),
-								subtitle: Row(children: [
-									IconButton(onPressed: () => notifier.decrement(item.id), icon: const Icon(Icons.remove_circle_outline)),
-									Text('x${item.quantity}'),
-									IconButton(onPressed: () => notifier.increment(item.id), icon: const Icon(Icons.add_circle_outline)),
-								]),
-								trailing: Column(
-									mainAxisAlignment: MainAxisAlignment.center,
+								subtitle: Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										Text('₦${(item.price * item.quantity).toStringAsFixed(2)}'),
+										Row(children: [
+											IconButton(onPressed: () => notifier.decrement(item.id), icon: const Icon(Icons.remove_circle_outline)),
+											Text('x${item.quantity}'),
+											IconButton(onPressed: () => notifier.increment(item.id), icon: const Icon(Icons.add_circle_outline)),
+										]),
 										TextButton(onPressed: () => notifier.remove(item.id), child: const Text('Remove')),
 									],
 								),
+								trailing: Text('₦${(item.price * item.quantity).toStringAsFixed(2)}'),
 							);
 						},
 					),
