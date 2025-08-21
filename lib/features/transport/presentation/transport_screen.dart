@@ -135,18 +135,26 @@ class _TransportScreenState extends State<TransportScreen> {
 				setState(() => _status = 'scheduled');
 				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride scheduled. We\'ll remind you.')));
 			} else {
-				final choice = await showDialog<String>(context: context, builder: (ctx){
-					return SimpleDialog(title: const Text('Choose driver'), children:[
-						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Driver A • 3-5m'), child: const Text('Driver A • 3-5m • ₦1,500')),
-						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Driver B • 5-7m'), child: const Text('Driver B • 5-7m • ₦1,700')),
+				final cls = await showDialog<String>(context: context, builder: (ctx){
+					return SimpleDialog(title: const Text('Choose ride class'), children:[
+						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Economy'), child: const Text('Economy • up to 4 pax • ₦1,200–₦1,800 • 3–6m')),
+						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Comfort'), child: const Text('Comfort • up to 4 pax • ₦1,600–₦2,400 • 4–8m')),
+						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'XL'), child: const Text('XL • up to 6 pax • ₦2,200–₦3,200 • 6–10m')),
 					]);
 				});
-				if (choice != null) {
-					context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
-					setState(() => _status = 'driver_selected');
-				} else {
-					setState(() => _status = 'requested');
-				}
+				if (cls == null) { setState(() => _status = 'requested'); return; }
+				setState(() => _status = 'searching');
+				if (!mounted) return;
+				showDialog(context: context, barrierDismissible: false, builder: (ctx)=> AlertDialog(
+					title: Text('Searching $cls drivers…'),
+					content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
+					actions: [TextButton(onPressed: ()=> Navigator.pop(ctx), child: const Text('Cancel'))],
+				));
+				await Future.delayed(const Duration(seconds: 6));
+				if (!mounted) return;
+				Navigator.of(context).pop();
+				context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
+				setState(() => _status = 'driver_selected');
 			}
 		} catch (e) {
 			setState(() => _status = 'idle');

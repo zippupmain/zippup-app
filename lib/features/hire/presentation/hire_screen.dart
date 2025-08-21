@@ -20,7 +20,6 @@ class _HireScreenState extends State<HireScreen> {
 	final TextEditingController _search = TextEditingController();
 	String _q = '';
 	geo.Position? _me;
-	final TextEditingController _pickup = TextEditingController();
 	final TextEditingController _dest = TextEditingController();
 
 	final Map<String, List<String>> _examples = const {
@@ -40,21 +39,12 @@ class _HireScreenState extends State<HireScreen> {
 			_search.text = widget.initialQuery!;
 		}
 		_location();
-		_prefillPickup();
 	}
 
 	Future<void> _location() async {
 		final p = await LocationService.getCurrentPosition();
 		if (!mounted) return;
 		setState(() => _me = p);
-	}
-
-	Future<void> _prefillPickup() async {
-		final p = await LocationService.getCurrentPosition();
-		if (p == null || !mounted) return;
-		final addr = await LocationService.reverseGeocode(p);
-		if (!mounted) return;
-		if ((addr ?? '').isNotEmpty) _pickup.text = addr!;
 	}
 
 	String _distanceText(Map<String, dynamic> p) {
@@ -160,8 +150,6 @@ class _HireScreenState extends State<HireScreen> {
 									Padding(
 										padding: const EdgeInsets.symmetric(horizontal:16, vertical:8),
 										child: Column(children:[
-											AddressField(controller: _pickup, label: 'Pickup address'),
-											const SizedBox(height:8),
 											AddressField(controller: _dest, label: 'Destination address'),
 										]),
 									),
@@ -178,12 +166,28 @@ class _HireScreenState extends State<HireScreen> {
 													subtitle: Text('Rating: ${(p['rating'] ?? 0).toString()} • Fee: ₦${(p['fee'] ?? 0).toString()}${dist.isNotEmpty ? ' • $dist' : ''}', style: const TextStyle(color: Colors.black54)),
 													trailing: Wrap(spacing: 8, children: [
 														TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Profile')),
-														FilledButton(onPressed: (){
-															final paddr=_pickup.text.trim(), daddr=_dest.text.trim();
-															if(paddr.isEmpty||daddr.isEmpty){
-																ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter pickup and destination')));
+														FilledButton(onPressed: () async {
+															final daddr=_dest.text.trim();
+															if(daddr.isEmpty){
+																ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter destination')));
 																return;
 															}
+															final cls = await showDialog<String>(context: context, builder: (ctx){
+																return SimpleDialog(title: const Text('Choose service class'), children:[
+																	SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Basic'), child: const Text('Basic • ₦2,000 / 2hrs')),
+																	SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Standard'), child: const Text('Standard • ₦3,500 / 2hrs')),
+																	SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Pro'), child: const Text('Pro • ₦5,000 / 2hrs')),
+																]);
+															});
+															if (cls == null) return;
+															showDialog(context: context, barrierDismissible: false, builder: (ctx)=> AlertDialog(
+																title: Text('Finding $cls ${_filter}…'),
+																content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
+																actions: [TextButton(onPressed: ()=> Navigator.pop(ctx), child: const Text('Cancel'))],
+															));
+															await Future.delayed(const Duration(seconds: 8));
+															if (!mounted) return;
+															Navigator.of(context).pop();
 															Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid)));
 														}, child: const Text('Book')),
 													]),
