@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zippup/common/widgets/address_field.dart';
+import 'package:zippup/services/location/location_service.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 
 class MovingScreen extends StatefulWidget {
 	const MovingScreen({super.key});
@@ -18,6 +20,20 @@ class _MovingScreenState extends State<MovingScreen> {
 	bool _scheduled = false;
 	DateTime? _scheduledAt;
 	bool _submitting = false;
+
+	@override
+	void initState() {
+		super.initState();
+		_prefillPickup();
+	}
+
+	Future<void> _prefillPickup() async {
+		final p = await LocationService.getCurrentPosition();
+		if (p == null || !mounted) return;
+		final addr = await LocationService.reverseGeocode(p);
+		if (!mounted) return;
+		if ((addr ?? '').isNotEmpty) _pickup.text = addr!;
+	}
 
 	Future<void> _submit() async {
 		if (_submitting) return;

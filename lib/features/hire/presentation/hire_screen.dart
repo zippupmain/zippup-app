@@ -4,6 +4,7 @@ import 'package:zippup/features/profile/presentation/provider_profile_screen.dar
 import 'package:zippup/services/location/location_service.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:zippup/common/widgets/address_field.dart';
 
 class HireScreen extends StatefulWidget {
 	const HireScreen({super.key, this.initialCategory, this.initialQuery});
@@ -19,6 +20,8 @@ class _HireScreenState extends State<HireScreen> {
 	final TextEditingController _search = TextEditingController();
 	String _q = '';
 	geo.Position? _me;
+	final TextEditingController _pickup = TextEditingController();
+	final TextEditingController _dest = TextEditingController();
 
 	final Map<String, List<String>> _examples = const {
 		'home': ['Cleaning', 'Plumbing', 'Electrician', 'Painting', 'Carpentry', 'Pest control'],
@@ -37,12 +40,21 @@ class _HireScreenState extends State<HireScreen> {
 			_search.text = widget.initialQuery!;
 		}
 		_location();
+		_prefillPickup();
 	}
 
 	Future<void> _location() async {
 		final p = await LocationService.getCurrentPosition();
 		if (!mounted) return;
 		setState(() => _me = p);
+	}
+
+	Future<void> _prefillPickup() async {
+		final p = await LocationService.getCurrentPosition();
+		if (p == null || !mounted) return;
+		final addr = await LocationService.reverseGeocode(p);
+		if (!mounted) return;
+		if ((addr ?? '').isNotEmpty) _pickup.text = addr!;
 	}
 
 	String _distanceText(Map<String, dynamic> p) {
@@ -145,6 +157,14 @@ class _HireScreenState extends State<HireScreen> {
 										}),
 									),
 									const Divider(height: 1),
+									Padding(
+										padding: const EdgeInsets.symmetric(horizontal:16, vertical:8),
+										child: Column(children:[
+											AddressField(controller: _pickup, label: 'Pickup address'),
+											const SizedBox(height:8),
+											AddressField(controller: _dest, label: 'Destination address'),
+										]),
+									),
 									Expanded(
 										child: ListView.separated(
 											itemCount: allDocs.length,
@@ -158,7 +178,14 @@ class _HireScreenState extends State<HireScreen> {
 													subtitle: Text('Rating: ${(p['rating'] ?? 0).toString()} • Fee: ₦${(p['fee'] ?? 0).toString()}${dist.isNotEmpty ? ' • $dist' : ''}', style: const TextStyle(color: Colors.black54)),
 													trailing: Wrap(spacing: 8, children: [
 														TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Profile')),
-														FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Book')),
+														FilledButton(onPressed: (){
+															final paddr=_pickup.text.trim(), daddr=_dest.text.trim();
+															if(paddr.isEmpty||daddr.isEmpty){
+																ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter pickup and destination')));
+																return;
+															}
+															Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid)));
+														}, child: const Text('Book')),
 													]),
 												);
 										},

@@ -135,8 +135,18 @@ class _TransportScreenState extends State<TransportScreen> {
 				setState(() => _status = 'scheduled');
 				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride scheduled. We\'ll remind you.')));
 			} else {
-				context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
-				setState(() => _status = 'driver_accepted');
+				final choice = await showDialog<String>(context: context, builder: (ctx){
+					return SimpleDialog(title: const Text('Choose driver'), children:[
+						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Driver A • 3-5m'), child: const Text('Driver A • 3-5m • ₦1,500')),
+						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Driver B • 5-7m'), child: const Text('Driver B • 5-7m • ₦1,700')),
+					]);
+				});
+				if (choice != null) {
+					context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
+					setState(() => _status = 'driver_selected');
+				} else {
+					setState(() => _status = 'requested');
+				}
 			}
 		} catch (e) {
 			setState(() => _status = 'idle');
