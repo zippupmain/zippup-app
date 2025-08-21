@@ -10,12 +10,11 @@ class PaymentsService {
 			receiveTimeout: const Duration(seconds: 20),
 		),
 	);
-	static const String _apiBase = 'https://zippup-backend-v3.onrender.com';
+	static const String _functionsBase = 'https://us-central1-zippup-3b5c6.cloudfunctions.net';
 
 	Future<String> createStripeCheckout({required double amount, required String currency, List<Map<String, dynamic>> items = const []}) async {
 		if (kIsWeb) {
-			// Always use REST on web to avoid CORS with callable functions
-			final response = await _dio.post('$_apiBase/api/payments/checkout-session3', data: {
+			final response = await _dio.post('$_functionsBase/createStripeCheckout', data: {
 				'items': items.map((e) => {
 					'name': e['title'] ?? 'Item',
 					'amount': ((e['price'] ?? 0) * 100).round(),
@@ -37,7 +36,7 @@ class PaymentsService {
 			final res = await callable.call({'amount': amount, 'currency': currency, 'items': items});
 			return (res.data as Map)['checkoutUrl'] as String;
 		} on FirebaseFunctionsException catch (_) {
-			final response = await _dio.post('$_apiBase/api/payments/checkout-session3', data: {
+			final response = await _dio.post('$_functionsBase/createStripeCheckout', data: {
 				'items': items.map((e) => {
 					'name': e['title'] ?? 'Item',
 					'amount': ((e['price'] ?? 0) * 100).round(),
@@ -58,8 +57,14 @@ class PaymentsService {
 
 	Future<String> createFlutterwaveCheckout({required double amount, required String currency, List<Map<String, dynamic>> items = const []}) async {
 		if (kIsWeb) {
-			// No reliable web fallback without JS; surface helpful error
-			throw Exception('Flutterwave checkout is blocked by CORS on web. Use Stripe or try on mobile.');
+			final response = await _dio.post('$_functionsBase/createFlutterwaveCheckout', data: {
+				'amount': amount,
+				'currency': currency,
+			});
+			final data = response.data is Map ? response.data as Map : <String, dynamic>{};
+			final hostedUrl = data['checkoutUrl'];
+			if (hostedUrl is String && hostedUrl.isNotEmpty) return hostedUrl;
+			throw Exception('Flutterwave checkout unavailable on web.');
 		}
 		try {
 			final callable = _functions.httpsCallable('createFlutterwaveCheckout');
