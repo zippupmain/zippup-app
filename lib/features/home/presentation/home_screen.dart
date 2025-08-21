@@ -192,6 +192,13 @@ class _HomeScreenState extends State<HomeScreen> {
 							]),
 						),
 					),
+					Padding(
+						padding: const EdgeInsets.only(top: 42),
+						child: Align(
+							alignment: Alignment.topCenter,
+							child: Text(_greet, style: const TextStyle(fontSize: 11, color: Colors.white70), overflow: TextOverflow.ellipsis, maxLines: 1),
+						),
+					),
 					SliverToBoxAdapter(
 						child: Padding(
 							padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
