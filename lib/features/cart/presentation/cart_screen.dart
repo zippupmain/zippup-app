@@ -45,10 +45,11 @@ class CartScreen extends ConsumerWidget {
 						},
 					),
 			bottomNavigationBar: SafeArea(
-				child: SingleChildScrollView(
+				child: Padding(
 					padding: const EdgeInsets.all(12),
 					child: Column(
 						mainAxisSize: MainAxisSize.min,
+						crossAxisAlignment: CrossAxisAlignment.stretch,
 						children: [
 							if (vendorLocked)
 								Row(children: [
@@ -56,13 +57,9 @@ class CartScreen extends ConsumerWidget {
 									const SizedBox(width: 6),
 									Expanded(child: Text('Items from a single vendor. To change vendor, clear cart.')),
 								]),
-							Row(
-								children: [
-									Text('Total: ₦${total.toStringAsFixed(2)}', style: Theme.of(context).textTheme.titleMedium),
-									const Spacer(),
-									FilledButton(onPressed: () => _checkout(context, items, total, 'stripe'), child: const Text('Pay with Stripe')),
-								],
-							),
+							Text('Total: ₦${total.toStringAsFixed(2)}', style: Theme.of(context).textTheme.titleMedium),
+							const SizedBox(height: 8),
+							FilledButton(onPressed: () => _checkout(context, items, total, 'stripe'), child: const Text('Pay with Stripe')),
 							const SizedBox(height: 8),
 							FilledButton.tonal(onPressed: () => _checkout(context, items, total, 'flutterwave'), child: const Text('Pay with Flutterwave')),
 						],
