@@ -54,10 +54,10 @@ class _MovingScreenState extends State<MovingScreen> {
 			return;
 		}
 		final titles = _subcategory == 'courier'
-			? ['Intra-city', 'Intra-state']
+			? ['Intra-city', 'Intra-state', 'Nationwide']
 			: (_subcategory == 'truck' ? ['Small truck', 'Medium truck', 'Large truck'] : ['Small pickup', 'Large pickup']);
 		final images = _subcategory == 'courier'
-			? ['assets/images/courier_city.png', 'assets/images/courier_state.png']
+			? ['assets/images/courier_city.png', 'assets/images/courier_state.png', 'assets/images/courier_nationwide.png']
 			: (_subcategory == 'truck'
 				? ['assets/images/truck_small.png','assets/images/truck_medium.png','assets/images/truck_large.png']
 				: ['assets/images/pickup_small.png','assets/images/pickup_large.png']);
@@ -71,10 +71,10 @@ class _MovingScreenState extends State<MovingScreen> {
 					itemBuilder: (ctx, i) {
 						final title = titles[i];
 						final img = images[i];
-						final base = _subcategory == 'courier' ? (i == 0 ? 1500.0 : 3500.0) : (_subcategory == 'truck' ? [5000.0, 7500.0, 10000.0][i] : [3000.0, 4500.0][i]);
+						final base = _subcategory == 'courier' ? (i == 0 ? 1500.0 : i == 1 ? 3500.0 : 8000.0) : (_subcategory == 'truck' ? [5000.0, 7500.0, 10000.0][i] : [3000.0, 4500.0][i]);
 						final km = 8.0;
 						final eta = 20 + i * 5;
-						final price = base + km * (_subcategory == 'courier' ? (i==0?100:150) : (_subcategory=='truck'? (i==0?250: i==1?300:350): (i==0?180:220)));
+						final price = base + km * (_subcategory == 'courier' ? (i==0?100: i==1?150: 250) : (_subcategory=='truck'? (i==0?250: i==1?300:350): (i==0?180:220)));
 						return ListTile(
 							leading: Image.asset(img, width: 56, height: 36, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.local_shipping)),
 							title: Text(title),
