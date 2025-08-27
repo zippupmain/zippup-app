@@ -71,9 +71,9 @@ class ProviderProfileScreen extends StatelessWidget {
 										Navigator.pop(context);
 										// Finding providers dialog
 										final navigator = Navigator.of(parentContext);
-										showDialog(context: parentContext, barrierDismissible: false, builder: (ctx) => AlertDialog(title: const Text('Finding providers…'), content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())), actions: [TextButton(onPressed: () { try { sub.cancel(); } catch (_) {} Navigator.of(ctx).pop(); }, child: const Text('Cancel'))],));
+										StreamSubscription? sub;
+										showDialog(context: parentContext, barrierDismissible: false, builder: (ctx) => AlertDialog(title: const Text('Finding providers…'), content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())), actions: [TextButton(onPressed: () { try { sub?.cancel(); } catch (_) {} Navigator.of(ctx).pop(); }, child: const Text('Cancel'))],));
 										bool routed = false;
-										late final StreamSubscription sub;
 										sub = FirebaseFirestore.instance.collection('orders').doc(orderId).snapshots().listen((snap) {
 											final data = snap.data() ?? const {};
 											final status = (data['status'] ?? '').toString();
@@ -82,10 +82,10 @@ class ProviderProfileScreen extends StatelessWidget {
 												// Route to track order with GoRouter and pass orderId
 												parentContext.pushNamed('trackOrder', queryParameters: {'orderId': orderId});
 												routed = true;
-												try { sub.cancel(); } catch (_) {}
+												try { sub?.cancel(); } catch (_) {}
 											}
 										});
-										Future.delayed(const Duration(seconds: 60), () { try { sub.cancel(); } catch (_) {} if (!routed && navigator.canPop()) navigator.pop(); if (!routed && parentContext.mounted) { ScaffoldMessenger.of(parentContext).showSnackBar(const SnackBar(content: Text('No provider found. Please try again.'))); } });
+										Future.delayed(const Duration(seconds: 60), () { try { sub?.cancel(); } catch (_) {} if (!routed && navigator.canPop()) navigator.pop(); if (!routed && parentContext.mounted) { ScaffoldMessenger.of(parentContext).showSnackBar(const SnackBar(content: Text('No provider found. Please try again.'))); } });
 									},
 									child: const Text('Confirm booking'),
 								),
