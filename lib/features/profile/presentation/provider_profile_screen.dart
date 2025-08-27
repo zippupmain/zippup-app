@@ -71,7 +71,7 @@ class ProviderProfileScreen extends StatelessWidget {
 										Navigator.pop(context);
 										// Finding providers dialog
 										final navigator = Navigator.of(parentContext);
-										showDialog(context: parentContext, barrierDismissible: false, builder: (ctx) => const AlertDialog(title: Text('Finding providers…'), content: SizedBox(height: 80, child: Center(child: CircularProgressIndicator()))));
+										showDialog(context: parentContext, barrierDismissible: false, builder: (ctx) => AlertDialog(title: const Text('Finding providers…'), content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())), actions: [TextButton(onPressed: () { try { sub.cancel(); } catch (_) {} Navigator.of(ctx).pop(); }, child: const Text('Cancel'))],));
 										bool routed = false;
 										late final StreamSubscription sub;
 										sub = FirebaseFirestore.instance.collection('orders').doc(orderId).snapshots().listen((snap) {
