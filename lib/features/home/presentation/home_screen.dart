@@ -391,6 +391,7 @@ class _BillboardCarousel extends StatefulWidget {
 class _BillboardCarouselState extends State<_BillboardCarousel> {
 	final PageController _controller = PageController(viewportFraction: 0.88);
 	int _index = 0;
+	final int _totalSlides = 4;
 	@override
 	void initState() {
 		super.initState();
@@ -398,7 +399,7 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 			while (mounted) {
 				await Future.delayed(const Duration(seconds: 4));
 				if (!mounted) break;
-				_index++;
+				_index = (_index + 1) % _totalSlides;
 				_controller.animateToPage(_index, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
 			}
 		});
@@ -413,22 +414,22 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 					_BillboardCard(
 						title: 'Pizza specials near you',
 						subtitle: 'Order hot and fresh in minutes',
-						imageUrl: null,
+						imageUrl: 'https://source.unsplash.com/1200x600/?pizza,food',
 					),
 					_BillboardCard(
 						title: 'Need a ride or bus charter?',
 						subtitle: 'Transport, taxi, and group travel',
-						imageUrl: null,
+						imageUrl: 'https://source.unsplash.com/1200x600/?taxi,bus,transport',
 					),
 					_BillboardCard(
 						title: 'Pay securely with ZippUp',
 						subtitle: 'Cards, wallets, and local methods',
-						imageUrl: null,
+						imageUrl: 'https://source.unsplash.com/1200x600/?payment,creditcard,fintech',
 					),
 					_BillboardCard(
 						title: 'Marketplace deals',
 						subtitle: 'Buy and sell with confidence',
-						imageUrl: null,
+						imageUrl: 'https://source.unsplash.com/1200x600/?shopping,marketplace,ecommerce',
 					),
 				],
 			),
@@ -451,6 +452,7 @@ class _BillboardCard extends StatelessWidget {
 					if (t.contains('ride') || t.contains('charter') || t.contains('bus')) context.push('/transport');
 					else if (t.contains('plumber') || t.contains('plumbers')) context.push('/hire');
 					else if (t.contains('food') || t.contains('pizza')) context.push('/food');
+					else if (t.contains('pay') || t.contains('wallet')) context.push('/wallet');
 					else if (t.contains('market')) context.push('/marketplace');
 				},
 				child: Container(
