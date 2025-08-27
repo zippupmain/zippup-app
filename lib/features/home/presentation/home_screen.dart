@@ -483,7 +483,8 @@ class _BillboardCard extends StatelessWidget {
 	final String title;
 	final String subtitle;
 	final String? imageUrl;
-	const _BillboardCard({required this.title, required this.subtitle, required this.imageUrl});
+	final String? assetPath;
+	const _BillboardCard({required this.title, required this.subtitle, this.imageUrl, this.assetPath});
 	@override
 	Widget build(BuildContext context) {
 		return Padding(
@@ -500,17 +501,25 @@ class _BillboardCard extends StatelessWidget {
 				child: Container(
 					decoration: BoxDecoration(
 						borderRadius: BorderRadius.circular(12),
-						gradient: imageUrl == null
+						gradient: (imageUrl == null && assetPath == null)
 							? const LinearGradient(colors: [Color(0xFF00C6FF), Color(0xFF0072FF)])
 							: null,
-						color: imageUrl == null ? null : Colors.white,
+						color: (imageUrl == null && assetPath == null) ? null : Colors.white,
 						boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,2))],
 					),
 					clipBehavior: Clip.antiAlias,
 					child: Stack(
 						fit: StackFit.expand,
 						children: [
-							if (imageUrl != null)
+							if (assetPath != null)
+								Image.asset(
+									assetPath!,
+									fit: BoxFit.cover,
+									errorBuilder: (_, __, ___) => imageUrl != null
+										? CachedNetworkImage(imageUrl: imageUrl!, fit: BoxFit.cover)
+										: const SizedBox.shrink(),
+								),
+							if (assetPath == null && imageUrl != null)
 								CachedNetworkImage(imageUrl: imageUrl!, fit: BoxFit.cover),
 							Container(
 								decoration: BoxDecoration(
