@@ -66,7 +66,13 @@ class ProviderProfileScreen extends StatelessWidget {
 								FilledButton(
 									onPressed: () async {
 										final extra = scheduled && scheduledAt != null ? {'scheduledAt': scheduledAt!.toIso8601String()} : null;
-										final orderId = await OrderService().createOrder(category: OrderCategory.hire, providerId: providerId, extra: extra);
+										String orderId;
+										try {
+											orderId = await OrderService().createOrder(category: OrderCategory.hire, providerId: providerId, extra: extra);
+										} catch (e) {
+											if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create order: $e')));
+											return;
+										}
 										if (!parentContext.mounted) return;
 										Navigator.pop(context);
 										// Finding providers dialog
