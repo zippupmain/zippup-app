@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:zippup/common/models/order.dart';
 import 'package:zippup/features/food/providers/order_service.dart';
+import 'package:go_router/go_router.dart';
 
 class ProviderProfileScreen extends StatelessWidget {
 	const ProviderProfileScreen({super.key, required this.providerId});
@@ -75,8 +76,10 @@ class ProviderProfileScreen extends StatelessWidget {
 											final status = (data['status'] ?? '').toString();
 											if (!routed && (status == OrderStatus.accepted.name || status == OrderStatus.assigned.name || status == OrderStatus.dispatched.name || status == OrderStatus.enroute.name)) {
 												if (navigator.canPop()) navigator.pop();
-												Navigator.pushNamed(context, '/track', arguments: null,);
+												// Route to track order with GoRouter and pass orderId
+												context.pushNamed('trackOrder', queryParameters: {'orderId': orderId});
 												routed = true;
+												try { sub.cancel(); } catch (_) {}
 											}
 										});
 										Future.delayed(const Duration(seconds: 60), () { try { sub.cancel(); } catch (_) {} if (!routed && navigator.canPop()) navigator.pop(); if (!routed) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No provider found. Please try again.'))); } });
