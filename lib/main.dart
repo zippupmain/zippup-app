@@ -36,9 +36,15 @@ Future<void> main() async {
 			Stripe.publishableKey = stripeKey;
 		}
 	}
-	// Configure Stripe on web from config
-	if (kIsWeb && (Stripe.publishableKey.isEmpty)) {
-		Stripe.publishableKey = stripePublishableKeyWeb;
+	// Configure Stripe on web from config (guarded)
+	if (kIsWeb) {
+		try {
+			if (Stripe.publishableKey.isEmpty) {
+				Stripe.publishableKey = stripePublishableKeyWeb;
+			}
+		} catch (_) {
+			// ignore any Stripe init issues on web to avoid startup crash
+		}
 	}
 	runZonedGuarded(() {
 		runApp(const ProviderScope(child: _BootstrapApp()));
