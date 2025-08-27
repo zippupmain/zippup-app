@@ -12,10 +12,8 @@ class PlacesService {
 		if (kIsWeb) {
 			// Use OpenStreetMap Nominatim on web; browsers block setting User-Agent header, so include an email param and throttle retries
 			const url = 'https://nominatim.openstreetmap.org/search';
-			int attempts = 0;
-			Response res;
-			while (true) {
-				attempts++;
+			Response<dynamic>? res;
+			for (int attempt = 1; attempt <= 3; attempt++) {
 				try {
 					res = await _dio.get(
 						url,
@@ -26,13 +24,21 @@ class PlacesService {
 							'limit': 5,
 							'email': 'support@zippup.app',
 						},
+						options: Options(receiveDataWhenStatusError: true),
 					);
 					break;
+				} on DioException catch (e) {
+					final status = e.response?.statusCode ?? 0;
+					if (status == 429 || status == 503 || status == 502 || attempt >= 3) {
+						return const <PlacePrediction>[];
+					}
+					await Future.delayed(Duration(milliseconds: 250 * attempt));
 				} catch (_) {
-					if (attempts >= 3) rethrow;
-					await Future.delayed(Duration(milliseconds: 250 * attempts));
+					if (attempt >= 3) return const <PlacePrediction>[];
+					await Future.delayed(Duration(milliseconds: 250 * attempt));
 				}
 			}
+			if (res == null || res.data == null) return const <PlacePrediction>[];
 			final list = (res.data as List?) ?? const [];
 			return list.map((e) {
 				final display = (e['display_name']?.toString() ?? '').trim();
