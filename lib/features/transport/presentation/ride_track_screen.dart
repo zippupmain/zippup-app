@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart' show MapsObjectId;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_map/flutter_map.dart' as lm;
+import 'package:latlong2/latlong.dart' as ll;
 import 'package:zippup/common/models/ride.dart';
 import 'package:zippup/features/orders/widgets/status_timeline.dart';
 import 'package:zippup/features/transport/providers/ride_service.dart';
@@ -204,6 +207,25 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 								child: Builder(builder: (context) {
 									if (center == null) return const Center(child: Text('Waiting for provider...'));
 									try {
+										if (kIsWeb) {
+											final fmMarkers = markers.map<lm.Marker>((m) => lm.Marker(
+												point: ll.LatLng(m.position.latitude, m.position.longitude),
+												width: 36,
+												height: 36,
+												child: const Icon(Icons.location_on, color: Colors.redAccent),
+											)).toList();
+											return lm.FlutterMap(
+												options: lm.MapOptions(initialCenter: ll.LatLng(center!.latitude, center!.longitude), initialZoom: 14),
+												children: [
+													lm.TileLayer(
+														urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+														userAgentPackageName: 'com.zippup.app',
+														maxZoom: 19,
+													),
+													lm.MarkerLayer(markers: fmMarkers),
+												],
+											);
+										}
 										return GoogleMap(
 											initialCameraPosition: CameraPosition(target: center!, zoom: 14),
 											markers: markers,

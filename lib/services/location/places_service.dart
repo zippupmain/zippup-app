@@ -12,7 +12,19 @@ class PlacesService {
 		if (kIsWeb) {
 			// Use OpenStreetMap Nominatim on web to avoid CORS with callable functions
 			final url = 'https://nominatim.openstreetmap.org/search';
-			final res = await _dio.get(url, queryParameters: {'q': input, 'format': 'json', 'addressdetails': 1, 'limit': 5});
+			final headers = {'User-Agent': 'ZippUp/1.0 (support@zippup.app)'};
+			int attempts = 0;
+			Response res;
+			while (true) {
+				attempts++;
+				try {
+					res = await _dio.get(url, queryParameters: {'q': input, 'format': 'json', 'addressdetails': 1, 'limit': 5}, options: Options(headers: headers));
+					break;
+				} catch (e) {
+					if (attempts >= 2) rethrow;
+					await Future.delayed(const Duration(milliseconds: 350));
+				}
+			}
 			final list = (res.data as List?) ?? const [];
 			return list.map((e) {
 				final display = (e['display_name']?.toString() ?? '').trim();

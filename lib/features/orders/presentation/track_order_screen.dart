@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_map/flutter_map.dart' as lm;
+import 'package:latlong2/latlong.dart' as ll;
 import 'package:zippup/common/models/order.dart';
 import 'package:zippup/features/food/providers/order_service.dart';
 import 'package:zippup/features/orders/widgets/status_timeline.dart';
@@ -193,6 +196,25 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
 							child: Builder(builder: (context) {
 								if (center == null) return const Center(child: Text('Waiting for provider/courier...'));
 								try {
+									if (kIsWeb) {
+										final fmMarkers = markers.map<lm.Marker>((m) => lm.Marker(
+											point: ll.LatLng(m.position.latitude, m.position.longitude),
+											width: 36,
+											height: 36,
+											child: const Icon(Icons.location_on, color: Colors.redAccent),
+										)).toList();
+										return lm.FlutterMap(
+											options: lm.MapOptions(initialCenter: ll.LatLng(center!.latitude, center!.longitude), initialZoom: 14),
+											children: [
+												lm.TileLayer(
+													urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+													userAgentPackageName: 'com.zippup.app',
+													maxZoom: 19,
+												),
+												lm.MarkerLayer(markers: fmMarkers),
+											],
+										);
+									}
 									return GoogleMap(
 										initialCameraPosition: CameraPosition(target: center!, zoom: 14),
 										markers: markers,
