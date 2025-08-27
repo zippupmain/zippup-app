@@ -153,11 +153,14 @@ class _WalletScreenState extends State<WalletScreen> {
 									final bal = (balSnap.data?.data()?['balance'] as num?)?.toDouble() ?? 0.0;
 									return FutureBuilder<String>(
 										future: CountryConfigService.instance.getCurrencySymbol(),
-										builder: (context, cs) => Row(
-											children: [
-												const Text('Balance: ', style: TextStyle(fontWeight: FontWeight.w600)),
-												Text('${(cs.data ?? '₦')}${bal.toStringAsFixed(2)}'),
-											],
+										builder: (context, cs) => FutureBuilder<String>(
+											future: CountryConfigService.instance.getCurrencyCode(),
+											builder: (context, cc) => Row(
+												children: [
+													const Text('Balance: ', style: TextStyle(fontWeight: FontWeight.w600)),
+													Text('${(cs.data ?? '₦')}${bal.toStringAsFixed(2)} ${(cc.data ?? '').toString()}'),
+												],
+											),
 										),
 									);
 								},
@@ -171,10 +174,13 @@ class _WalletScreenState extends State<WalletScreen> {
 									final t = txs[i].data();
 									return FutureBuilder<String>(
 										future: CountryConfigService.instance.getCurrencySymbol(),
-										builder: (context, cs) => ListTile(
-											title: Text(t['type']?.toString() ?? 'txn'),
-											subtitle: Text(t['ref']?.toString() ?? ''),
-											trailing: Text('${cs.data ?? '₦'}${(t['amount'] as num?)?.toStringAsFixed(2) ?? ''}'),
+										builder: (context, cs) => FutureBuilder<String>(
+											future: CountryConfigService.instance.getCurrencyCode(),
+											builder: (context, cc) => ListTile(
+												title: Text(t['type']?.toString() ?? 'txn'),
+												subtitle: Text(t['ref']?.toString() ?? ''),
+												trailing: Text('${cs.data ?? '₦'}${((t['amount'] as num?)?.toDouble() ?? 0).toStringAsFixed(2)} ${(cc.data ?? '').toString()}'),
+											),
 										),
 									);
 								},
