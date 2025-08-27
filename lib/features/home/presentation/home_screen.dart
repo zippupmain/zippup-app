@@ -391,7 +391,6 @@ class _BillboardCarousel extends StatefulWidget {
 class _BillboardCarouselState extends State<_BillboardCarousel> {
 	final PageController _controller = PageController(viewportFraction: 0.88);
 	int _index = 0;
-	final int _totalSlides = 4;
 	@override
 	void initState() {
 		super.initState();
@@ -399,8 +398,14 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 			while (mounted) {
 				await Future.delayed(const Duration(seconds: 4));
 				if (!mounted) break;
-				_index = (_index + 1) % _totalSlides;
-				_controller.animateToPage(_index, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+				try {
+					if (!_controller.hasClients) continue;
+					final current = _controller.page?.round() ?? 0;
+					final next = current + 1;
+					await _controller.animateToPage(next, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+				} catch (_) {
+					try { _controller.jumpToPage(0); } catch (_) {}
+				}
 			}
 		});
 	}
@@ -408,31 +413,68 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 	Widget build(BuildContext context) {
 		return SizedBox(
 			height: widget.height,
-			child: PageView(
-				controller: _controller,
-				children: const [
-					_BillboardCard(
-						title: 'Pizza specials near you',
-						subtitle: 'Order hot and fresh in minutes',
-						imageUrl: 'https://source.unsplash.com/1200x600/?pizza,food',
-					),
-					_BillboardCard(
-						title: 'Need a ride or bus charter?',
-						subtitle: 'Transport, taxi, and group travel',
-						imageUrl: 'https://source.unsplash.com/1200x600/?taxi,bus,transport',
-					),
-					_BillboardCard(
-						title: 'Pay securely with ZippUp',
-						subtitle: 'Cards, wallets, and local methods',
-						imageUrl: 'https://source.unsplash.com/1200x600/?payment,creditcard,fintech',
-					),
-					_BillboardCard(
-						title: 'Marketplace deals',
-						subtitle: 'Buy and sell with confidence',
-						imageUrl: 'https://source.unsplash.com/1200x600/?shopping,marketplace,ecommerce',
-					),
-				],
+			child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+				stream: FirebaseFirestore.instance.collection('_config').doc('promos').snapshots(),
+				builder: (context, configSnap) {
+					final mode = (configSnap.data?.data()?['mode'] ?? 'local').toString();
+					if (mode == 'firestore') {
+						return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+							stream: FirebaseFirestore.instance.collection('promos').orderBy('createdAt', descending: true).limit(5).snapshots(),
+							builder: (context, snapshot) {
+								final docs = snapshot.data?.docs ?? const [];
+								if (docs.isEmpty) {
+									return _buildLocalPromos();
+								}
+								return PageView.builder(
+									controller: _controller,
+									itemCount: docs.length,
+									itemBuilder: (context, i) {
+										final data = docs[i].data();
+										return _BillboardCard(
+											title: (data['title'] ?? '').toString(),
+											subtitle: (data['subtitle'] ?? data['description'] ?? '').toString(),
+											imageUrl: (data['imageUrl'] ?? '').toString().isEmpty ? null : (data['imageUrl'] as String),
+										);
+									},
+								);
+							},
+						);
+					}
+					return _buildLocalPromos();
+				},
 			),
+		);
+	}
+
+	Widget _buildLocalPromos() {
+		return PageView(
+			controller: _controller,
+			children: const [
+				_BillboardCard(
+					title: 'Pizza specials near you',
+					subtitle: 'Order hot and fresh in minutes',
+					assetPath: 'assets/promos/pizza.jpg',
+					imageUrl: 'https://source.unsplash.com/1200x600/?pizza,food',
+				),
+				_BillboardCard(
+					title: 'Need a ride or bus charter?',
+					subtitle: 'Transport, taxi, and group travel',
+					assetPath: 'assets/promos/transport.jpg',
+					imageUrl: 'https://source.unsplash.com/1200x600/?taxi,bus,transport',
+				),
+				_BillboardCard(
+					title: 'Pay securely with ZippUp',
+					subtitle: 'Cards, wallets, and local methods',
+					assetPath: 'assets/promos/payments.jpg',
+					imageUrl: 'https://source.unsplash.com/1200x600/?payment,creditcard,fintech',
+				),
+				_BillboardCard(
+					title: 'Marketplace deals',
+					subtitle: 'Buy and sell with confidence',
+					assetPath: 'assets/promos/marketplace.jpg',
+					imageUrl: 'https://source.unsplash.com/1200x600/?shopping,marketplace,ecommerce',
+				),
+			],
 		);
 	}
 }
