@@ -199,41 +199,43 @@ class _TransportScreenState extends State<TransportScreen> {
 												subtitle: Text('ETA ${mins} min • ${km.toStringAsFixed(1)} km'),
 												trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children:[Text('₦${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600))]),
 												onTap: () async {
-												Navigator.pop(parentContext);
-												await _createRideAndSearch(
-													origin: origin,
-													dests: dests,
-													oLoc: oLoc,
-													dLoc: dLoc,
-													km: km,
-													mins: mins,
-													capacity: cap,
-													classLabel: label,
-													fare: price,
-													scheduled: scheduled,
-													scheduledAt: scheduledAt,
-												);
+													Navigator.pop(parentContext);
+													await _createRideAndSearch(
+														origin: origin,
+														dests: dests,
+														oLoc: oLoc,
+														dLoc: dLoc,
+														km: km,
+														mins: mins,
+														capacity: cap,
+														classLabel: label,
+														fare: price,
+														scheduled: scheduled,
+														scheduledAt: scheduledAt,
+													);
 											},
 										);
 									},
+								),
 									const SizedBox(height: 8),
 									SwitchListTile(
 										title: const Text('Schedule booking'),
 										value: scheduled,
 										onChanged: (v) => setModalState(() => scheduled = v),
 									),
-									if (scheduled) ListTile(
-										title: const Text('Scheduled time'),
-										subtitle: Text(scheduledAt?.toString() ?? 'Pick time'),
-										onTap: () async {
-											final now = DateTime.now();
-											final date = await showDatePicker(context: ctx, firstDate: now, lastDate: now.add(const Duration(days: 30)), initialDate: now);
-											if (date == null) return;
-											final time = await showTimePicker(context: ctx, initialTime: TimeOfDay.now());
-											if (time == null) return;
-											setModalState(() => scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
-										},
-									),
+									if (scheduled)
+										ListTile(
+											title: const Text('Scheduled time'),
+											subtitle: Text(scheduledAt?.toString() ?? 'Pick time'),
+											onTap: () async {
+												final now = DateTime.now();
+												final date = await showDatePicker(context: ctx, firstDate: now, lastDate: now.add(const Duration(days: 30)), initialDate: now);
+												if (date == null) return;
+												final time = await showTimePicker(context: ctx, initialTime: TimeOfDay.now());
+												if (time == null) return;
+												setModalState(() => scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
+											},
+										),
 									const SizedBox(height: 8),
 								],
 							),
