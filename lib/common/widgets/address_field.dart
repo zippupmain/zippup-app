@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:zippup/services/location/places_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class AddressField extends StatefulWidget {
 	final TextEditingController controller;
@@ -18,6 +20,16 @@ class _AddressFieldState extends State<AddressField> {
 	Timer? _debounce;
 	List<PlacePrediction> _suggestions = const <PlacePrediction>[];
 	bool _loading = false;
+	stt.SpeechToText? _speech;
+	bool _listening = false;
+
+	@override
+	void initState() {
+		super.initState();
+		if (!kIsWeb) {
+			_speech = stt.SpeechToText();
+		}
+	}
 
 	void _onChanged(String value) {
 		_debounce?.cancel();
@@ -55,7 +67,33 @@ class _AddressFieldState extends State<AddressField> {
 						labelText: widget.label,
 						hintText: widget.hint,
 						contentPadding: widget.contentPadding,
-						suffixIcon: _loading ? const SizedBox(width: 16, height: 16, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))) : const Icon(Icons.place_outlined),
+						suffixIcon: _loading
+							? const SizedBox(width: 16, height: 16, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
+							: SizedBox(
+								width: 72,
+								child: Row(mainAxisSize: MainAxisSize.min, children: [
+									IconButton(
+										tooltip: _listening ? 'Stop' : 'Voice input',
+										onPressed: kIsWeb ? null : () async {
+											if (_speech == null) return;
+											if (_listening) {
+												await _speech!.stop();
+												setState(() => _listening = false);
+												return;
+											}
+											final ok = await _speech!.initialize(onStatus: (_) {}, onError: (_) {});
+											if (!ok) return;
+											setState(() => _listening = true);
+											_speech!.listen(onResult: (r) {
+												widget.controller.text = r.recognizedWords;
+												widget.controller.selection = TextSelection.fromPosition(TextPosition(offset: widget.controller.text.length));
+											});
+										},
+										icon: Icon(_listening ? Icons.stop : Icons.mic_none_rounded),
+									),
+									const Icon(Icons.place_outlined),
+								]),
+							),
 					),
 					onChanged: _onChanged,
 				),

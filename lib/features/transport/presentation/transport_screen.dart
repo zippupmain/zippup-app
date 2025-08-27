@@ -34,6 +34,7 @@ class _TransportScreenState extends State<TransportScreen> {
 	final _distanceService = DistanceService();
 	bool _submitting = false;
 	StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _rideSub;
+	bool _isCharter = false;
 
 	double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
 		const double R = 6371.0;
@@ -141,6 +142,20 @@ class _TransportScreenState extends State<TransportScreen> {
 		return base + km * perKm + mins * perMin;
 	}
 
+	double _charterPrice({required int seats, required double km, required int mins}) {
+		double base;
+		double perKm;
+		double perMin;
+		switch (seats) {
+			case 8: base = 1500; perKm = 90; perMin = 8; break;
+			case 12: base = 2200; perKm = 110; perMin = 10; break;
+			case 16: base = 3000; perKm = 130; perMin = 12; break;
+			case 30: base = 5000; perKm = 160; perMin = 15; break;
+			default: base = 3000; perKm = 130; perMin = 12;
+		}
+		return base + km * perKm + mins * perMin;
+	}
+
 	String _vehicleClassLabel(int capacity) {
 		switch (capacity) {
 			case 2: return 'Tricycle';
@@ -185,7 +200,7 @@ class _TransportScreenState extends State<TransportScreen> {
 			isScrollControlled: true,
 			builder: (ctx) {
 				return StatefulBuilder(builder: (ctx, setModalState) {
-					final classes = <int>[2,3,4,6];
+					final classes = _isCharter ? <int>[8,12,16,30] : <int>[2,3,4,6];
 					return Padding(
 						padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 16),
 						child: SingleChildScrollView(
@@ -193,7 +208,7 @@ class _TransportScreenState extends State<TransportScreen> {
 								crossAxisAlignment: CrossAxisAlignment.start,
 								children: [
 									Row(children:[
-										const Text('Choose ride', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+										Text(_isCharter ? 'Choose bus charter' : 'Choose ride', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
 										const Spacer(),
 										Text('~${km.toStringAsFixed(1)} km • ${mins} min')
 									]),
@@ -205,15 +220,27 @@ class _TransportScreenState extends State<TransportScreen> {
 										separatorBuilder: (_, __) => const Divider(height: 1),
 										itemBuilder: (ctx, i) {
 											final cap = classes[i];
-											final label = _vehicleClassLabel(cap);
-											final price = _priceForClass(capacity: cap, km: km, mins: mins);
-											final asset = cap == 2
-												? 'assets/images/vehicle_tricycle.png'
-												: cap == 3
-													? 'assets/images/vehicle_compact.png'
-													: cap == 4
-														? 'assets/images/vehicle_standard.png'
-														: 'assets/images/vehicle_xl.png';
+											final label = _isCharter
+												? 'Bus ${cap}-seater'
+												: _vehicleClassLabel(cap);
+											final price = _isCharter
+												? (_charterPrice(seats: cap, km: km, mins: mins))
+												: _priceForClass(capacity: cap, km: km, mins: mins);
+											final asset = _isCharter
+												? (cap == 8
+													? 'assets/images/bus_8.png'
+													: cap == 12
+														? 'assets/images/bus_12.png'
+														: cap == 16
+															? 'assets/images/bus_16.png'
+															: 'assets/images/bus_30.png')
+												: (cap == 2
+													? 'assets/images/vehicle_tricycle.png'
+													: cap == 3
+														? 'assets/images/vehicle_compact.png'
+														: cap == 4
+															? 'assets/images/vehicle_standard.png'
+															: 'assets/images/vehicle_xl.png');
 											return ListTile(
 												leading: _vehicleImage(asset),
 												title: Text('$label • $cap passengers'),
@@ -323,9 +350,10 @@ class _TransportScreenState extends State<TransportScreen> {
 		showDialog(
 			context: context,
 			barrierDismissible: false,
-			builder: (ctx) => const AlertDialog(
-				title: Text('Finding drivers…'),
-				content: SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
+			builder: (ctx) => AlertDialog(
+				title: const Text('Finding drivers…'),
+				content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
+				actions: [TextButton(onPressed: () { try { _rideSub?.cancel(); } catch (_) {} Navigator.of(ctx).pop(); }, child: const Text('Cancel'))],
 			),
 		);
 
@@ -447,6 +475,8 @@ class _TransportScreenState extends State<TransportScreen> {
 							Expanded(child: OutlinedButton(onPressed: _estimate, child: const Text('Estimate fare'))),
 							const SizedBox(width: 8),
 							Expanded(child: FilledButton(onPressed: _submitting ? null : _requestRide, child: Text(_submitting ? 'Requesting...' : 'Request ride'))),
+							const SizedBox(width: 8),
+							Expanded(child: OutlinedButton(onPressed: () { try { _rideSub?.cancel(); } catch (_) {} setState(() => _status = 'idle'); }, child: const Text('Cancel'))),
 						],
 					),
 					const SizedBox(height: 12),
