@@ -391,6 +391,7 @@ class _BillboardCarousel extends StatefulWidget {
 class _BillboardCarouselState extends State<_BillboardCarousel> {
 	final PageController _controller = PageController(viewportFraction: 0.88);
 	int _index = 0;
+	int _slidesCount = 4;
 	@override
 	void initState() {
 		super.initState();
@@ -398,14 +399,11 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 			while (mounted) {
 				await Future.delayed(const Duration(seconds: 4));
 				if (!mounted) break;
-				try {
-					if (!_controller.hasClients) continue;
-					final current = _controller.page?.round() ?? 0;
-					final next = current + 1;
-					await _controller.animateToPage(next, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-				} catch (_) {
-					try { _controller.jumpToPage(0); } catch (_) {}
-				}
+				if (!_controller.hasClients) continue;
+				final total = _slidesCount <= 0 ? 1 : _slidesCount;
+				final current = _controller.page?.round() ?? 0;
+				final next = (current + 1) % total;
+				await _controller.animateToPage(next, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
 			}
 		});
 	}
@@ -422,6 +420,8 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 							stream: FirebaseFirestore.instance.collection('promos').orderBy('createdAt', descending: true).limit(5).snapshots(),
 							builder: (context, snapshot) {
 								final docs = snapshot.data?.docs ?? const [];
+								// Update slide count for auto-scroll loop
+								_slidesCount = docs.isEmpty ? 4 : docs.length;
 								if (docs.isEmpty) {
 									return _buildLocalPromos();
 								}
