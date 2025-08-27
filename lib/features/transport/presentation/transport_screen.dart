@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/common/widgets/address_field.dart';
+import 'package:zippup/services/notifications/notifications_service.dart';
 import 'dart:async';
 
 class TransportScreen extends StatefulWidget {
@@ -261,6 +262,16 @@ class _TransportScreenState extends State<TransportScreen> {
 	}) async {
 		final db = FirebaseFirestore.instance;
 		final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+		if (scheduled && scheduledAt != null && scheduledAt!.isAfter(DateTime.now().add(const Duration(minutes: 6)))) {
+			// Schedule reminder 5 minutes before
+			final reminderAt = scheduledAt!.subtract(const Duration(minutes: 5));
+			await NotificationsService.scheduleReminder(
+				id: 'ride_${DateTime.now().millisecondsSinceEpoch}',
+				when: reminderAt,
+				title: 'Upcoming ride',
+				body: 'Your scheduled ride is in 5 minutes. Continue or cancel?'
+			);
+		}
 		final doc = await db.collection('rides').add({
 			'riderId': uid,
 			'type': _rideTypeForCapacity(capacity),
