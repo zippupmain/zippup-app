@@ -59,6 +59,32 @@
         caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
       }
     })();
+
+    // Global error overlay to diagnose white screen
+    (function(){
+      function showError(msg, stack){
+        try {
+          var box = document.createElement('div');
+          box.style.position='fixed'; box.style.left='0'; box.style.right='0'; box.style.bottom='0'; box.style.maxHeight='40%';
+          box.style.background='rgba(0,0,0,0.85)'; box.style.color='#fff'; box.style.fontFamily='monospace'; box.style.padding='8px'; box.style.overflow='auto';
+          box.style.zIndex='999999';
+          box.innerText = '[Web runtime error] ' + msg + (stack ? ('\n' + stack) : '');
+          document.body.appendChild(box);
+          console.error('[Web runtime error]', msg, stack);
+        } catch(_) {}
+      }
+      window.addEventListener('error', function(e){
+        var msg = (e && e.message) ? e.message : String(e);
+        var stack = (e && e.error && e.error.stack) ? e.error.stack : (e && e.stack ? e.stack : '');
+        showError(msg, stack);
+      });
+      window.addEventListener('unhandledrejection', function(e){
+        var reason = (e && e.reason) ? e.reason : e;
+        var msg = (reason && reason.message) ? reason.message : String(reason);
+        var stack = (reason && reason.stack) ? reason.stack : '';
+        showError(msg, stack);
+      });
+    })();
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
