@@ -72,6 +72,8 @@ class ProviderProfileScreen extends StatelessWidget {
 											if (parentContext.mounted) parentContext.push('/profile');
 											return;
 										}
+										// Refresh token to avoid stale auth causing permission denied on web
+										try { await user.getIdToken(true); } catch (_) {}
 										final extra = scheduled && scheduledAt != null ? {'scheduledAt': scheduledAt!.toIso8601String()} : null;
 										String orderId;
 										try {
