@@ -76,7 +76,7 @@ class CountryConfigService {
 			'GH': {'currency': 'GHS', 'symbol': '₵'},
 			'KE': {'currency': 'KES', 'symbol': 'KSh'},
 			'ZA': {'currency': 'ZAR', 'symbol': 'R'},
-			'US': {'currency': 'USD', 'symbol': ' '},
+			'US': {'currency': 'USD', 'symbol': '\u0024'},
 			'GB': {'currency': 'GBP', 'symbol': '£'},
 			'EU': {'currency': 'EUR', 'symbol': '€'},
 		};
@@ -91,11 +91,11 @@ class CountryConfigService {
 			'GH': {'currency': 'GHS', 'symbol': '₵'},
 			'KE': {'currency': 'KES', 'symbol': 'KSh'},
 			'ZA': {'currency': 'ZAR', 'symbol': 'R'},
-			'US': {'currency': 'USD', 'symbol': '$'},
+			'US': {'currency': 'USD', 'symbol': '\u0024'},
 			'GB': {'currency': 'GBP', 'symbol': '£'},
 			'EU': {'currency': 'EUR', 'symbol': '€'},
 		};
-		return (map[cc]?['symbol']?.toString() ?? (builtin[cc]?['symbol']?.toString() ?? '$'));
+		return (map[cc]?['symbol']?.toString() ?? (builtin[cc]?['symbol']?.toString() ?? '\u0024'));
 	}
 
 	Future<Map<String, dynamic>> getCountrySettings() async {
