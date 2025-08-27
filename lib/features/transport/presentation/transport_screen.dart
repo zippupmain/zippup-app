@@ -263,7 +263,7 @@ class _TransportScreenState extends State<TransportScreen> {
 													),
 												]),
 												onTap: () async {
-													Navigator.pop(parentContext);
+													Navigator.of(ctx).pop();
 													await _createRideAndSearch(
 														origin: origin,
 														dests: dests,

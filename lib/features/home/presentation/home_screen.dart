@@ -278,12 +278,13 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Food', Icons.local_fire_department, 'food', Color(0xFFE8F5E9), Colors.black),
 		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFFFF7E0), Colors.black),
 		_QuickAction('Moving', Icons.local_shipping, 'moving', Color(0xFFE3F2FD), Colors.black),
-		_QuickAction('Digital', Icons.devices_other, 'digital', Color(0xFFE8F5E9), Colors.black),
+		_QuickAction('TopUp', Icons.phone_iphone, 'digital', Color(0xFFE8F5E9), Colors.black),
 		_QuickAction('Emergency', Icons.emergency_share, 'emergency', Color(0xFFFFE5E5), Colors.black),
 		_QuickAction('Others', Icons.category, 'others', Color(0xFFFFE5E5), Colors.black),
 		_QuickAction('Personal', Icons.face_3, 'personal', Color(0xFFFFFFFF), Colors.black),
 		_QuickAction('Market(P)', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.black),
 		_QuickAction('Rentals', Icons.key, 'rentals', Color(0xFFFFF3E0), Colors.black),
+		_QuickAction('Grocery', Icons.local_grocery_store, 'food', Color(0xFFE8F5E9), Colors.black),
 	];
 
 	@override
