@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class CountryConfigService {
 	static final CountryConfigService instance = CountryConfigService._();
@@ -40,6 +41,21 @@ class CountryConfigService {
 				}
 			}
 		} catch (_) {}
+		// Try server-side geocode (more reliable than locale) if last known location stored
+		try {
+			final last = await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid ?? '').get();
+			final lat = (last.data()?['lastLat'] as num?)?.toDouble();
+			final lng = (last.data()?['lastLng'] as num?)?.toDouble();
+			if (lat != null && lng != null) {
+				final res = await FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('geocode').call({'lat': lat, 'lng': lng});
+				final data = Map<String, dynamic>.from(res.data as Map);
+				final cc = (data['countryCode']?.toString() ?? '').toUpperCase();
+				if (cc.isNotEmpty) {
+					_cachedCountryCode = cc;
+					return cc;
+				}
+			}
+		} catch (_) {}
 		// fallback to device locale region code
 		final locale = ui.PlatformDispatcher.instance.locale;
 		final region = (locale.countryCode ?? '').toUpperCase();
@@ -54,13 +70,32 @@ class CountryConfigService {
 	Future<String> getCurrencyCode() async {
 		final cc = await getCountryCode();
 		final map = await _loadCountriesMap();
-		return (map[cc]?['currency']?.toString() ?? 'USD');
+		// Built-in fallbacks for common countries
+		const builtin = {
+			'NG': {'currency': 'NGN', 'symbol': '₦'},
+			'GH': {'currency': 'GHS', 'symbol': '₵'},
+			'KE': {'currency': 'KES', 'symbol': 'KSh'},
+			'ZA': {'currency': 'ZAR', 'symbol': 'R'},
+			'US': {'currency': 'USD', 'symbol': ' '},
+			'GB': {'currency': 'GBP', 'symbol': '£'},
+			'EU': {'currency': 'EUR', 'symbol': '€'},
+		};
+		return (map[cc]?['currency']?.toString() ?? (builtin[cc]?['currency']?.toString() ?? 'USD'));
 	}
 
 	Future<String> getCurrencySymbol() async {
 		final cc = await getCountryCode();
 		final map = await _loadCountriesMap();
-		return (map[cc]?['symbol']?.toString() ?? '4B2'); // default: generic money symbol
+		const builtin = {
+			'NG': {'currency': 'NGN', 'symbol': '₦'},
+			'GH': {'currency': 'GHS', 'symbol': '₵'},
+			'KE': {'currency': 'KES', 'symbol': 'KSh'},
+			'ZA': {'currency': 'ZAR', 'symbol': 'R'},
+			'US': {'currency': 'USD', 'symbol': '$'},
+			'GB': {'currency': 'GBP', 'symbol': '£'},
+			'EU': {'currency': 'EUR', 'symbol': '€'},
+		};
+		return (map[cc]?['symbol']?.toString() ?? (builtin[cc]?['symbol']?.toString() ?? '$'));
 	}
 
 	Future<Map<String, dynamic>> getCountrySettings() async {
