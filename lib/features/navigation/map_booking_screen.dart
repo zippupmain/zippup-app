@@ -17,11 +17,16 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 	GoogleMapController? _mapController;
 	bool _isTracking = false;
 
+	void _onMarkersUpdate() {
+		if (mounted) setState(() {});
+	}
+
 	@override
 	void initState() {
 		super.initState();
 		_init();
 		_mapService.currentLocationNotifier.addListener(_onLocationUpdate);
+		_mapService.markersNotifier.addListener(_onMarkersUpdate);
 	}
 
 	void _onLocationUpdate() {
@@ -230,6 +235,7 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 	void dispose() {
 		_mapController?.dispose();
 		_mapService.currentLocationNotifier.removeListener(_onLocationUpdate);
+		_mapService.markersNotifier.removeListener(_onMarkersUpdate);
 		_mapService.dispose();
 		super.dispose();
 	}

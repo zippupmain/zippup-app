@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_map/flutter_map.dart' as lm;
+import 'package:latlong2/latlong.dart' as ll;
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:zippup/services/location/location_service.dart';
 
@@ -91,6 +94,21 @@ class _VendorListScreenState extends State<VendorListScreen> {
 							child: Builder(builder: (context) {
 								if (center == null) return const Center(child: Text('Map: no location yet'));
 								try {
+									if (kIsWeb) {
+										final fmMarkers = markers.map<lm.Marker>((m) => lm.Marker(
+											point: ll.LatLng(m.position.latitude, m.position.longitude),
+											width: 40,
+											height: 40,
+											child: const Icon(Icons.location_on, color: Colors.redAccent),
+										)).toList();
+										return lm.FlutterMap(
+											options: lm.MapOptions(initialCenter: ll.LatLng(center!.latitude, center!.longitude), initialZoom: 12),
+											children: [
+												lm.TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', subdomains: const ['a','b','c']),
+												lm.MarkerLayer(markers: fmMarkers),
+											],
+										);
+									}
 									return GoogleMap(initialCameraPosition: CameraPosition(target: center!, zoom: 12), markers: markers, myLocationEnabled: false, compassEnabled: false);
 								} catch (_) {
 									return const Center(child: Text('Map failed to load'));
