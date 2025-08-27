@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WalletScreen extends StatefulWidget {
 	const WalletScreen({super.key});
@@ -13,6 +14,31 @@ class _WalletScreenState extends State<WalletScreen> {
 	Future<QuerySnapshot<Map<String, dynamic>>> _history() {
 		final uid = FirebaseAuth.instance.currentUser!.uid;
 		return FirebaseFirestore.instance.collection('wallets').doc(uid).collection('tx').orderBy('createdAt', descending: true).limit(50).get();
+	}
+
+	Future<void> _openUrl(String url) async {
+		try {
+			final uri = Uri.parse(url);
+			final openedInApp = await launchUrl(
+				uri,
+				mode: LaunchMode.inAppBrowserView,
+				webOnlyWindowName: '_blank',
+			);
+			if (!openedInApp) {
+				final openedExternal = await launchUrl(
+					uri,
+					mode: LaunchMode.externalApplication,
+					webOnlyWindowName: '_self',
+				);
+				if (!openedExternal && mounted) {
+					ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open payment page')));
+				}
+			}
+		} catch (e) {
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to open link: $e')));
+			}
+		}
 	}
 
 	Future<void> _addFunds() async {
@@ -34,7 +60,7 @@ class _WalletScreenState extends State<WalletScreen> {
 			final checkoutUrl = data['checkoutUrl']?.toString();
 			if (checkoutUrl != null && context.mounted) {
 				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Redirecting to payment...')));
-				// Platform-specific navigation handled elsewhere (e.g., web: launchUrl)
+				await _openUrl(checkoutUrl);
 			}
 		} catch (e) {
 			if (context.mounted) {
