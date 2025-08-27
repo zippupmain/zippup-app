@@ -40,6 +40,7 @@ class ProviderProfileScreen extends StatelessWidget {
 	}
 
 	void _openBookingSheet(BuildContext context) {
+		final BuildContext parentContext = context;
 		bool scheduled = false;
 		DateTime? scheduledAt;
 		showModalBottomSheet(
@@ -66,11 +67,11 @@ class ProviderProfileScreen extends StatelessWidget {
 									onPressed: () async {
 										final extra = scheduled && scheduledAt != null ? {'scheduledAt': scheduledAt!.toIso8601String()} : null;
 										final orderId = await OrderService().createOrder(category: OrderCategory.hire, providerId: providerId, extra: extra);
-										if (!context.mounted) return;
+										if (!parentContext.mounted) return;
 										Navigator.pop(context);
 										// Finding providers dialog
-										final navigator = Navigator.of(context);
-										showDialog(context: context, barrierDismissible: false, builder: (ctx) => const AlertDialog(title: Text('Finding providers…'), content: SizedBox(height: 80, child: Center(child: CircularProgressIndicator()))));
+										final navigator = Navigator.of(parentContext);
+										showDialog(context: parentContext, barrierDismissible: false, builder: (ctx) => const AlertDialog(title: Text('Finding providers…'), content: SizedBox(height: 80, child: Center(child: CircularProgressIndicator()))));
 										bool routed = false;
 										late final StreamSubscription sub;
 										sub = FirebaseFirestore.instance.collection('orders').doc(orderId).snapshots().listen((snap) {
@@ -79,12 +80,12 @@ class ProviderProfileScreen extends StatelessWidget {
 											if (!routed && (status == OrderStatus.accepted.name || status == OrderStatus.assigned.name || status == OrderStatus.dispatched.name || status == OrderStatus.enroute.name)) {
 												if (navigator.canPop()) navigator.pop();
 												// Route to track order with GoRouter and pass orderId
-												context.pushNamed('trackOrder', queryParameters: {'orderId': orderId});
+												parentContext.pushNamed('trackOrder', queryParameters: {'orderId': orderId});
 												routed = true;
 												try { sub.cancel(); } catch (_) {}
 											}
 										});
-										Future.delayed(const Duration(seconds: 60), () { try { sub.cancel(); } catch (_) {} if (!routed && navigator.canPop()) navigator.pop(); if (!routed) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No provider found. Please try again.'))); } });
+										Future.delayed(const Duration(seconds: 60), () { try { sub.cancel(); } catch (_) {} if (!routed && navigator.canPop()) navigator.pop(); if (!routed && parentContext.mounted) { ScaffoldMessenger.of(parentContext).showSnackBar(const SnackBar(content: Text('No provider found. Please try again.'))); } });
 									},
 									child: const Text('Confirm booking'),
 								),
