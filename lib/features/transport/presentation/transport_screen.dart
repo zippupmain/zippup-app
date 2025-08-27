@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/common/widgets/address_field.dart';
+import 'dart:async';
 
 class TransportScreen extends StatefulWidget {
 	const TransportScreen({super.key});
@@ -26,6 +27,7 @@ class _TransportScreenState extends State<TransportScreen> {
 	String _status = 'idle';
 	final _distanceService = DistanceService();
 	bool _submitting = false;
+	StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _rideSub;
 
 	@override
 	void initState() {
@@ -130,32 +132,43 @@ class _TransportScreenState extends State<TransportScreen> {
 				'notes': _scheduled ? _scheduleMsg.text.trim() : null,
 				'status': 'requested',
 			});
+
 			if (!mounted) return;
-			if (_scheduled) {
-				setState(() => _status = 'scheduled');
-				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride scheduled. We\'ll remind you.')));
-			} else {
-				final cls = await showDialog<String>(context: context, builder: (ctx){
-					return SimpleDialog(title: const Text('Choose ride class'), children:[
-						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Economy'), child: const Text('Economy • up to 4 pax • ₦1,200–₦1,800 • 3–6m')),
-						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Comfort'), child: const Text('Comfort • up to 4 pax • ₦1,600–₦2,400 • 4–8m')),
-						SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'XL'), child: const Text('XL • up to 6 pax • ₦2,200–₦3,200 • 6–10m')),
-					]);
-				});
-				if (cls == null) { setState(() => _status = 'requested'); return; }
-				setState(() => _status = 'searching');
-				if (!mounted) return;
-				showDialog(context: context, barrierDismissible: false, builder: (ctx)=> AlertDialog(
-					title: Text('Searching $cls drivers…'),
+			// Show finding drivers dialog and watch for acceptance
+			setState(() => _status = 'searching');
+			final navigator = Navigator.of(context);
+			showDialog(
+				context: context,
+				barrierDismissible: false,
+				builder: (ctx) => AlertDialog(
+					title: const Text('Finding drivers…'),
 					content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
-					actions: [TextButton(onPressed: ()=> Navigator.pop(ctx), child: const Text('Cancel'))],
-				));
-				await Future.delayed(const Duration(seconds: 6));
+					actions: [TextButton(onPressed: () => navigator.pop(), child: const Text('Cancel'))],
+				),
+			);
+
+			final rideRef = db.collection('rides').doc(doc.id);
+			bool navigated = false;
+			_rideSub?.cancel();
+			_rideSub = rideRef.snapshots().listen((snap) {
+				final data = snap.data() ?? const {};
+				final status = (data['status'] ?? '').toString();
+				if (!navigated && (status == 'accepted' || status == 'arriving' || status == 'arrived' || status == 'enroute')) {
+					if (navigator.canPop()) navigator.pop();
+					context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
+					navigated = true;
+				}
+			});
+
+			// Timeout in 60s with no driver
+			Future.delayed(const Duration(seconds: 60), () {
 				if (!mounted) return;
-				Navigator.of(context).pop();
-				context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
-				setState(() => _status = 'driver_selected');
-			}
+				if (!navigated) {
+					if (navigator.canPop()) navigator.pop();
+					setState(() => _status = 'idle');
+					ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No driver found. Please try again.')));
+				}
+			});
 		} catch (e) {
 			setState(() => _status = 'idle');
 			if (!mounted) return;
@@ -163,6 +176,12 @@ class _TransportScreenState extends State<TransportScreen> {
 		} finally {
 			if (mounted) setState(() { _submitting = false; });
 		}
+	}
+
+	@override
+	void dispose() {
+		_rideSub?.cancel();
+		super.dispose();
 	}
 
 	@override

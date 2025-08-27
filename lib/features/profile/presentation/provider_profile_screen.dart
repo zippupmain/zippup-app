@@ -63,8 +63,23 @@ class ProviderProfileScreen extends StatelessWidget {
 								FilledButton(
 									onPressed: () async {
 										final extra = scheduled && scheduledAt != null ? {'scheduledAt': scheduledAt!.toIso8601String()} : null;
-										await OrderService().createOrder(category: OrderCategory.hire, providerId: providerId, extra: extra);
-										if (context.mounted) Navigator.pop(context);
+										final orderId = await OrderService().createOrder(category: OrderCategory.hire, providerId: providerId, extra: extra);
+										if (!context.mounted) return;
+										Navigator.pop(context);
+										// Finding providers dialog
+										final navigator = Navigator.of(context);
+										showDialog(context: context, barrierDismissible: false, builder: (ctx) => const AlertDialog(title: Text('Finding providers…'), content: SizedBox(height: 80, child: Center(child: CircularProgressIndicator()))));
+										bool routed = false;
+										final sub = FirebaseFirestore.instance.collection('orders').doc(orderId).snapshots().listen((snap) {
+											final data = snap.data() ?? const {};
+											final status = (data['status'] ?? '').toString();
+											if (!routed && (status == OrderStatus.accepted.name || status == OrderStatus.assigned.name || status == OrderStatus.dispatched.name || status == OrderStatus.enroute.name)) {
+												if (navigator.canPop()) navigator.pop();
+												Navigator.pushNamed(context, '/track', arguments: null,);
+												routed = true;
+											}
+										});
+										Future.delayed(const Duration(seconds: 60), () { try { sub.cancel(); } catch (_) {} if (!routed && navigator.canPop()) navigator.pop(); if (!routed) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No provider found. Please try again.'))); } });
 									},
 									child: const Text('Confirm booking'),
 								),
