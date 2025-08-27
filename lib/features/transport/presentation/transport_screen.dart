@@ -482,8 +482,6 @@ class _TransportScreenState extends State<TransportScreen> {
 							Expanded(child: OutlinedButton(onPressed: _estimate, child: const Text('Estimate fare'))),
 							const SizedBox(width: 8),
 							Expanded(child: FilledButton(onPressed: _submitting ? null : _requestRide, child: Text(_submitting ? 'Requesting...' : 'Request ride'))),
-							const SizedBox(width: 8),
-							Expanded(child: OutlinedButton(onPressed: () { try { _rideSub?.cancel(); } catch (_) {} setState(() => _status = 'idle'); }, child: const Text('Cancel'))),
 						],
 					),
 					const SizedBox(height: 12),
