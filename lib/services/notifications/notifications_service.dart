@@ -47,26 +47,13 @@ class NotificationsService {
 
 	Future<void> scheduleReminder({required String id, required DateTime when, required String title, required String body}) async {
 		await init();
-		if (!kIsWeb) {
-			const NotificationDetails details = NotificationDetails(
-				android: AndroidNotificationDetails('rides', 'Rides', importance: Importance.defaultImportance, priority: Priority.defaultPriority),
-			);
-			await _local.schedule(
-				id.hashCode,
-				title,
-				body,
-				when.toLocal(),
-				details,
-				androidAllowWhileIdle: true,
-			);
-		} else {
-			await FirebaseFirestore.instance.collection('_scheduled_notifications').doc(id).set({
-				'title': title,
-				'body': body,
-				'time': when.toIso8601String(),
-				'createdAt': DateTime.now().toIso8601String(),
-			});
-		}
+		// Persist schedule request in Firestore for server-side or app-side handling
+		await FirebaseFirestore.instance.collection('_scheduled_notifications').doc(id).set({
+			'title': title,
+			'body': body,
+			'time': when.toIso8601String(),
+			'createdAt': DateTime.now().toIso8601String(),
+		});
 	}
 
 	// Static helper to keep existing call sites working
