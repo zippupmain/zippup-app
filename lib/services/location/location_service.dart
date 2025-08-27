@@ -9,6 +9,13 @@ import 'package:http/http.dart' as http;
 
 class LocationService {
 	static Future<bool> ensurePermissions() async {
+		if (kIsWeb) {
+			LocationPermission permission = await Geolocator.checkPermission();
+			if (permission == LocationPermission.denied) {
+				permission = await Geolocator.requestPermission();
+			}
+			return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
+		}
 		final serviceEnabled = await Geolocator.isLocationServiceEnabled();
 		if (!serviceEnabled) {
 			await Geolocator.openLocationSettings();
