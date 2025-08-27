@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:zippup/core/config/country_config_service.dart';
 
 class WalletScreen extends StatefulWidget {
 	const WalletScreen({super.key});
@@ -144,16 +145,37 @@ class _WalletScreenState extends State<WalletScreen> {
 							]),
 						),
 						const Divider(),
+						Padding(
+							padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+							child: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+								future: FirebaseFirestore.instance.collection('wallets').doc(FirebaseAuth.instance.currentUser!.uid).get(),
+								builder: (context, balSnap) {
+									final bal = (balSnap.data?.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+									return FutureBuilder<String>(
+										future: CountryConfigService.instance.getCurrencySymbol(),
+										builder: (context, cs) => Row(
+											children: [
+												const Text('Balance: ', style: TextStyle(fontWeight: FontWeight.w600)),
+												Text('${(cs.data ?? '₦')}${bal.toStringAsFixed(2)}'),
+											],
+										),
+									);
+								},
+							),
+						),
 						Expanded(
 							child: ListView.separated(
 								itemCount: txs.length,
 								separatorBuilder: (_, __) => const Divider(height: 1),
 								itemBuilder: (context, i) {
 									final t = txs[i].data();
-									return ListTile(
-										title: Text(t['type']?.toString() ?? 'txn'),
-										subtitle: Text(t['ref']?.toString() ?? ''),
-										trailing: Text(t['amount']?.toString() ?? ''),
+									return FutureBuilder<String>(
+										future: CountryConfigService.instance.getCurrencySymbol(),
+										builder: (context, cs) => ListTile(
+											title: Text(t['type']?.toString() ?? 'txn'),
+											subtitle: Text(t['ref']?.toString() ?? ''),
+											trailing: Text('${cs.data ?? '₦'}${(t['amount'] as num?)?.toStringAsFixed(2) ?? ''}'),
+										),
 									);
 								},
 							),

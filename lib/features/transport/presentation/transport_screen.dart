@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:zippup/services/notifications/notifications_service.dart';
 import 'dart:math' as Math;
+import 'package:zippup/core/config/country_config_service.dart';
 
 class TransportScreen extends StatefulWidget {
 	const TransportScreen({super.key});
@@ -252,7 +253,15 @@ class _TransportScreenState extends State<TransportScreen> {
 												leading: _vehicleImage(asset),
 												title: Text('$label • $cap passengers'),
 												subtitle: Text('ETA ${mins} min • ${km.toStringAsFixed(1)} km'),
-												trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children:[Text('₦${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600))]),
+												trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children:[
+													FutureBuilder<String>(
+														future: CountryConfigService.instance.getCurrencySymbol(),
+														builder: (context, snap) {
+															final symbol = snap.data ?? '₦';
+															return Text('${symbol}${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600));
+														},
+													),
+												]),
 												onTap: () async {
 													Navigator.pop(parentContext);
 													await _createRideAndSearch(
@@ -270,10 +279,10 @@ class _TransportScreenState extends State<TransportScreen> {
 														scheduled: scheduled,
 														scheduledAt: scheduledAt,
 													);
-											},
-										);
-									},
-								),
+												},
+											);
+										},
+									),
 									const SizedBox(height: 8),
 									SwitchListTile(
 										title: const Text('Schedule booking'),
@@ -485,7 +494,10 @@ class _TransportScreenState extends State<TransportScreen> {
 						],
 					),
 					const SizedBox(height: 12),
-					Text('Fare estimate: ₦${_fare.toStringAsFixed(2)}'),
+					FutureBuilder<String>(
+						future: CountryConfigService.instance.getCurrencySymbol(),
+						builder: (context, snap) => Text('Fare estimate: ${(snap.data ?? '₦')}${_fare.toStringAsFixed(2)}'),
+					),
 					Text('Driver ETA: ${_eta} min'),
 					const SizedBox(height: 12),
 					Text('Status: $_status'),

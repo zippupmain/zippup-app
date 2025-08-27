@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math' as Math;
 import 'dart:async';
+import 'package:zippup/core/config/country_config_service.dart';
 
 class MovingScreen extends StatefulWidget {
 	const MovingScreen({super.key});
@@ -80,7 +81,10 @@ class _MovingScreenState extends State<MovingScreen> {
 							leading: Image.asset(img, width: 56, height: 36, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.local_shipping)),
 							title: Text(title),
 							subtitle: Text('ETA ${eta} min • ${km.toStringAsFixed(1)} km'),
-							trailing: Text('₦${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+							trailing: FutureBuilder<String>(
+								future: CountryConfigService.instance.getCurrencySymbol(),
+								builder: (context, snap) => Text('${snap.data ?? '₦'}${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+							),
 							onTap: () {
 								Navigator.pop(ctx);
 								_submit(chosenClass: title, price: price);

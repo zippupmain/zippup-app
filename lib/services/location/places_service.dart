@@ -1,6 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:zippup/core/config/country_config_service.dart';
 
 class PlacesService {
 	final FirebaseFunctions _functions;
@@ -12,6 +13,7 @@ class PlacesService {
 		if (kIsWeb) {
 			// Use OpenStreetMap Nominatim on web; browsers block setting User-Agent header, so include an email param and throttle retries
 			const url = 'https://nominatim.openstreetmap.org/search';
+			final cc = await CountryConfigService.instance.getCountryCode();
 			Response<dynamic>? res;
 			for (int attempt = 1; attempt <= 3; attempt++) {
 				try {
@@ -23,6 +25,7 @@ class PlacesService {
 							'addressdetails': 1,
 							'limit': 5,
 							'email': 'support@zippup.app',
+							'countrycodes': cc.toLowerCase(),
 						},
 						options: Options(receiveDataWhenStatusError: true),
 					);
@@ -45,9 +48,11 @@ class PlacesService {
 				return PlacePrediction(description: display, placeId: (e['osm_id']?.toString() ?? ''));
 			}).toList();
 		}
+		final cc = await CountryConfigService.instance.getCountryCode();
 		final res = await _functions.httpsCallable('placesAutocomplete').call(<String, dynamic>{
 			'input': input,
 			'sessiontoken': sessionToken,
+			'components': 'country:$cc',
 		});
 		final data = res.data as Map;
 		final List preds = (data['predictions'] as List? ?? const []);
