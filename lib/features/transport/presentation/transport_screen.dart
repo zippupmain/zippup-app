@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:zippup/services/notifications/notifications_service.dart';
 
 class TransportScreen extends StatefulWidget {
 	const TransportScreen({super.key});
