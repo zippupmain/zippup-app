@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class SearchResultsScreen extends StatefulWidget {
 	const SearchResultsScreen({super.key, required this.query});
@@ -13,6 +14,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 	final _controller = TextEditingController();
 	String _activeSection = 'All';
 	int _limit = 20;
+	stt.SpeechToText? _speech;
 
 	Future<Map<String, List<Map<String, dynamic>>>> _search(String q) async {
 		final db = FirebaseFirestore.instance;
@@ -28,6 +30,17 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 			'providers': providers,
 			'listings': listings,
 		};
+	}
+
+	Future<void> _voiceSearch() async {
+		_speech ??= stt.SpeechToText();
+		final ok = await _speech!.initialize(onError: (_) {});
+		if (!ok) return;
+		_speech!.listen(onResult: (r) {
+			_controller.text = r.recognizedWords;
+			_controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
+			if (r.finalResult) setState(() {});
+		});
 	}
 
 	@override
@@ -58,6 +71,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 									),
 								),
 							),
+							IconButton(onPressed: _voiceSearch, icon: const Icon(Icons.mic_none)),
 							const SizedBox(width: 8),
 							DropdownButton<String>(
 								value: _activeSection,

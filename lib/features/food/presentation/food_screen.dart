@@ -48,6 +48,7 @@ class FoodScreen extends StatelessWidget {
 								fillColor: Colors.white,
 								hintText: 'Search food, vendors...',
 								prefixIcon: const Icon(Icons.search, color: Colors.black),
+								suffixIcon: IconButton(icon: const Icon(Icons.mic_none), onPressed: () => _voiceSearch(context, controller)),
 								border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.black12)),
 							),
 						),

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class OthersSearchScreen extends StatefulWidget {
 	const OthersSearchScreen({super.key, required this.kind});
@@ -13,6 +14,17 @@ class OthersSearchScreen extends StatefulWidget {
 class _OthersSearchScreenState extends State<OthersSearchScreen> {
 	final _q = TextEditingController();
 	bool _submitting = false;
+	stt.SpeechToText? _speech;
+	Future<void> _mic() async {
+		_speech ??= stt.SpeechToText();
+		final ok = await _speech!.initialize(onError: (_) {});
+		if (!ok) return;
+		_speech!.listen(onResult: (r) {
+			_q.text = r.recognizedWords;
+			_q.selection = TextSelection.fromPosition(TextPosition(offset: _q.text.length));
+			if (r.finalResult && mounted) setState(() {});
+		});
+	}
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
@@ -24,7 +36,7 @@ class _OthersSearchScreenState extends State<OthersSearchScreen> {
 						padding: const EdgeInsets.all(8.0),
 						child: TextField(
 							controller: _q,
-							decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search...', filled: true, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(12)))),
+							decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: 'Search...', filled: true, border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(12))), suffixIcon: IconButton(icon: const Icon(Icons.mic_none), onPressed: _mic)),
 							onChanged: (_) => setState(() {}),
 						),
 					),

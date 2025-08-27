@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart' as lm;
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:zippup/services/location/location_service.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class VendorListScreen extends StatefulWidget {
 	const VendorListScreen({super.key, required this.category});
@@ -19,6 +20,7 @@ class _VendorListScreenState extends State<VendorListScreen> {
 	final _search = TextEditingController();
 	String _q = '';
 	geo.Position? _me;
+	stt.SpeechToText? _speech;
 
 	@override
 	void initState() {
@@ -41,6 +43,17 @@ class _VendorListScreenState extends State<VendorListScreen> {
 		return '${km.toStringAsFixed(km < 10 ? 1 : 0)} km away';
 	}
 
+	Future<void> _mic() async {
+		_speech ??= stt.SpeechToText();
+		final ok = await _speech!.initialize(onError: (_) {});
+		if (!ok) return;
+		_speech!.listen(onResult: (r) {
+			_search.text = r.recognizedWords;
+			_search.selection = TextSelection.fromPosition(TextPosition(offset: _search.text.length));
+			if (r.finalResult && mounted) setState(() => _q = _search.text.trim().toLowerCase());
+		});
+	}
+
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
@@ -58,6 +71,7 @@ class _VendorListScreenState extends State<VendorListScreen> {
 								filled: true,
 								hintText: 'Search vendors...',
 								prefixIcon: const Icon(Icons.search),
+								suffixIcon: IconButton(icon: const Icon(Icons.mic_none), onPressed: _mic),
 								border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
 							),
 						),
