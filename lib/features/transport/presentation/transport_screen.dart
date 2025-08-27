@@ -213,6 +213,12 @@ class _TransportScreenState extends State<TransportScreen> {
 										const Spacer(),
 										Text('~${km.toStringAsFixed(1)} km • ${mins} min')
 									]),
+									const SizedBox(height: 8),
+									Row(children:[
+										FilterChip(label: const Text('Standard'), selected: !_isCharter, onSelected: (_) => setModalState(() => _isCharter = false)),
+										const SizedBox(width: 8),
+										FilterChip(label: const Text('Bus charter'), selected: _isCharter, onSelected: (_) => setModalState(() => _isCharter = true)),
+									]),
 									const SizedBox(height: 12),
 									ListView.separated(
 										shrinkWrap: true,
@@ -460,11 +466,6 @@ class _TransportScreenState extends State<TransportScreen> {
 			body: ListView(
 				padding: const EdgeInsets.all(16),
 				children: [
-					SwitchListTile(
-						title: const Text('Bus charter'),
-						value: _isCharter,
-						onChanged: (v) => setState(() => _isCharter = v),
-					),
 					const SizedBox(height: 4),
 					AddressField(controller: _pickup, label: 'Pickup address'),
 					const SizedBox(height: 8),
