@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:zippup/common/models/order.dart';
 import 'package:zippup/features/food/providers/order_service.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 
 class ProviderProfileScreen extends StatelessWidget {
 	const ProviderProfileScreen({super.key, required this.providerId});
@@ -71,7 +72,8 @@ class ProviderProfileScreen extends StatelessWidget {
 										final navigator = Navigator.of(context);
 										showDialog(context: context, barrierDismissible: false, builder: (ctx) => const AlertDialog(title: Text('Finding providers…'), content: SizedBox(height: 80, child: Center(child: CircularProgressIndicator()))));
 										bool routed = false;
-										final sub = FirebaseFirestore.instance.collection('orders').doc(orderId).snapshots().listen((snap) {
+										late final StreamSubscription sub;
+										sub = FirebaseFirestore.instance.collection('orders').doc(orderId).snapshots().listen((snap) {
 											final data = snap.data() ?? const {};
 											final status = (data['status'] ?? '').toString();
 											if (!routed && (status == OrderStatus.accepted.name || status == OrderStatus.assigned.name || status == OrderStatus.dispatched.name || status == OrderStatus.enroute.name)) {
