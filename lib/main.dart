@@ -9,6 +9,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:zippup/services/notifications/notifications_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:zippup/core/config/payments_config.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 
@@ -84,6 +85,13 @@ class _BootstrapAppState extends State<_BootstrapApp> {
 	Future<void> _init() async {
 		try {
 			await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+			if (kIsWeb) {
+				// Stabilize Firestore on web to avoid INTERNAL ASSERTION errors
+				FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED); 
+				FirebaseFirestore.instance.terminate();
+				await FirebaseFirestore.instance.clearPersistence();
+				FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
+			}
 			if (!kIsWeb) {
 				await NotificationsService.instance.init();
 			}

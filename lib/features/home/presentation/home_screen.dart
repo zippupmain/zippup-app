@@ -454,25 +454,21 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 					title: 'Pizza specials near you',
 					subtitle: 'Order hot and fresh in minutes',
 					assetPath: 'assets/promos/pizza.jpg',
-					imageUrl: 'https://source.unsplash.com/1200x600/?pizza,food',
 				),
 				_BillboardCard(
 					title: 'Need a ride or bus charter?',
 					subtitle: 'Transport, taxi, and group travel',
 					assetPath: 'assets/promos/transport.jpg',
-					imageUrl: 'https://source.unsplash.com/1200x600/?taxi,bus,transport',
 				),
 				_BillboardCard(
 					title: 'Pay securely with ZippUp',
 					subtitle: 'Cards, wallets, and local methods',
 					assetPath: 'assets/promos/payments.jpg',
-					imageUrl: 'https://source.unsplash.com/1200x600/?payment,creditcard,fintech',
 				),
 				_BillboardCard(
 					title: 'Marketplace deals',
 					subtitle: 'Buy and sell with confidence',
 					assetPath: 'assets/promos/marketplace.jpg',
-					imageUrl: 'https://source.unsplash.com/1200x600/?shopping,marketplace,ecommerce',
 				),
 			],
 		);
