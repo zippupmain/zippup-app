@@ -104,7 +104,11 @@ class _VendorListScreenState extends State<VendorListScreen> {
 										return lm.FlutterMap(
 											options: lm.MapOptions(initialCenter: ll.LatLng(center!.latitude, center!.longitude), initialZoom: 12),
 											children: [
-												lm.TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', subdomains: const ['a','b','c']),
+												lm.TileLayer(
+													urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+													userAgentPackageName: 'com.zippup.app',
+													maxZoom: 19,
+												),
 												lm.MarkerLayer(markers: fmMarkers),
 											],
 										);

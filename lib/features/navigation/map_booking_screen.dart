@@ -56,7 +56,11 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
 			return lm.FlutterMap(
 				options: lm.MapOptions(initialCenter: center, initialZoom: current != null ? 15 : 2),
 				children: [
-					lm.TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', subdomains: const ['a','b','c']),
+					lm.TileLayer(
+						urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+						userAgentPackageName: 'com.zippup.app',
+						maxZoom: 19,
+					),
 					lm.MarkerLayer(markers: markers),
 				],
 			);
