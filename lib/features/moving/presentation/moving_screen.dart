@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zippup/common/widgets/address_field.dart';
 import 'package:zippup/services/location/location_service.dart';
 import 'package:geolocator/geolocator.dart' as geo;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:math' as Math;
 
 class MovingScreen extends StatefulWidget {
 	const MovingScreen({super.key});
@@ -21,6 +23,15 @@ class _MovingScreenState extends State<MovingScreen> {
 	DateTime? _scheduledAt;
 	bool _submitting = false;
 
+	double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
+		const double R = 6371.0;
+		double dLat = (lat2 - lat1) * (Math.pi / 180.0);
+		double dLon = (lon2 - lon1) * (Math.pi / 180.0);
+		double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.pi/180.0)) * Math.cos(lat2 * (Math.pi/180.0)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		return R * c;
+	}
+
 	@override
 	void initState() {
 		super.initState();
@@ -35,7 +46,52 @@ class _MovingScreenState extends State<MovingScreen> {
 		if ((addr ?? '').isNotEmpty) _pickup.text = addr!;
 	}
 
-	Future<void> _submit() async {
+	Future<void> _openClassModal() async {
+		final pickup = _pickup.text.trim();
+		final dropoff = _dropoff.text.trim();
+		if (pickup.isEmpty || dropoff.isEmpty) {
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter pickup and dropoff')));
+			return;
+		}
+		final titles = _subcategory == 'courier'
+			? ['Intra-city', 'Intra-state']
+			: (_subcategory == 'truck' ? ['Small truck', 'Medium truck', 'Large truck'] : ['Small pickup', 'Large pickup']);
+		final images = _subcategory == 'courier'
+			? ['assets/images/courier_city.png', 'assets/images/courier_state.png']
+			: (_subcategory == 'truck'
+				? ['assets/images/truck_small.png','assets/images/truck_medium.png','assets/images/truck_large.png']
+				: ['assets/images/pickup_small.png','assets/images/pickup_large.png']);
+		await showModalBottomSheet(context: context, isScrollControlled: true, builder: (ctx) {
+			return Padding(
+				padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 16),
+				child: ListView.separated(
+					shrinkWrap: true,
+					itemCount: titles.length,
+					separatorBuilder: (_, __) => const Divider(height: 1),
+					itemBuilder: (ctx, i) {
+						final title = titles[i];
+						final img = images[i];
+						final base = _subcategory == 'courier' ? (i == 0 ? 1500.0 : 3500.0) : (_subcategory == 'truck' ? [5000.0, 7500.0, 10000.0][i] : [3000.0, 4500.0][i]);
+						final km = 8.0;
+						final eta = 20 + i * 5;
+						final price = base + km * (_subcategory == 'courier' ? (i==0?100:150) : (_subcategory=='truck'? (i==0?250: i==1?300:350): (i==0?180:220)));
+						return ListTile(
+							leading: Image.asset(img, width: 56, height: 36, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.local_shipping)),
+							title: Text(title),
+							subtitle: Text('ETA ${eta} min • ${km.toStringAsFixed(1)} km'),
+							trailing: Text('₦${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+							onTap: () {
+								Navigator.pop(ctx);
+								_submit(chosenClass: title, price: price);
+							},
+						);
+					},
+				),
+			);
+		});
+	}
+
+	Future<void> _submit({required String chosenClass, required double price}) async {
 		if (_submitting) return;
 		final pickup = _pickup.text.trim();
 		final dropoff = _dropoff.text.trim();
@@ -49,6 +105,8 @@ class _MovingScreenState extends State<MovingScreen> {
 			final doc = await FirebaseFirestore.instance.collection('moving_requests').add({
 				'userId': uid,
 				'subcategory': _subcategory,
+				'class': chosenClass,
+				'priceEstimate': price,
 				'pickupAddress': pickup,
 				'dropoffAddress': dropoff,
 				'notes': _notes.text.trim(),
@@ -124,7 +182,7 @@ class _MovingScreenState extends State<MovingScreen> {
 					const SizedBox(height: 8),
 					TextField(controller: _notes, decoration: const InputDecoration(labelText: 'Notes (optional)')),
 					const SizedBox(height: 12),
-					FilledButton(onPressed: _submitting ? null : _submit, child: Text(_submitting ? 'Submitting...' : 'Request moving')),
+					FilledButton(onPressed: _submitting ? null : _openClassModal, child: Text(_submitting ? 'Submitting...' : 'Choose class')),
 				],
 			),
 		);
