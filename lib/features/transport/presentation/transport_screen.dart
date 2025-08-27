@@ -265,7 +265,7 @@ class _TransportScreenState extends State<TransportScreen> {
 		if (scheduled && scheduledAt != null && scheduledAt!.isAfter(DateTime.now().add(const Duration(minutes: 6)))) {
 			// Schedule reminder 5 minutes before
 			final reminderAt = scheduledAt!.subtract(const Duration(minutes: 5));
-			await NotificationsService.scheduleReminder(
+			await NotificationsService.scheduleReminderStatic(
 				id: 'ride_${DateTime.now().millisecondsSinceEpoch}',
 				when: reminderAt,
 				title: 'Upcoming ride',
