@@ -6,8 +6,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/common/widgets/address_field.dart';
-import 'package:zippup/services/notifications/notifications_service.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class TransportScreen extends StatefulWidget {
 	const TransportScreen({super.key});
@@ -152,8 +154,10 @@ class _TransportScreenState extends State<TransportScreen> {
 	Future<void> _openClassSelection({
 		required String origin,
 		required List<String> dests,
-		required gc.Location oLoc,
-		required gc.Location dLoc,
+		required double oLat,
+		required double oLng,
+		required double dLat,
+		required double dLng,
 		required double km,
 		required int mins,
 	}) async {
@@ -204,8 +208,10 @@ class _TransportScreenState extends State<TransportScreen> {
 													await _createRideAndSearch(
 														origin: origin,
 														dests: dests,
-														oLoc: oLoc,
-														dLoc: dLoc,
+														oLat: oLat,
+														oLng: oLng,
+														dLat: dLat,
+														dLng: dLng,
 														km: km,
 														mins: mins,
 														capacity: cap,
@@ -250,8 +256,10 @@ class _TransportScreenState extends State<TransportScreen> {
 	Future<void> _createRideAndSearch({
 		required String origin,
 		required List<String> dests,
-		required gc.Location oLoc,
-		required gc.Location dLoc,
+		required double oLat,
+		required double oLng,
+		required double dLat,
+		required double dLng,
 		required double km,
 		required int mins,
 		required int capacity,
@@ -279,10 +287,10 @@ class _TransportScreenState extends State<TransportScreen> {
 			'scheduledAt': scheduledAt?.toIso8601String(),
 			'pickupAddress': origin,
 			'destinationAddresses': dests,
-			'pickupLat': oLoc.latitude,
-			'pickupLng': oLoc.longitude,
-			'destLat': dLoc.latitude,
-			'destLng': dLoc.longitude,
+			'pickupLat': oLat,
+			'pickupLng': oLng,
+			'destLat': dLat,
+			'destLng': dLng,
 			'createdAt': DateTime.now().toIso8601String(),
 			'fareEstimate': fare,
 			'etaMinutes': mins,
@@ -339,14 +347,27 @@ class _TransportScreenState extends State<TransportScreen> {
 		}
 		setState(() { _status = 'requesting'; _submitting = true; });
 		try {
-			final oLocs = await gc.locationFromAddress(origin).catchError((_) => <gc.Location>[]);
-			final dLocs = await gc.locationFromAddress(dests.first).catchError((_) => <gc.Location>[]);
-			if (oLocs.isEmpty || dLocs.isEmpty) {
+			// Resolve coordinates with web fallback to Nominatim
+			double oLat; double oLng; double dLat; double dLng;
+			try {
+				if (kIsWeb) {
+					final o = await _geocodeWeb(origin);
+					final d = await _geocodeWeb(dests.first);
+					if (o == null || d == null) throw Exception('Could not resolve addresses.');
+					oLat = o.$1; oLng = o.$2; dLat = d.$1; dLng = d.$2;
+				} else {
+					final oLocs = await gc.locationFromAddress(origin).catchError((_) => <gc.Location>[]);
+					final dLocs = await gc.locationFromAddress(dests.first).catchError((_) => <gc.Location>[]);
+					if (oLocs.isEmpty || dLocs.isEmpty) throw Exception('Could not resolve addresses.');
+					oLat = oLocs.first.latitude; oLng = oLocs.first.longitude; dLat = dLocs.first.latitude; dLng = dLocs.first.longitude;
+				}
+			} catch (_) {
 				throw Exception('Could not resolve addresses. Please refine search.');
 			}
+
 			final matrix = await _distanceService.getMatrix(
-				origin: '${oLocs.first.latitude},${oLocs.first.longitude}',
-				destinations: ['${dLocs.first.latitude},${dLocs.first.longitude}'],
+				origin: '$oLat,$oLng',
+				destinations: ['$dLat,$dLng'],
 			);
 			final rows = (matrix['rows'] as List?) ?? const [];
 			final elements = rows.isNotEmpty ? (rows.first['elements'] as List? ?? const []) : const [];
@@ -362,7 +383,7 @@ class _TransportScreenState extends State<TransportScreen> {
 			final km = meters > 0 ? meters / 1000.0 : 5.0;
 			final mins = seconds > 0 ? (seconds / 60).round() : 10;
 			if (!mounted) return;
-			await _openClassSelection(origin: origin, dests: dests, oLoc: oLocs.first, dLoc: dLocs.first, km: km, mins: mins);
+			await _openClassSelection(origin: origin, dests: dests, oLat: oLat, oLng: oLng, dLat: dLat, dLng: dLng, km: km, mins: mins);
 			setState(() => _status = 'idle');
 		} catch (e) {
 			setState(() => _status = 'idle');
@@ -412,5 +433,28 @@ class _TransportScreenState extends State<TransportScreen> {
 				],
 			),
 		);
+	}
+}
+
+// Web geocode helper using Nominatim
+Future<(double,double)?> _geocodeWeb(String input) async {
+	try {
+		final uri = Uri.parse('https://nominatim.openstreetmap.org/search').replace(queryParameters: {
+			'q': input,
+			'format': 'json',
+			'limit': '1',
+			'addressdetails': '0',
+			'email': 'support@zippup.app',
+		});
+		final res = await http.get(uri, headers: {'Accept': 'application/json'});
+		if (res.statusCode != 200) return null;
+		final List data = res.body.isNotEmpty ? (jsonDecode(res.body) as List) : const [];
+		if (data.isEmpty) return null;
+		final lat = double.tryParse(data.first['lat']?.toString() ?? '');
+		final lon = double.tryParse(data.first['lon']?.toString() ?? '');
+		if (lat == null || lon == null) return null;
+		return (lat, lon);
+	} catch (_) {
+		return null;
 	}
 }
