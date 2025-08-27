@@ -167,6 +167,7 @@ class _TransportScreenState extends State<TransportScreen> {
 	}
 
 	String _rideTypeForCapacity(int capacity) {
+		if (_isCharter || capacity >= 8) return 'bus';
 		if (capacity == 2) return 'tricycle';
 		if (capacity == 6) return 'bus';
 		return 'taxi';
@@ -459,6 +460,11 @@ class _TransportScreenState extends State<TransportScreen> {
 			body: ListView(
 				padding: const EdgeInsets.all(16),
 				children: [
+					SwitchListTile(
+						title: const Text('Bus charter'),
+						value: _isCharter,
+						onChanged: (v) => setState(() => _isCharter = v),
+					),
 					const SizedBox(height: 4),
 					AddressField(controller: _pickup, label: 'Pickup address'),
 					const SizedBox(height: 8),
