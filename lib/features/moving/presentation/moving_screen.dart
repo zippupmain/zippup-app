@@ -6,6 +6,7 @@ import 'package:zippup/services/location/location_service.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math' as Math;
+import 'dart:async';
 
 class MovingScreen extends StatefulWidget {
 	const MovingScreen({super.key});
@@ -119,8 +120,42 @@ class _MovingScreenState extends State<MovingScreen> {
 			if (_scheduled) {
 				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Moving request scheduled')));
 			} else {
-				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request sent. Opening live tracking...')));
-				Navigator.of(context).pushNamed('/live');
+				// Show finding providers with cancel, then watch for acceptance
+				final navigator = Navigator.of(context);
+				bool routed = false;
+				late final StreamSubscription sub;
+				showDialog(
+					context: context,
+					barrierDismissible: false,
+					builder: (ctx) => AlertDialog(
+						title: const Text('Finding providers…'),
+						content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
+						actions: [
+							TextButton(onPressed: () async {
+								try { await FirebaseFirestore.instance.collection('moving_requests').doc(doc.id).set({'status': 'cancelled', 'cancelledAt': DateTime.now().toIso8601String(), 'cancelledBy': uid}, SetOptions(merge: true)); } catch (_) {}
+								try { sub.cancel(); } catch (_) {}
+								Navigator.of(ctx).pop();
+							}, child: const Text('Cancel')),
+						],
+					),
+				);
+				sub = FirebaseFirestore.instance.collection('moving_requests').doc(doc.id).snapshots().listen((snap) {
+					final data = snap.data() ?? const {};
+					final status = (data['status'] ?? '').toString();
+					if (!routed && (status == 'accepted' || status == 'assigned' || status == 'enroute')) {
+						if (navigator.canPop()) navigator.pop();
+						routed = true;
+						sub.cancel();
+						Navigator.of(context).pushNamed('/live');
+					}
+				});
+				Future.delayed(const Duration(seconds: 60), () {
+					try { sub.cancel(); } catch (_) {}
+					if (!routed && navigator.canPop()) navigator.pop();
+					if (!routed && mounted) {
+						ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No provider available right now. Please try again.')));
+					}
+				});
 			}
 		} catch (e) {
 			if (mounted) {
