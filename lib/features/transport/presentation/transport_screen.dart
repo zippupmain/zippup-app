@@ -337,12 +337,19 @@ class _TransportScreenState extends State<TransportScreen> {
 				origin: '${oLocs.first.latitude},${oLocs.first.longitude}',
 				destinations: ['${dLocs.first.latitude},${dLocs.first.longitude}'],
 			);
-			final elements = (matrix['rows'][0]['elements'] as List);
+			final rows = (matrix['rows'] as List?) ?? const [];
+			final elements = rows.isNotEmpty ? (rows.first['elements'] as List? ?? const []) : const [];
 			double meters = 0; int seconds = 0;
 			for (final el in elements) {
-				if (el['status'] == 'OK') { meters += (el['distance']['value'] as num).toDouble(); seconds += (el['duration']['value'] as num).toInt(); }
+				if (el is Map && el['status'] == 'OK') {
+					final dist = (el['distance'] as Map?)?['value'];
+					final dur = (el['duration'] as Map?)?['value'];
+					if (dist is num) meters += dist.toDouble();
+					if (dur is num) seconds += dur.toInt();
+				}
 			}
-			final km = meters / 1000.0; final mins = (seconds / 60).round();
+			final km = meters > 0 ? meters / 1000.0 : 5.0;
+			final mins = seconds > 0 ? (seconds / 60).round() : 10;
 			if (!mounted) return;
 			await _openClassSelection(origin: origin, dests: dests, oLoc: oLocs.first, dLoc: dLocs.first, km: km, mins: mins);
 			setState(() => _status = 'idle');
