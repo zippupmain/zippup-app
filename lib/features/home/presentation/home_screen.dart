@@ -407,31 +407,30 @@ class _BillboardCarouselState extends State<_BillboardCarousel> {
 	Widget build(BuildContext context) {
 		return SizedBox(
 			height: widget.height,
-			child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-				stream: FirebaseFirestore.instance.collection('promos').orderBy('createdAt', descending: true).limit(5).snapshots(),
-				builder: (context, snapshot) {
-					final docs = snapshot.data?.docs ?? const [];
-					final count = docs.isNotEmpty ? docs.length : 1;
-					return PageView.builder(
-						controller: _controller,
-						itemCount: count,
-						itemBuilder: (context, i) {
-							if (docs.isEmpty) {
-								return const _BillboardCard(
-									title: 'ZippUp! One Tap. All Services.',
-									subtitle: 'Everything you need, in one app.',
-									imageUrl: null,
-								);
-							}
-							final data = docs[i % docs.length].data();
-							return _BillboardCard(
-								title: (data['title'] ?? '').toString(),
-								subtitle: (data['subtitle'] ?? data['description'] ?? '').toString(),
-								imageUrl: (data['imageUrl'] ?? '').toString().isEmpty ? null : (data['imageUrl'] as String),
-							);
-						},
-					);
-				},
+			child: PageView(
+				controller: _controller,
+				children: const [
+					_BillboardCard(
+						title: 'Pizza specials near you',
+						subtitle: 'Order hot and fresh in minutes',
+						imageUrl: null,
+					),
+					_BillboardCard(
+						title: 'Need a ride or bus charter?',
+						subtitle: 'Transport, taxi, and group travel',
+						imageUrl: null,
+					),
+					_BillboardCard(
+						title: 'Pay securely with ZippUp',
+						subtitle: 'Cards, wallets, and local methods',
+						imageUrl: null,
+					),
+					_BillboardCard(
+						title: 'Marketplace deals',
+						subtitle: 'Buy and sell with confidence',
+						imageUrl: null,
+					),
+				],
 			),
 		);
 	}
@@ -449,9 +448,9 @@ class _BillboardCard extends StatelessWidget {
 			child: InkWell(
 				onTap: () {
 					final t = title.toLowerCase();
-					if (t.contains('taxi') || t.contains('ride')) context.push('/transport');
+					if (t.contains('ride') || t.contains('charter') || t.contains('bus')) context.push('/transport');
 					else if (t.contains('plumber') || t.contains('plumbers')) context.push('/hire');
-					else if (t.contains('food')) context.push('/food');
+					else if (t.contains('food') || t.contains('pizza')) context.push('/food');
 					else if (t.contains('market')) context.push('/marketplace');
 				},
 				child: Container(
