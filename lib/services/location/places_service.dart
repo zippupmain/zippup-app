@@ -10,19 +10,27 @@ class PlacesService {
 	Future<List<PlacePrediction>> autocomplete(String input, {String? sessionToken}) async {
 		if (input.trim().length < 3) return const <PlacePrediction>[];
 		if (kIsWeb) {
-			// Use OpenStreetMap Nominatim on web to avoid CORS with callable functions
-			final url = 'https://nominatim.openstreetmap.org/search';
-			final headers = {'User-Agent': 'ZippUp/1.0 (support@zippup.app)'};
+			// Use OpenStreetMap Nominatim on web; browsers block setting User-Agent header, so include an email param and throttle retries
+			const url = 'https://nominatim.openstreetmap.org/search';
 			int attempts = 0;
 			Response res;
 			while (true) {
 				attempts++;
 				try {
-					res = await _dio.get(url, queryParameters: {'q': input, 'format': 'json', 'addressdetails': 1, 'limit': 5}, options: Options(headers: headers));
+					res = await _dio.get(
+						url,
+						queryParameters: {
+							'q': input,
+							'format': 'json',
+							'addressdetails': 1,
+							'limit': 5,
+							'email': 'support@zippup.app',
+						},
+					);
 					break;
-				} catch (e) {
-					if (attempts >= 2) rethrow;
-					await Future.delayed(const Duration(milliseconds: 350));
+				} catch (_) {
+					if (attempts >= 3) rethrow;
+					await Future.delayed(Duration(milliseconds: 250 * attempts));
 				}
 			}
 			final list = (res.data as List?) ?? const [];
