@@ -34,10 +34,10 @@ class MyBookingsScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(title: const Text('My Bookings')),
-			body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-				stream: FirebaseFirestore.instance.collection('orders').where('buyerId', isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? 'self').snapshots(),
+			body: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+				future: FirebaseFirestore.instance.collection('orders').where('buyerId', isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? 'self').orderBy('createdAt', descending: true).get(const GetOptions(source: Source.server)),
 				builder: (context, snap) {
-					if (snap.hasError) return Center(child: Text('Error loading bookings: ${snap.error}'));
+					if (snap.hasError) return const Center(child: Text('Error loading bookings'));
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
 					final docs = snap.data!.docs;
 					if (docs.isEmpty) return const Center(child: Text('No bookings'));

@@ -86,10 +86,7 @@ class _BootstrapAppState extends State<_BootstrapApp> {
 		try {
 			await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 			if (kIsWeb) {
-				// Stabilize Firestore on web to avoid INTERNAL ASSERTION errors
-				FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED); 
-				FirebaseFirestore.instance.terminate();
-				await FirebaseFirestore.instance.clearPersistence();
+				// Stabilize Firestore on web: disable persistence only
 				FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
 			}
 			if (!kIsWeb) {

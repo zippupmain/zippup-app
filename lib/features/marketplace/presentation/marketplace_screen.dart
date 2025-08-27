@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/features/marketplace/models/product.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class MarketplaceScreen extends StatelessWidget {
 	const MarketplaceScreen({super.key});
@@ -29,6 +30,16 @@ class MarketplaceScreen extends StatelessWidget {
 	@override
 	Widget build(BuildContext context) {
 		final controller = TextEditingController();
+		final stt.SpeechToText speech = stt.SpeechToText();
+		Future<void> _mic() async {
+			final ok = await speech.initialize(onError: (_) {});
+			if (!ok) return;
+			speech.listen(onResult: (r) {
+				controller.text = r.recognizedWords;
+				controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
+				if (r.finalResult) _goSearch(context, controller.text);
+			});
+		}
 		return Scaffold(
 			appBar: AppBar(
 				title: const Text('Marketplace'),
@@ -46,6 +57,7 @@ class MarketplaceScreen extends StatelessWidget {
 										filled: true,
 										hintText: 'Search items or sellers...',
 										prefixIcon: IconButton(icon: const Icon(Icons.search), onPressed: () => _goSearch(context, controller.text)),
+										suffixIcon: IconButton(icon: const Icon(Icons.mic_none), onPressed: _mic),
 										border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
 									),
 								),

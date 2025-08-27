@@ -104,7 +104,18 @@ class LocationService {
 	}
 
 	static Future<void> updateUserLocationProfile(Position p) async {
-		if (kIsWeb) return; // skip on web to avoid CORS
+		if (kIsWeb) {
+			try {
+				final uid = FirebaseAuth.instance.currentUser?.uid;
+				if (uid == null) return;
+				await FirebaseFirestore.instance.collection('users').doc(uid).set({
+					'lastLat': p.latitude,
+					'lastLng': p.longitude,
+					'updatedAt': DateTime.now().toIso8601String(),
+				}, SetOptions(merge: true));
+			} catch (_) {}
+			return;
+		}
 		try {
 			final fn = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('geocode');
 			final res = await fn.call({'lat': p.latitude, 'lng': p.longitude});

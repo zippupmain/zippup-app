@@ -16,6 +16,36 @@ Widget _HomeSearchBar() => const _HomeSearchBarWidget();
 Widget _Promotions() => const SizedBox.shrink();
 Widget _DynamicCard({required int index}) => const SizedBox.shrink();
 
+class _PositionedDraggablePanic extends StatefulWidget {
+	@override
+	State<_PositionedDraggablePanic> createState() => _PositionedDraggablePanicState();
+}
+
+class _PositionedDraggablePanicState extends State<_PositionedDraggablePanic> {
+	Offset pos = const Offset(16, 520);
+	@override
+	Widget build(BuildContext context) {
+		return Positioned(
+			left: pos.dx,
+			top: pos.dy,
+			child: Draggable(
+				feedback: _panicFab(),
+				childWhenDragging: const SizedBox.shrink(),
+				onDragEnd: (d) => setState(() => pos = d.offset),
+				child: _panicFab(),
+			),
+		);
+	}
+
+	Widget _panicFab() => FloatingActionButton.extended(
+		backgroundColor: Colors.red,
+		foregroundColor: Colors.white,
+		onPressed: () => context.push('/panic'),
+		label: const Text('Panic'),
+		icon: const Icon(Icons.emergency_share),
+	);
+}
+
 class HomeScreen extends StatefulWidget {
 	const HomeScreen({super.key});
 	@override
@@ -152,7 +182,8 @@ class _HomeScreenState extends State<HomeScreen> {
 					),
 				],
 			),
-			body: CustomScrollView(
+			body: Stack(children:[
+				CustomScrollView(
 				slivers: [
 					SliverAppBar(
 						pinned: true,
@@ -214,7 +245,10 @@ class _HomeScreenState extends State<HomeScreen> {
 						),
 					),
 				],
-			),
+				),
+				// Draggable panic button overlay
+				_PositionedDraggablePanic(),
+			]),
 			floatingActionButton: FloatingActionButton.extended(
 				backgroundColor: Colors.red,
 				foregroundColor: Colors.white,
