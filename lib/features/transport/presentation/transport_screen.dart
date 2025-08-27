@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:zippup/services/notifications/notifications_service.dart';
+import 'dart:math' as Math;
 
 class TransportScreen extends StatefulWidget {
 	const TransportScreen({super.key});
@@ -33,6 +34,20 @@ class _TransportScreenState extends State<TransportScreen> {
 	final _distanceService = DistanceService();
 	bool _submitting = false;
 	StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _rideSub;
+
+	double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
+		const double R = 6371.0;
+		double dLat = _deg2rad(lat2 - lat1);
+		double dLon = _deg2rad(lon2 - lon1);
+		double a =
+				Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+				Math.cos(_deg2rad(lat1)) * Math.cos(_deg2rad(lat2)) *
+				Math.sin(dLon / 2) * Math.sin(dLon / 2);
+		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		return R * c;
+	}
+
+	double _deg2rad(double deg) => deg * (3.141592653589793 / 180.0);
 
 	@override
 	void initState() {
@@ -366,23 +381,31 @@ class _TransportScreenState extends State<TransportScreen> {
 				throw Exception('Could not resolve addresses. Please refine search.');
 			}
 
-			final matrix = await _distanceService.getMatrix(
-				origin: '$oLat,$oLng',
-				destinations: ['$dLat,$dLng'],
-			);
-			final rows = (matrix['rows'] as List?) ?? const [];
-			final elements = rows.isNotEmpty ? (rows.first['elements'] as List? ?? const []) : const [];
-			double meters = 0; int seconds = 0;
-			for (final el in elements) {
-				if (el is Map && el['status'] == 'OK') {
-					final dist = (el['distance'] as Map?)?['value'];
-					final dur = (el['duration'] as Map?)?['value'];
-					if (dist is num) meters += dist.toDouble();
-					if (dur is num) seconds += dur.toInt();
+			double km;
+			int mins;
+			if (kIsWeb) {
+				km = _haversineKm(oLat, oLng, dLat, dLng);
+				final avgSpeedKmh = 25.0;
+				mins = (km / avgSpeedKmh * 60).clamp(5, 90).round();
+			} else {
+				final matrix = await _distanceService.getMatrix(
+					origin: '$oLat,$oLng',
+					destinations: ['$dLat,$dLng'],
+				);
+				final rows = (matrix['rows'] as List?) ?? const [];
+				final elements = rows.isNotEmpty ? (rows.first['elements'] as List? ?? const []) : const [];
+				double meters = 0; int seconds = 0;
+				for (final el in elements) {
+					if (el is Map && el['status'] == 'OK') {
+						final dist = (el['distance'] as Map?)?['value'];
+						final dur = (el['duration'] as Map?)?['value'];
+						if (dist is num) meters += dist.toDouble();
+						if (dur is num) seconds += dur.toInt();
+					}
 				}
+				km = meters > 0 ? meters / 1000.0 : 5.0;
+				mins = seconds > 0 ? (seconds / 60).round() : 10;
 			}
-			final km = meters > 0 ? meters / 1000.0 : 5.0;
-			final mins = seconds > 0 ? (seconds / 60).round() : 10;
 			if (!mounted) return;
 			await _openClassSelection(origin: origin, dests: dests, oLat: oLat, oLng: oLng, dLat: dLat, dLng: dLng, km: km, mins: mins);
 			setState(() => _status = 'idle');
