@@ -40,13 +40,8 @@ Future<void> main() async {
 	if (kIsWeb && (Stripe.publishableKey.isEmpty)) {
 		Stripe.publishableKey = stripePublishableKeyWeb;
 	}
-	await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-	// Initialize notifications (skip on web)
-	if (!kIsWeb) {
-		await NotificationsService.instance.init();
-	}
 	runZonedGuarded(() {
-		runApp(const ProviderScope(child: ZippUpApp()));
+		runApp(const ProviderScope(child: _BootstrapApp()));
 	}, (error, stack) {
 		// ignore: avoid_print
 		print('Zone error: ' + error.toString());
@@ -67,6 +62,78 @@ class ZippUpApp extends ConsumerWidget {
 			darkTheme: AppTheme.dark(),
 			routerConfig: router,
 			debugShowCheckedModeBanner: false,
+		);
+	}
+}
+
+class _BootstrapApp extends StatefulWidget {
+	const _BootstrapApp();
+	@override
+	State<_BootstrapApp> createState() => _BootstrapAppState();
+}
+
+class _BootstrapAppState extends State<_BootstrapApp> {
+	late final Future<void> _initFuture = _init();
+
+	Future<void> _init() async {
+		try {
+			await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+			if (!kIsWeb) {
+				await NotificationsService.instance.init();
+			}
+		} catch (e, s) {
+			// ignore: avoid_print
+			print('Init error: ' + e.toString());
+			// ignore: avoid_print
+			print(s);
+			rethrow;
+		}
+	}
+
+	@override
+	Widget build(BuildContext context) {
+		ErrorWidget.builder = (FlutterErrorDetails details) {
+			return Material(
+				child: Center(
+					child: Padding(
+						padding: const EdgeInsets.all(16),
+						child: Column(
+							mainAxisSize: MainAxisSize.min,
+							children: [
+								const CircularProgressIndicator(),
+								const SizedBox(height: 12),
+								Text('Loading…', style: Theme.of(context).textTheme.bodyMedium),
+							],
+						),
+					),
+				),
+			);
+		};
+
+		return FutureBuilder<void>(
+			future: _initFuture,
+			builder: (context, snapshot) {
+				if (snapshot.connectionState == ConnectionState.waiting) {
+					return const MaterialApp(home: Scaffold(body: Center(child: CircularProgressIndicator())));
+				}
+				if (snapshot.hasError) {
+					return MaterialApp(
+						home: Scaffold(
+							body: Center(
+								child: Column(
+									mainAxisSize: MainAxisSize.min,
+									children: [
+										const Text('Failed to initialize. Tap to retry.'),
+										const SizedBox(height: 8),
+										FilledButton(onPressed: () => setState(() {}), child: const Text('Retry')),
+									],
+								),
+							),
+						),
+					);
+				}
+				return const ZippUpApp();
+			},
 		);
 	}
 }
