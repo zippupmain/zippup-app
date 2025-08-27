@@ -368,48 +368,7 @@ class _TransportScreenState extends State<TransportScreen> {
 			body: ListView(
 				padding: const EdgeInsets.all(16),
 				children: [
-					ToggleButtons(
-						isSelected: ['taxi', 'bus', 'tricycle', 'bike'].map((e) => _type == e).toList(),
-						onPressed: (i) => setState(() => _type = ['taxi', 'bus', 'tricycle', 'bike'][i]),
-						children: const [
-							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Taxi')),
-							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Bus')),
-							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Tricycle')),
-							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Bike')),
-						],
-					),
-					const SizedBox(height: 12),
-					SwitchListTile(
-						title: const Text('Schedule ride'),
-						value: _scheduled,
-						onChanged: (v) => setState(() => _scheduled = v),
-					),
-					if (_scheduled)
-						ListTile(
-							title: const Text('Select date'),
-							subtitle: Text(_scheduledAt == null ? 'Pick a date' : '${_scheduledAt!.year}-${_scheduledAt!.month.toString().padLeft(2,'0')}-${_scheduledAt!.day.toString().padLeft(2,'0')}'),
-							onTap: () async {
-								final now = DateTime.now();
-								final date = await showDatePicker(context: context, firstDate: now, lastDate: now.add(const Duration(days: 30)), initialDate: _scheduledAt ?? now);
-								if (date == null) return;
-								final current = _scheduledAt ?? now;
-								setState(() => _scheduledAt = DateTime(date.year, date.month, date.day, current.hour, current.minute));
-							},
-						),
-					if (_scheduled)
-						ListTile(
-							title: const Text('Select time'),
-							subtitle: Text(_scheduledAt == null ? 'Pick a time' : '${_scheduledAt!.hour.toString().padLeft(2,'0')}:${_scheduledAt!.minute.toString().padLeft(2,'0')}'),
-							onTap: () async {
-								final now = TimeOfDay.now();
-								final picked = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_scheduledAt ?? DateTime.now()));
-								if (picked == null) return;
-								final base = _scheduledAt ?? DateTime.now();
-								setState(() => _scheduledAt = DateTime(base.year, base.month, base.day, picked.hour, picked.minute));
-							},
-						),
-					if (_scheduled)
-						TextField(controller: _scheduleMsg, decoration: const InputDecoration(labelText: 'Message / reason (optional)')),
+					const SizedBox(height: 4),
 					AddressField(controller: _pickup, label: 'Pickup address'),
 					const SizedBox(height: 8),
 					const Text('Stops (max 5):'),
