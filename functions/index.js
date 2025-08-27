@@ -281,3 +281,137 @@ async function notifyParties(userIds, notif, data) {
 	const payload = { notification: { title: notif.title, body: notif.body, sound: 'default' }, data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) };
 	await admin.messaging().sendToDevice(tokens, payload);
 }
+
+// Wallet: Create Topup Checkout (Stripe/Flutterwave) - Scaffold
+exports.walletCreateTopup = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const amount = Number(data && data.amount);
+	const currency = (data && data.currency) || 'NGN';
+	if (!amount || amount <= 0) throw new functions.https.HttpsError('invalid-argument', 'Invalid amount');
+	// Record intent
+	const topupRef = await admin.firestore().collection('wallets').doc(uid).collection('tx').add({
+		type: 'topup',
+		amount,
+		currency,
+		status: 'initiated',
+		createdAt: admin.firestore.FieldValue.serverTimestamp(),
+	});
+	// Choose provider
+	// Try Stripe for USD/EUR/GBP; otherwise Flutterwave
+	let checkoutUrl = null;
+	try {
+		if (['USD','EUR','GBP'].includes(currency)) {
+			const secret = (await admin.firestore().doc('_config/stripe').get()).get('secret') || process.env.STRIPE_SECRET || (functions.config().stripe && functions.config().stripe.secret);
+			if (!secret) throw new Error('Stripe not configured');
+			const stripe = new Stripe(secret);
+			const session = await stripe.checkout.sessions.create({
+				mode: 'payment',
+				line_items: [{ price_data: { currency, product_data: { name: 'Wallet Top-up' }, unit_amount: Math.round(amount * 100) }, quantity: 1 }],
+				success_url: 'https://zippup.app/wallet?status=success',
+				cancel_url: 'https://zippup.app/wallet?status=cancel',
+				metadata: { uid, txId: topupRef.id, type: 'wallet_topup' },
+			});
+			checkoutUrl = session.url;
+		} else {
+			const secret = (await admin.firestore().doc('_config/flutterwave').get()).get('secret') || process.env.FLW_SECRET || (functions.config().flutterwave && functions.config().flutterwave.secret);
+			if (!secret) throw new Error('Flutterwave not configured');
+			const payload = { amount, currency, tx_ref: `wallet_${uid}_${Date.now()}`, redirect_url: 'https://zippup.app/wallet-callback', customer: { email: 'customer@example.com' }, meta: { uid, txId: topupRef.id, type: 'wallet_topup' } };
+			const res = await axios.post('https://api.flutterwave.com/v3/payments', payload, { headers: { Authorization: `Bearer ${secret}` } });
+			checkoutUrl = res.data && res.data.data && res.data.data.link;
+		}
+	} catch (e) {
+		console.error('Topup error', e && (e.response && e.response.data || e));
+	}
+	await topupRef.set({ checkoutUrl: checkoutUrl || null }, { merge: true });
+	return { checkoutUrl, txId: topupRef.id };
+});
+
+// Wallet: Peer-to-peer send - Scaffold
+exports.walletSend = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const to = (data && data.to) || '';
+	const amount = Number(data && data.amount);
+	if (!to || !amount || amount <= 0) throw new functions.https.HttpsError('invalid-argument', 'Invalid params');
+	// Resolve recipient UID (accept uid or phone)
+	let toUid = to;
+	if (toUid.length < 20) {
+		const q = await admin.firestore().collection('users').where('phone', '==', to).limit(1).get();
+		if (!q.empty) toUid = q.docs[0].id;
+	}
+	if (toUid === uid) throw new functions.https.HttpsError('failed-precondition', 'Cannot send to self');
+	await admin.firestore().runTransaction(async (tx) => {
+		const senderRef = admin.firestore().collection('wallets').doc(uid);
+		const recvRef = admin.firestore().collection('wallets').doc(toUid);
+		const [sSnap, rSnap] = await Promise.all([tx.get(senderRef), tx.get(recvRef)]);
+		const sBal = Number((sSnap.data() && sSnap.data().balance) || 0);
+		if (sBal < amount) throw new functions.https.HttpsError('failed-precondition', 'Insufficient balance');
+		tx.set(senderRef, { balance: sBal - amount }, { merge: true });
+		const rBal = Number((rSnap.data() && rSnap.data().balance) || 0);
+		tx.set(recvRef, { balance: rBal + amount }, { merge: true });
+		const now = admin.firestore.FieldValue.serverTimestamp();
+		tx.set(senderRef.collection('tx').doc(), { type: 'send', to: toUid, amount, createdAt: now }, { merge: true });
+		tx.set(recvRef.collection('tx').doc(), { type: 'receive', from: uid, amount, createdAt: now }, { merge: true });
+	});
+	return { ok: true };
+});
+
+// Wallet: Withdraw request - Scaffold
+exports.walletWithdraw = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const amount = Number(data && data.amount);
+	const currency = (data && data.currency) || 'NGN';
+	if (!amount || amount <= 0) throw new functions.https.HttpsError('invalid-argument', 'Invalid amount');
+	await admin.firestore().collection('withdrawals').add({ userId: uid, amount, currency, status: 'pending', createdAt: admin.firestore.FieldValue.serverTimestamp() });
+	return { ok: true };
+});
+
+// Digital: Airtime/Data/Bills - Scaffold using aggregator config
+async function getDigitalConfig() {
+	const doc = await admin.firestore().doc('_config/digital').get();
+	return doc.exists ? doc.data() : {};
+}
+
+exports.airtimePurchase = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const { provider, phone, amount, country } = data || {};
+	if (!phone || !amount) throw new functions.https.HttpsError('invalid-argument', 'phone, amount required');
+	const cfg = await getDigitalConfig();
+	const txRef = `airtime_${uid}_${Date.now()}`;
+	const txDoc = await admin.firestore().collection('digital_tx').doc(txRef).set({
+		userId: uid, type: 'airtime', provider: provider || null, phone, amount, country: country || null, status: 'queued', createdAt: admin.firestore.FieldValue.serverTimestamp(),
+	});
+	// TODO: integrate with aggregator (e.g., Flutterwave Bills or Reloadly) using cfg
+	return { ref: txRef, status: 'queued' };
+});
+
+exports.dataPurchase = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const { provider, phone, bundleId, amount, country } = data || {};
+	if (!phone || !bundleId) throw new functions.https.HttpsError('invalid-argument', 'phone, bundleId required');
+	const cfg = await getDigitalConfig();
+	const txRef = `data_${uid}_${Date.now()}`;
+	await admin.firestore().collection('digital_tx').doc(txRef).set({
+		userId: uid, type: 'data', provider: provider || null, phone, bundleId, amount: amount || null, country: country || null, status: 'queued', createdAt: admin.firestore.FieldValue.serverTimestamp(),
+	});
+	// TODO: integrate with aggregator using cfg
+	return { ref: txRef, status: 'queued' };
+});
+
+exports.billPay = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const { billerCode, account, amount, country, metadata } = data || {};
+	if (!billerCode || !account || !amount) throw new functions.https.HttpsError('invalid-argument', 'billerCode, account, amount required');
+	const cfg = await getDigitalConfig();
+	const txRef = `bill_${uid}_${Date.now()}`;
+	await admin.firestore().collection('digital_tx').doc(txRef).set({
+		userId: uid, type: 'bill', billerCode, account, amount, country: country || null, metadata: metadata || null, status: 'queued', createdAt: admin.firestore.FieldValue.serverTimestamp(),
+	});
+	// TODO: integrate with aggregator using cfg
+	return { ref: txRef, status: 'queued' };
+});
