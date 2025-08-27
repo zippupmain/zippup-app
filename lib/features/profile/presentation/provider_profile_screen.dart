@@ -90,6 +90,12 @@ class ProviderProfileScreen extends StatelessWidget {
 												routed = true;
 												try { sub?.cancel(); } catch (_) {}
 											}
+										}, onError: (e) {
+											try { sub?.cancel(); } catch (_) {}
+											if (!routed && navigator.canPop()) navigator.pop();
+											if (!routed && parentContext.mounted) {
+												ScaffoldMessenger.of(parentContext).showSnackBar(const SnackBar(content: Text('Network issue or permission error. Please try again.')));
+											}
 										});
 										Future.delayed(const Duration(seconds: 60), () { try { sub?.cancel(); } catch (_) {} if (!routed && navigator.canPop()) navigator.pop(); if (!routed && parentContext.mounted) { ScaffoldMessenger.of(parentContext).showSnackBar(const SnackBar(content: Text('No provider found. Please try again.'))); } });
 									},
