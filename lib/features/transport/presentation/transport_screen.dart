@@ -24,6 +24,7 @@ class _TransportScreenState extends State<TransportScreen> {
 	String _type = 'taxi';
 	double _fare = 0;
 	int _eta = 0;
+	double _distanceKm = 0;
 	String _status = 'idle';
 	final _distanceService = DistanceService();
 	bool _submitting = false;
@@ -58,6 +59,7 @@ class _TransportScreenState extends State<TransportScreen> {
 			setState(() {
 				_fare = 0;
 				_eta = 0;
+				_distanceKm = 0;
 			});
 			return;
 		}
@@ -89,13 +91,229 @@ class _TransportScreenState extends State<TransportScreen> {
 			setState(() {
 				_fare = base + km * perKm + mins * perMin;
 				_eta = mins;
+				_distanceKm = km;
 			});
 		} catch (_) {
 			setState(() {
 				_fare = 0;
 				_eta = 0;
+				_distanceKm = 0;
 			});
 		}
+	}
+
+	double _priceForClass({required int capacity, required double km, required int mins}) {
+		// Simple pricing model by capacity
+		double base;
+		double perKm;
+		double perMin;
+		switch (capacity) {
+			case 2: // Tricycle
+				base = 500; perKm = 120; perMin = 10; break;
+			case 3: // Compact
+				base = 600; perKm = 150; perMin = 12; break;
+			case 4: // Standard
+				base = 700; perKm = 180; perMin = 15; break;
+			case 6: // XL
+				base = 900; perKm = 220; perMin = 18; break;
+			default:
+				base = 700; perKm = 180; perMin = 15;
+		}
+		return base + km * perKm + mins * perMin;
+	}
+
+	String _vehicleClassLabel(int capacity) {
+		switch (capacity) {
+			case 2: return 'Tricycle';
+			case 3: return 'Compact';
+			case 4: return 'Standard';
+			case 6: return 'XL';
+			default: return 'Standard';
+		}
+	}
+
+	String _rideTypeForCapacity(int capacity) {
+		if (capacity == 2) return 'tricycle';
+		if (capacity == 6) return 'bus';
+		return 'taxi';
+	}
+
+	Widget _vehicleImage(String assetName) {
+		return Image.asset(
+			assetName,
+			width: 64,
+			height: 40,
+			fit: BoxFit.contain,
+			errorBuilder: (_, __, ___) => const Icon(Icons.directions_car, size: 40),
+		);
+	}
+
+	Future<void> _openClassSelection({
+		required String origin,
+		required List<String> dests,
+		required gc.Location oLoc,
+		required gc.Location dLoc,
+		required double km,
+		required int mins,
+	}) async {
+		final parentContext = context;
+		bool scheduled = _scheduled;
+		DateTime? scheduledAt = _scheduledAt;
+		await showModalBottomSheet(
+			context: parentContext,
+			isScrollControlled: true,
+			builder: (ctx) {
+				return StatefulBuilder(builder: (ctx, setModalState) {
+					final classes = <int>[2,3,4,6];
+					return Padding(
+						padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 16),
+						child: SingleChildScrollView(
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Row(children:[
+										const Text('Choose ride', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+										const Spacer(),
+										Text('~${km.toStringAsFixed(1)} km • ${mins} min')
+									]),
+									const SizedBox(height: 12),
+									ListView.separated(
+										shrinkWrap: true,
+										physics: const NeverScrollableScrollPhysics(),
+										itemCount: classes.length,
+										separatorBuilder: (_, __) => const Divider(height: 1),
+										itemBuilder: (ctx, i) {
+											final cap = classes[i];
+											final label = _vehicleClassLabel(cap);
+											final price = _priceForClass(capacity: cap, km: km, mins: mins);
+											final asset = cap == 2
+												? 'assets/images/vehicle_tricycle.png'
+												: cap == 3
+													? 'assets/images/vehicle_compact.png'
+													: cap == 4
+														? 'assets/images/vehicle_standard.png'
+														: 'assets/images/vehicle_xl.png';
+											return ListTile(
+												leading: _vehicleImage(asset),
+												title: Text('$label • $cap passengers'),
+												subtitle: Text('ETA ${mins} min • ${km.toStringAsFixed(1)} km'),
+												trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children:[Text('₦${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600))]),
+												onTap: () async {
+												Navigator.pop(parentContext);
+												await _createRideAndSearch(
+													origin: origin,
+													dests: dests,
+													oLoc: oLoc,
+													dLoc: dLoc,
+													km: km,
+													mins: mins,
+													capacity: cap,
+													classLabel: label,
+													fare: price,
+													scheduled: scheduled,
+													scheduledAt: scheduledAt,
+												);
+											},
+										);
+									},
+									const SizedBox(height: 8),
+									SwitchListTile(
+										title: const Text('Schedule booking'),
+										value: scheduled,
+										onChanged: (v) => setModalState(() => scheduled = v),
+									),
+									if (scheduled) ListTile(
+										title: const Text('Scheduled time'),
+										subtitle: Text(scheduledAt?.toString() ?? 'Pick time'),
+										onTap: () async {
+											final now = DateTime.now();
+											final date = await showDatePicker(context: ctx, firstDate: now, lastDate: now.add(const Duration(days: 30)), initialDate: now);
+											if (date == null) return;
+											final time = await showTimePicker(context: ctx, initialTime: TimeOfDay.now());
+											if (time == null) return;
+											setModalState(() => scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
+										},
+									),
+									const SizedBox(height: 8),
+								],
+							),
+						),
+					);
+				});
+			},
+		);
+	}
+
+	Future<void> _createRideAndSearch({
+		required String origin,
+		required List<String> dests,
+		required gc.Location oLoc,
+		required gc.Location dLoc,
+		required double km,
+		required int mins,
+		required int capacity,
+		required String classLabel,
+		required double fare,
+		required bool scheduled,
+		DateTime? scheduledAt,
+	}) async {
+		final db = FirebaseFirestore.instance;
+		final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+		final doc = await db.collection('rides').add({
+			'riderId': uid,
+			'type': _rideTypeForCapacity(capacity),
+			'isScheduled': scheduled,
+			'scheduledAt': scheduledAt?.toIso8601String(),
+			'pickupAddress': origin,
+			'destinationAddresses': dests,
+			'pickupLat': oLoc.latitude,
+			'pickupLng': oLoc.longitude,
+			'destLat': dLoc.latitude,
+			'destLng': dLoc.longitude,
+			'createdAt': DateTime.now().toIso8601String(),
+			'fareEstimate': fare,
+			'etaMinutes': mins,
+			'distanceKm': km,
+			'vehicleClass': classLabel,
+			'classCapacity': capacity,
+			'notes': scheduled ? _scheduleMsg.text.trim() : null,
+			'status': 'requested',
+		});
+
+		if (!mounted) return;
+		setState(() => _status = 'searching');
+		final navigator = Navigator.of(context);
+		showDialog(
+			context: context,
+			barrierDismissible: false,
+			builder: (ctx) => const AlertDialog(
+				title: Text('Finding drivers…'),
+				content: SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
+			),
+		);
+
+		bool navigated = false;
+		_rideSub?.cancel();
+		final rideRef = db.collection('rides').doc(doc.id);
+		_rideSub = rideRef.snapshots().listen((snap) {
+			final data = snap.data() ?? const {};
+			final status = (data['status'] ?? '').toString();
+			if (!navigated && (status == 'accepted' || status == 'arriving' || status == 'arrived' || status == 'enroute')) {
+				if (navigator.canPop()) navigator.pop();
+				context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
+				navigated = true;
+			}
+		});
+
+		Future.delayed(const Duration(seconds: 60), () {
+			if (!mounted) return;
+			if (!navigated) {
+				try { _rideSub?.cancel(); } catch (_) {}
+				if (navigator.canPop()) navigator.pop();
+				setState(() => _status = 'idle');
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No driver found. Please try again.')));
+			}
+		});
 	}
 
 	Future<void> _requestRide() async {
@@ -108,67 +326,24 @@ class _TransportScreenState extends State<TransportScreen> {
 		}
 		setState(() { _status = 'requesting'; _submitting = true; });
 		try {
-			final oLoc = await gc.locationFromAddress(origin).catchError((_) => <gc.Location>[]);
-			final dLoc = await gc.locationFromAddress(dests.first).catchError((_) => <gc.Location>[]);
-			if (oLoc.isEmpty || dLoc.isEmpty) {
+			final oLocs = await gc.locationFromAddress(origin).catchError((_) => <gc.Location>[]);
+			final dLocs = await gc.locationFromAddress(dests.first).catchError((_) => <gc.Location>[]);
+			if (oLocs.isEmpty || dLocs.isEmpty) {
 				throw Exception('Could not resolve addresses. Please refine search.');
 			}
-			final db = FirebaseFirestore.instance;
-			final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
-			final doc = await db.collection('rides').add({
-				'riderId': uid,
-				'type': _type,
-				'isScheduled': _scheduled,
-				'scheduledAt': _scheduledAt?.toIso8601String(),
-				'pickupAddress': origin,
-				'destinationAddresses': dests,
-				'pickupLat': oLoc.first.latitude,
-				'pickupLng': oLoc.first.longitude,
-				'destLat': dLoc.first.latitude,
-				'destLng': dLoc.first.longitude,
-				'createdAt': DateTime.now().toIso8601String(),
-				'fareEstimate': _fare,
-				'etaMinutes': _eta,
-				'notes': _scheduled ? _scheduleMsg.text.trim() : null,
-				'status': 'requested',
-			});
-
-			if (!mounted) return;
-			// Show finding drivers dialog and watch for acceptance
-			setState(() => _status = 'searching');
-			final navigator = Navigator.of(context);
-			showDialog(
-				context: context,
-				barrierDismissible: false,
-				builder: (ctx) => AlertDialog(
-					title: const Text('Finding drivers…'),
-					content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
-					actions: [TextButton(onPressed: () => navigator.pop(), child: const Text('Cancel'))],
-				),
+			final matrix = await _distanceService.getMatrix(
+				origin: '${oLocs.first.latitude},${oLocs.first.longitude}',
+				destinations: ['${dLocs.first.latitude},${dLocs.first.longitude}'],
 			);
-
-			final rideRef = db.collection('rides').doc(doc.id);
-			bool navigated = false;
-			_rideSub?.cancel();
-			_rideSub = rideRef.snapshots().listen((snap) {
-				final data = snap.data() ?? const {};
-				final status = (data['status'] ?? '').toString();
-				if (!navigated && (status == 'accepted' || status == 'arriving' || status == 'arrived' || status == 'enroute')) {
-					if (navigator.canPop()) navigator.pop();
-					context.pushNamed('trackRide', queryParameters: {'rideId': doc.id});
-					navigated = true;
-				}
-			});
-
-			// Timeout in 60s with no driver
-			Future.delayed(const Duration(seconds: 60), () {
-				if (!mounted) return;
-				if (!navigated) {
-					if (navigator.canPop()) navigator.pop();
-					setState(() => _status = 'idle');
-					ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No driver found. Please try again.')));
-				}
-			});
+			final elements = (matrix['rows'][0]['elements'] as List);
+			double meters = 0; int seconds = 0;
+			for (final el in elements) {
+				if (el['status'] == 'OK') { meters += (el['distance']['value'] as num).toDouble(); seconds += (el['duration']['value'] as num).toInt(); }
+			}
+			final km = meters / 1000.0; final mins = (seconds / 60).round();
+			if (!mounted) return;
+			await _openClassSelection(origin: origin, dests: dests, oLoc: oLocs.first, dLoc: dLocs.first, km: km, mins: mins);
+			setState(() => _status = 'idle');
 		} catch (e) {
 			setState(() => _status = 'idle');
 			if (!mounted) return;
