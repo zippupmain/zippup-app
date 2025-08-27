@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:zippup/common/models/order.dart';
 import 'package:zippup/features/food/providers/order_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
 class ProviderProfileScreen extends StatelessWidget {
@@ -65,6 +66,12 @@ class ProviderProfileScreen extends StatelessWidget {
 								const SizedBox(height: 12),
 								FilledButton(
 									onPressed: () async {
+										final user = FirebaseAuth.instance.currentUser;
+										if (user == null) {
+											if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please sign in to book.')));
+											if (parentContext.mounted) parentContext.push('/profile');
+											return;
+										}
 										final extra = scheduled && scheduledAt != null ? {'scheduledAt': scheduledAt!.toIso8601String()} : null;
 										String orderId;
 										try {
