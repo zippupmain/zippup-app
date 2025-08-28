@@ -60,9 +60,14 @@ class _SupportScreenState extends State<SupportScreen> {
 			body: ListView(
 				padding: const EdgeInsets.all(16),
 				children: [
-					const Text('Suggested help'),
-					ListTile(title: const Text('How to track my order?'), onTap: () => setState(() => _reason.text = 'How to track my order?')),
-					ListTile(title: const Text('How to reset password?'), onTap: () => setState(() => _reason.text = 'How to reset password?')),
+					const Text('Suggested questions'),
+					const SizedBox(height: 8),
+					Card(child: ExpansionTile(title: const Text('How do I track my booking?'), children: const [Padding(padding: EdgeInsets.all(12), child: Text('Go to Profile > My Bookings, open a booking, then tap Track.'))])),
+					Card(child: ExpansionTile(title: const Text('How do I reset my password?'), children: const [Padding(padding: EdgeInsets.all(12), child: Text('Open Profile > Manage account or use “Forgot password” on sign-in.'))])),
+					Card(child: ExpansionTile(title: const Text('How do I change language?'), children: const [Padding(padding: EdgeInsets.all(12), child: Text('Profile > Languages. Pick your language and the app updates.'))])),
+					const SizedBox(height: 12),
+					const Text("Aren't satisfied with the answers?"),
+					TextButton(onPressed: () {}, child: const Text('Contact support…')),
 					const Divider(),
 					TextField(controller: _name, decoration: const InputDecoration(labelText: 'Name')),
 					TextField(controller: _phone, decoration: const InputDecoration(labelText: 'Phone number')),
