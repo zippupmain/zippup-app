@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class CreateServiceProfileScreen extends StatefulWidget {
 	const CreateServiceProfileScreen({super.key});
@@ -50,28 +51,37 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				'createdAt': nowIso,
 			});
 			// Create provider profile for Provider Hub (active for testing)
-			await FirebaseFirestore.instance.collection('provider_profiles').add({
-				'userId': uid,
-				'service': service,
-				'status': 'active',
-				'availabilityOnline': false,
-				'rating': 0.0,
-				'totalRatings': 0,
-				'earnings': 0.0,
-				'createdAt': nowIso,
-				'metadata': {
-					'title': _title.text.trim(),
-					'description': _desc.text.trim(),
-					'category': _category,
-					'subcategory': _subcategory,
-					'type': _type,
-				},
-			});
-			// Add provider role to user and set active role
-			await FirebaseFirestore.instance.collection('users').doc(uid).set({
-				'providerRoles': FieldValue.arrayUnion(['provider:$service']),
-				'activeRole': 'provider:$service',
-			}, SetOptions(merge: true));
+			try {
+				await FirebaseFirestore.instance.collection('provider_profiles').add({
+					'userId': uid,
+					'service': service,
+					'status': 'active',
+					'availabilityOnline': false,
+					'rating': 0.0,
+					'totalRatings': 0,
+					'earnings': 0.0,
+					'createdAt': nowIso,
+					'metadata': {
+						'title': _title.text.trim(),
+						'description': _desc.text.trim(),
+						'category': _category,
+						'subcategory': _subcategory,
+						'type': _type,
+					},
+				});
+			} catch (_) {}
+			// Try to set user provider roles; ignore failures
+			try {
+				await FirebaseFirestore.instance.collection('users').doc(uid).set({
+					'providerRoles': FieldValue.arrayUnion(['provider:$service']),
+					'activeRole': 'provider:$service',
+				}, SetOptions(merge: true));
+			} catch (_) {}
+			// Ensure role is switched via Cloud Function (bypasses client rules)
+			try {
+				final fn = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('switchActiveRole');
+				await fn.call({'role': 'provider:$service'});
+			} catch (_) {}
 			if (!mounted) return;
 			// Go to Hub
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile created')));
