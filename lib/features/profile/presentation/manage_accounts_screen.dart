@@ -66,15 +66,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account scheduled for deletion')));
   }
 
-	Future<void> _addProfile() async {
-		await FirebaseFirestore.instance.collection('users').doc(_uid).collection('profiles').add({
-			'displayName': _name.text.trim(),
-			'type': _type.text.trim(),
-			'createdAt': DateTime.now().toIso8601String(),
-		});
-		_name.clear(); _type.clear();
-		if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile added')));
-	}
+	Future<void> _addProfile() async {}
 
 	Future<void> _setActive(String id) async {
 		await FirebaseFirestore.instance.collection('users').doc(_uid).set({'activeProfileId': id}, SetOptions(merge: true));
