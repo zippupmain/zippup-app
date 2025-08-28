@@ -27,25 +27,10 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'marketplace': ['Electronics','Vehicles','Property','Services'],
 	};
 
-	Future<bool> _isKycApproved(String uid) async {
-		final doc = await FirebaseFirestore.instance.collection('_onboarding').doc(uid).get();
-		if (!doc.exists) return false;
-		final status = (doc.data()?['status'] ?? '').toString();
-		return status.toLowerCase() == 'approved';
-	}
-
 	Future<void> _save() async {
 		setState(() => _saving = true);
 		try {
 			final uid = FirebaseAuth.instance.currentUser!.uid;
-			final kycOk = await _isKycApproved(uid);
-			if (!kycOk) {
-				if (mounted) {
-					ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please complete KYC verification before creating a business profile.')));
-					Navigator.of(context).pushNamed('/providers/kyc');
-				}
-				return;
-			}
 			final ref = await FirebaseFirestore.instance.collection('business_profiles').doc(uid).collection('profiles').add({
 				'title': _title.text.trim(),
 				'description': _desc.text.trim(),
