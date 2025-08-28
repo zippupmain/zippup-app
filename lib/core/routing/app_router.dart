@@ -60,6 +60,7 @@ import 'package:zippup/features/rentals/presentation/other_rentals_screen.dart';
 import 'package:zippup/features/providers/presentation/kyc_onboarding_screen.dart';
 import 'package:zippup/features/providers/presentation/business_profiles_screen.dart';
 import 'package:zippup/features/providers/presentation/create_service_profile_screen.dart';
+import 'package:zippup/features/providers/presentation/provider_hub_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -369,6 +370,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/providers/kyc',
         name: 'providersKyc',
         builder: (context, state) => const KycOnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/hub',
+        name: 'providerHub',
+        builder: (context, state) => const ProviderHubScreen(),
       ),
       GoRoute(
         path: '/providers',

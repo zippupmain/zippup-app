@@ -272,11 +272,12 @@ class _HomeScreenState extends State<HomeScreen> {
 				selectedIndex: _tab,
 				onDestinationSelected: (i) {
 					setState(() => _tab = i);
-					if (i == 0) return; if (i == 1) context.push('/bookings'); if (i == 2) context.push('/profile');
+					if (i == 0) return; if (i == 1) context.push('/bookings'); if (i == 2) context.push('/hub'); if (i == 3) context.push('/profile');
 				},
 				destinations: const [
 					NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
 					NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Bookings'),
+					NavigationDestination(icon: Icon(Icons.hub_outlined), selectedIcon: Icon(Icons.hub), label: 'Hub'),
 					NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
 				],
 			),
