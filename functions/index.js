@@ -15,6 +15,30 @@ async function getMapsKey() {
   return env;
 }
 
+async function getStripeSecretKey() {
+  const doc = await admin.firestore().doc('_config/stripe').get();
+  return doc.get('secret') || process.env.STRIPE_SECRET || (functions.config().stripe && functions.config().stripe.secret);
+}
+
+async function getStripeEndpointSecret() {
+  const doc = await admin.firestore().doc('_config/stripe').get();
+  return doc.get('endpoint_secret') || process.env.STRIPE_ENDPOINT_SECRET || (functions.config().stripe && functions.config().stripe.endpoint_secret);
+}
+
+async function getFlutterwaveSecretKey() {
+  const doc = await admin.firestore().doc('_config/flutterwave').get();
+  return doc.get('secret') || process.env.FLW_SECRET || (functions.config().flutterwave && functions.config().flutterwave.secret);
+}
+
+async function getFlutterwaveWebhookSecret() {
+  const doc = await admin.firestore().doc('_config/flutterwave').get();
+  return doc.get('webhook_secret') || process.env.FLW_WEBHOOK_SECRET || (functions.config().flutterwave && functions.config().flutterwave.webhook_secret);
+}
+
+function removeUndefined(obj) {
+  return Object.fromEntries(Object.entries(obj || {}).filter(([, v]) => v !== undefined && v !== null));
+}
+
 
 // Stripe checkout (Callable)
 exports.createStripeCheckout = functions.region('us-central1').https.onCall(async (data, context) => {
@@ -295,6 +319,7 @@ exports.walletCreateTopup = functions.region('us-central1').https.onCall(async (
 		amount,
 		currency,
 		status: 'initiated',
+		ref: null,
 		createdAt: admin.firestore.FieldValue.serverTimestamp(),
 	});
 	// Choose provider
@@ -302,7 +327,7 @@ exports.walletCreateTopup = functions.region('us-central1').https.onCall(async (
 	let checkoutUrl = null;
 	try {
 		if (['USD','EUR','GBP'].includes(currency)) {
-			const secret = (await admin.firestore().doc('_config/stripe').get()).get('secret') || process.env.STRIPE_SECRET || (functions.config().stripe && functions.config().stripe.secret);
+			const secret = await getStripeSecretKey();
 			if (!secret) throw new Error('Stripe not configured');
 			const stripe = new Stripe(secret);
 			const session = await stripe.checkout.sessions.create({
@@ -314,7 +339,7 @@ exports.walletCreateTopup = functions.region('us-central1').https.onCall(async (
 			});
 			checkoutUrl = session.url;
 		} else {
-			const secret = (await admin.firestore().doc('_config/flutterwave').get()).get('secret') || process.env.FLW_SECRET || (functions.config().flutterwave && functions.config().flutterwave.secret);
+			const secret = await getFlutterwaveSecretKey();
 			if (!secret) throw new Error('Flutterwave not configured');
 			const payload = { amount, currency, tx_ref: `wallet_${uid}_${Date.now()}`, redirect_url: 'https://zippup.app/wallet-callback', customer: { email: 'customer@example.com' }, meta: { uid, txId: topupRef.id, type: 'wallet_topup' } };
 			const res = await axios.post('https://api.flutterwave.com/v3/payments', payload, { headers: { Authorization: `Bearer ${secret}` } });
@@ -377,41 +402,197 @@ async function getDigitalConfig() {
 exports.airtimePurchase = functions.region('us-central1').https.onCall(async (data, context) => {
 	const uid = context.auth && context.auth.uid;
 	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
-	const { provider, phone, amount, country } = data || {};
+	const { provider, phone, amount, country, currency, reference, billerCode } = data || {};
 	if (!phone || !amount) throw new functions.https.HttpsError('invalid-argument', 'phone, amount required');
-	const cfg = await getDigitalConfig();
 	const txRef = `airtime_${uid}_${Date.now()}`;
-	const txDoc = await admin.firestore().collection('digital_tx').doc(txRef).set({
-		userId: uid, type: 'airtime', provider: provider || null, phone, amount, country: country || null, status: 'queued', createdAt: admin.firestore.FieldValue.serverTimestamp(),
+	await admin.firestore().runTransaction(async (t) => {
+		const walletRef = admin.firestore().collection('wallets').doc(uid);
+		const wSnap = await t.get(walletRef);
+		const bal = Number((wSnap.data() && wSnap.data().balance) || 0);
+		if (bal < Number(amount)) throw new functions.https.HttpsError('failed-precondition', 'Insufficient balance');
+		t.set(admin.firestore().collection('digital_tx').doc(txRef), {
+			userId: uid, type: 'airtime', provider: provider || 'flutterwaveBills', phone, amount: Number(amount), currency: currency || null, country: country || null,
+			status: 'processing', reference: reference || txRef, createdAt: admin.firestore.FieldValue.serverTimestamp(),
+		});
+		t.set(walletRef, { balance: bal - Number(amount) }, { merge: true });
+		t.set(walletRef.collection('tx').doc(), { type: 'debit', ref: txRef, amount: Number(amount), createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
 	});
-	// TODO: integrate with aggregator (e.g., Flutterwave Bills or Reloadly) using cfg
-	return { ref: txRef, status: 'queued' };
+	try {
+		const res = await callFlutterwaveBills({ type: 'AIRTIME', country, customer: phone, amount: Number(amount), reference: reference || txRef, biller_code: billerCode });
+		await admin.firestore().collection('digital_tx').doc(txRef).set(removeUndefined({ status: (res && res.status) || 'success', providerRef: (res && res.data && res.data.flw_ref) || null, response: res || null }), { merge: true });
+		return { ref: txRef, status: 'success' };
+	} catch (e) {
+		console.error('airtimePurchase error', e && (e.response && e.response.data || e));
+		await admin.firestore().runTransaction(async (t) => {
+			const walletRef = admin.firestore().collection('wallets').doc(uid);
+			const wSnap = await t.get(walletRef);
+			const bal = Number((wSnap.data() && wSnap.data().balance) || 0);
+			t.set(walletRef, { balance: bal + Number(amount) }, { merge: true });
+			t.set(walletRef.collection('tx').doc(), { type: 'refund', ref: txRef, amount: Number(amount), createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+			t.set(admin.firestore().collection('digital_tx').doc(txRef), { status: 'failed', error: String(e && (e.response && JSON.stringify(e.response.data) || e.message || e)) }, { merge: true });
+		});
+		throw new functions.https.HttpsError('internal', 'Airtime purchase failed');
+	}
 });
 
 exports.dataPurchase = functions.region('us-central1').https.onCall(async (data, context) => {
 	const uid = context.auth && context.auth.uid;
 	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
-	const { provider, phone, bundleId, amount, country } = data || {};
-	if (!phone || !bundleId) throw new functions.https.HttpsError('invalid-argument', 'phone, bundleId required');
-	const cfg = await getDigitalConfig();
+	const { provider, phone, bundleCode, amount, country, currency, reference, billerCode } = data || {};
+	if (!phone || !bundleCode || !amount) throw new functions.https.HttpsError('invalid-argument', 'phone, bundleCode, amount required');
 	const txRef = `data_${uid}_${Date.now()}`;
-	await admin.firestore().collection('digital_tx').doc(txRef).set({
-		userId: uid, type: 'data', provider: provider || null, phone, bundleId, amount: amount || null, country: country || null, status: 'queued', createdAt: admin.firestore.FieldValue.serverTimestamp(),
+	await admin.firestore().runTransaction(async (t) => {
+		const walletRef = admin.firestore().collection('wallets').doc(uid);
+		const wSnap = await t.get(walletRef);
+		const bal = Number((wSnap.data() && wSnap.data().balance) || 0);
+		if (bal < Number(amount)) throw new functions.https.HttpsError('failed-precondition', 'Insufficient balance');
+		t.set(admin.firestore().collection('digital_tx').doc(txRef), {
+			userId: uid, type: 'data', provider: provider || 'flutterwaveBills', phone, bundleCode, amount: Number(amount), currency: currency || null, country: country || null,
+			status: 'processing', reference: reference || txRef, createdAt: admin.firestore.FieldValue.serverTimestamp(),
+		});
+		t.set(walletRef, { balance: bal - Number(amount) }, { merge: true });
+		t.set(walletRef.collection('tx').doc(), { type: 'debit', ref: txRef, amount: Number(amount), createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
 	});
-	// TODO: integrate with aggregator using cfg
-	return { ref: txRef, status: 'queued' };
+	try {
+		const res = await callFlutterwaveBills({ type: 'DATA', country, customer: phone, amount: Number(amount), reference: reference || txRef, item_code: bundleCode, biller_code: billerCode });
+		await admin.firestore().collection('digital_tx').doc(txRef).set(removeUndefined({ status: (res && res.status) || 'success', providerRef: (res && res.data && res.data.flw_ref) || null, response: res || null }), { merge: true });
+		return { ref: txRef, status: 'success' };
+	} catch (e) {
+		console.error('dataPurchase error', e && (e.response && e.response.data || e));
+		await admin.firestore().runTransaction(async (t) => {
+			const walletRef = admin.firestore().collection('wallets').doc(uid);
+			const wSnap = await t.get(walletRef);
+			const bal = Number((wSnap.data() && wSnap.data().balance) || 0);
+			t.set(walletRef, { balance: bal + Number(amount) }, { merge: true });
+			t.set(walletRef.collection('tx').doc(), { type: 'refund', ref: txRef, amount: Number(amount), createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+			t.set(admin.firestore().collection('digital_tx').doc(txRef), { status: 'failed', error: String(e && (e.response && JSON.stringify(e.response.data) || e.message || e)) }, { merge: true });
+		});
+		throw new functions.https.HttpsError('internal', 'Data purchase failed');
+	}
 });
 
 exports.billPay = functions.region('us-central1').https.onCall(async (data, context) => {
 	const uid = context.auth && context.auth.uid;
 	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
-	const { billerCode, account, amount, country, metadata } = data || {};
+	const { billerCode, account, amount, country, currency, reference, itemCode, type } = data || {};
 	if (!billerCode || !account || !amount) throw new functions.https.HttpsError('invalid-argument', 'billerCode, account, amount required');
-	const cfg = await getDigitalConfig();
 	const txRef = `bill_${uid}_${Date.now()}`;
-	await admin.firestore().collection('digital_tx').doc(txRef).set({
-		userId: uid, type: 'bill', billerCode, account, amount, country: country || null, metadata: metadata || null, status: 'queued', createdAt: admin.firestore.FieldValue.serverTimestamp(),
+	await admin.firestore().runTransaction(async (t) => {
+		const walletRef = admin.firestore().collection('wallets').doc(uid);
+		const wSnap = await t.get(walletRef);
+		const bal = Number((wSnap.data() && wSnap.data().balance) || 0);
+		if (bal < Number(amount)) throw new functions.https.HttpsError('failed-precondition', 'Insufficient balance');
+		t.set(admin.firestore().collection('digital_tx').doc(txRef), {
+			userId: uid, type: 'bill', billerCode, account, amount: Number(amount), currency: currency || null, country: country || null,
+			status: 'processing', reference: reference || txRef, createdAt: admin.firestore.FieldValue.serverTimestamp(),
+		});
+		t.set(walletRef, { balance: bal - Number(amount) }, { merge: true });
+		t.set(walletRef.collection('tx').doc(), { type: 'debit', ref: txRef, amount: Number(amount), createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
 	});
-	// TODO: integrate with aggregator using cfg
-	return { ref: txRef, status: 'queued' };
+	try {
+		const res = await callFlutterwaveBills({ type: type || 'BILLS', country, customer: account, amount: Number(amount), reference: reference || txRef, biller_code: billerCode, item_code: itemCode });
+		await admin.firestore().collection('digital_tx').doc(txRef).set(removeUndefined({ status: (res && res.status) || 'success', providerRef: (res && res.data && res.data.flw_ref) || null, response: res || null }), { merge: true });
+		return { ref: txRef, status: 'success' };
+	} catch (e) {
+		console.error('billPay error', e && (e.response && e.response.data || e));
+		await admin.firestore().runTransaction(async (t) => {
+			const walletRef = admin.firestore().collection('wallets').doc(uid);
+			const wSnap = await t.get(walletRef);
+			const bal = Number((wSnap.data() && wSnap.data().balance) || 0);
+			t.set(walletRef, { balance: bal + Number(amount) }, { merge: true });
+			t.set(walletRef.collection('tx').doc(), { type: 'refund', ref: txRef, amount: Number(amount), createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+			t.set(admin.firestore().collection('digital_tx').doc(txRef), { status: 'failed', error: String(e && (e.response && JSON.stringify(e.response.data) || e.message || e)) }, { merge: true });
+		});
+		throw new functions.https.HttpsError('internal', 'Bill payment failed');
+	}
+});
+
+async function callFlutterwaveBills(payload) {
+	const secret = await getFlutterwaveSecretKey();
+	if (!secret) throw new functions.https.HttpsError('failed-precondition', 'Flutterwave bills not configured');
+	const ref = payload.reference || `dz_${Date.now()}`;
+	const body = removeUndefined({
+		country: payload.country,
+		customer: payload.customer,
+		amount: payload.amount,
+		recurrence: 'ONCE',
+		type: payload.type,
+		reference: ref,
+		biller_code: payload.biller_code,
+		item_code: payload.item_code,
+		meta: payload.meta || {},
+	});
+	const res = await axios.post('https://api.flutterwave.com/v3/bills', body, { headers: { Authorization: `Bearer ${secret}` } });
+	return res.data;
+}
+
+exports.walletStripeWebhook = functions.region('us-central1').https.onRequest(async (req, res) => {
+	if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+	const endpointSecret = await getStripeEndpointSecret();
+	const secret = await getStripeSecretKey();
+	if (!endpointSecret || !secret) return res.status(500).send('Stripe not configured');
+	let event;
+	try {
+		const stripe = new Stripe(secret);
+		event = stripe.webhooks.constructEvent(req.rawBody, req.headers['stripe-signature'], endpointSecret);
+	} catch (err) {
+		console.error('Stripe webhook verify failed', err);
+		return res.status(400).send(`Webhook Error: ${err.message}`);
+	}
+	if (event.type === 'checkout.session.completed') {
+		const session = event.data.object;
+		const uid = session.metadata && session.metadata.uid;
+		const txId = session.metadata && session.metadata.txId;
+		if (uid && txId) {
+			await admin.firestore().runTransaction(async (t) => {
+				const txRef = admin.firestore().collection('wallets').doc(uid).collection('tx').doc(txId);
+				const walletRef = admin.firestore().collection('wallets').doc(uid);
+				const snap = await t.get(txRef);
+				if (!snap.exists) return;
+				const data = snap.data() || {};
+				if (data.status === 'paid') return;
+				const amount = Number(data.amount || 0);
+				const wSnap = await t.get(walletRef);
+				const bal = Number((wSnap.data() && wSnap.data().balance) || 0);
+				t.set(walletRef, { balance: bal + amount }, { merge: true });
+				t.set(txRef, { status: 'paid', gateway: 'stripe', gatewayRef: session.id, paidAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+				t.set(walletRef.collection('tx').doc(), { type: 'credit', ref: txId, amount, createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+			});
+		}
+	}
+	return res.json({ received: true });
+});
+
+exports.walletFlutterwaveWebhook = functions.region('us-central1').https.onRequest(async (req, res) => {
+	if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+	const hash = req.headers['verif-hash'];
+	const expected = await getFlutterwaveWebhookSecret();
+	if (!expected || hash !== expected) {
+		console.error('Flutterwave webhook invalid signature');
+		return res.status(401).send('Unauthorized');
+	}
+	const payload = req.body || {};
+	const data = payload.data || {};
+	const meta = data.meta || {};
+	if ((payload.event && payload.event.includes('charge')) || data.status === 'successful') {
+		const uid = meta.uid;
+		const txId = meta.txId;
+		if (uid && txId) {
+			await admin.firestore().runTransaction(async (t) => {
+				const txRef = admin.firestore().collection('wallets').doc(uid).collection('tx').doc(txId);
+				const walletRef = admin.firestore().collection('wallets').doc(uid);
+				const snap = await t.get(txRef);
+				if (!snap.exists) return;
+				const doc = snap.data() || {};
+				if (doc.status === 'paid') return;
+				const amount = Number(doc.amount || 0);
+				const wSnap = await t.get(walletRef);
+				const bal = Number((wSnap.data() && wSnap.data().balance) || 0);
+				t.set(walletRef, { balance: bal + amount }, { merge: true });
+				t.set(txRef, { status: 'paid', gateway: 'flutterwave', gatewayRef: data.id || data.flw_ref || null, paidAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+				t.set(walletRef.collection('tx').doc(), { type: 'credit', ref: txId, amount, createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+			});
+		}
+	}
+	return res.json({ received: true });
 });
