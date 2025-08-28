@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class DigitalScreen extends StatelessWidget {
 	const DigitalScreen({super.key});
@@ -34,13 +35,13 @@ class _DigitalCard extends StatelessWidget {
 			onTap: () {
 				switch (label) {
 					case 'Buy Airtime':
-						Navigator.of(context).pushNamed('/digital/airtime');
+						context.push('/digital/airtime');
 						break;
 					case 'Buy Data':
-						Navigator.of(context).pushNamed('/digital/data');
+						context.push('/digital/data');
 						break;
 					case 'Pay Bills':
-						Navigator.of(context).pushNamed('/digital/bills');
+						context.push('/digital/bills');
 						break;
 					default:
 				}
