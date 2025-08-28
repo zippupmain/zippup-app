@@ -23,15 +23,33 @@ class _PositionedDraggablePanic extends StatefulWidget {
 
 class _PositionedDraggablePanicState extends State<_PositionedDraggablePanic> {
 	Offset pos = const Offset(16, 520);
+	bool _initialized = false;
+
+	@override
+	void didChangeDependencies() {
+		super.didChangeDependencies();
+		if (!_initialized) {
+			final size = MediaQuery.of(context).size;
+			final dx = (size.width - 160).clamp(8.0, size.width - 80.0);
+			final dy = (size.height - 160).clamp(80.0, size.height - 80.0);
+			pos = Offset(dx, dy);
+			_initialized = true;
+		}
+	}
 	@override
 	Widget build(BuildContext context) {
 		return Positioned(
 			left: pos.dx,
 			top: pos.dy,
-			child: Draggable(
-				feedback: _panicFab(),
-				childWhenDragging: const SizedBox.shrink(),
-				onDragEnd: (d) => setState(() => pos = d.offset),
+			child: GestureDetector(
+				onPanUpdate: (details) {
+					final size = MediaQuery.of(context).size;
+					double dx = (pos.dx + details.delta.dx);
+					double dy = (pos.dy + details.delta.dy);
+					dx = dx.clamp(8.0, size.width - 80.0);
+					dy = dy.clamp(80.0, size.height - (kBottomNavigationBarHeight + 80.0));
+					setState(() => pos = Offset(dx, dy));
+				},
 				child: _panicFab(),
 			),
 		);
