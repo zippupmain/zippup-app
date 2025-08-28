@@ -99,11 +99,11 @@ class _HireScreenState extends State<HireScreen> {
 						),
 					),
 					Expanded(
-						child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-							stream: FirebaseFirestore.instance.collection('providers').where('category', isEqualTo: _filter).snapshots(),
+						child: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+							future: FirebaseFirestore.instance.collection('providers').where('category', isEqualTo: _filter).get(const GetOptions(source: Source.server)),
 							builder: (context, snap) {
 								if (snap.hasError) {
-									return Center(child: Text('Error loading providers: ${snap.error}'));
+									return const Center(child: Text('Error loading providers'));
 								}
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
 								final allDocs = snap.data!.docs.where((d) {
