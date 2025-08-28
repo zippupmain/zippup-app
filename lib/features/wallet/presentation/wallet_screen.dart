@@ -56,7 +56,8 @@ class _WalletScreenState extends State<WalletScreen> {
 		final amount = double.tryParse(amountController.text.trim()) ?? 0;
 		if (amount <= 0) return;
 		try {
-			final res = await FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('walletCreateTopup').call({'amount': amount});
+			final currency = await CountryConfigService.instance.getCurrencyCode();
+			final res = await FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('walletCreateTopup').call({'amount': amount, 'currency': currency});
 			final data = Map<String, dynamic>.from(res.data as Map);
 			final checkoutUrl = data['checkoutUrl']?.toString();
 			if (checkoutUrl != null && context.mounted) {

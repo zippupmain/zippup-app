@@ -30,9 +30,25 @@ class _DigitalCard extends StatelessWidget {
 	final IconData icon;
 	@override
 	Widget build(BuildContext context) {
-		return Container(
-			decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black12)),
-			child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: Colors.black), const SizedBox(height: 8), Text(label, style: const TextStyle(color: Colors.black))]),
+		return InkWell(
+			onTap: () {
+				switch (label) {
+					case 'Buy Airtime':
+						Navigator.of(context).pushNamed('/digital/airtime');
+						break;
+					case 'Buy Data':
+						Navigator.of(context).pushNamed('/digital/data');
+						break;
+					case 'Pay Bills':
+						Navigator.of(context).pushNamed('/digital/bills');
+						break;
+					default:
+				}
+			},
+			child: Container(
+				decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black12)),
+				child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: Colors.black), const SizedBox(height: 8), Text(label, style: const TextStyle(color: Colors.black))]),
+			),
 		);
 	}
 }
