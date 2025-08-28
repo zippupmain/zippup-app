@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:go_router/go_router.dart';
 
 class KycOnboardingScreen extends StatefulWidget {
 	const KycOnboardingScreen({super.key});
@@ -77,7 +78,7 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 			// BYPASS KYC for testing: do not upload or write to Firestore; just succeed
 			if (mounted) {
 				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('KYC bypassed for testing')));
-				Navigator.of(context).pop(true);
+				context.go('/providers');
 				return;
 			}
 		} finally {
