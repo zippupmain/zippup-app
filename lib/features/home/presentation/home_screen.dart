@@ -249,13 +249,6 @@ class _HomeScreenState extends State<HomeScreen> {
 				// Draggable panic button overlay
 				_PositionedDraggablePanic(),
 			]),
-			floatingActionButton: FloatingActionButton.extended(
-				backgroundColor: Colors.red,
-				foregroundColor: Colors.white,
-				onPressed: () => context.push('/panic'),
-				label: const Text('Panic'),
-				icon: const Icon(Icons.emergency_share),
-			),
 			bottomNavigationBar: NavigationBar(
 				selectedIndex: _tab,
 				onDestinationSelected: (i) {
