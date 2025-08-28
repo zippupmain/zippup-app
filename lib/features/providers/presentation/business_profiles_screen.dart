@@ -20,57 +20,8 @@ class BusinessProfilesScreen extends StatelessWidget {
 				),
 			);
 		}
-		return Scaffold(
-			appBar: AppBar(title: const Text('Business profiles')),
-			body: FutureBuilder<bool>(
-				future: FlagsService.instance.bypassKyc(),
-				builder: (context, flagSnap) {
-					final bypass = flagSnap.data == true;
-					if (bypass) return _ApprovedHub(uid: uid);
-					return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-						stream: FirebaseFirestore.instance.collection('_onboarding').doc(uid).snapshots(),
-						builder: (context, kycSnap) {
-							if (kycSnap.hasError) {
-								return Center(child: Padding(padding: const EdgeInsets.all(24), child: Text('Error: ${kycSnap.error}')));
-							}
-							if (!kycSnap.hasData) {
-								return const _KycGate(
-									message: 'Checking KYC status... If this takes long, you can proceed to complete KYC.',
-									ctaText: 'Complete KYC',
-									onTapRoute: '/providers/kyc',
-								);
-							}
-							final kyc = kycSnap.data!;
-							final exists = kyc.exists;
-							final status = (kyc.data()?['status'] ?? '').toString().toLowerCase();
-							final reason = kyc.data()?['reason']?.toString();
-							if (!exists || status.isEmpty) {
-								return const _KycGate(
-									message: 'Go to Apply as Service Provider / Vendor to complete KYC before you can create a business profile.',
-									ctaText: 'Complete KYC',
-									onTapRoute: '/providers/kyc',
-								);
-							}
-							if (status == 'pending') {
-								return const _KycGate(
-									message: 'Your KYC is submitted and awaiting approval. You will be notified once reviewed.',
-									ctaText: 'View notifications',
-									onTapRoute: '/notifications',
-								);
-							}
-							if (status == 'declined') {
-								return _KycGate(
-									message: 'Your KYC was declined.' + (reason != null && reason.isNotEmpty ? '\nReason: $reason' : ''),
-									ctaText: 'Update KYC',
-									onTapRoute: '/providers/kyc',
-								);
-							}
-							return _ApprovedHub(uid: uid);
-						},
-					);
-				},
-			),
-		);
+		// BYPASS KYC for testing: always show approved hub
+		return Scaffold(appBar: AppBar(title: const Text('Business profiles')), body: _ApprovedHub(uid: uid));
 	}
 }
 

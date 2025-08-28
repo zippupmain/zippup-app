@@ -74,44 +74,12 @@ class _KycOnboardingScreenState extends State<KycOnboardingScreen> {
 	Future<void> _submit() async {
 		setState(() => _saving = true);
 		try {
-			final uid = FirebaseAuth.instance.currentUser!.uid;
-			String? idUrl;
-			String? selfieUrl;
-			final proofUrls = <String>[];
-			if (_idImageBytes != null) {
-				final ref = FirebaseStorage.instance.ref('onboarding/$uid/id_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				await ref.putData(_idImageBytes!, SettableMetadata(contentType: 'image/jpeg'));
-				idUrl = await ref.getDownloadURL();
+			// BYPASS KYC for testing: do not upload or write to Firestore; just succeed
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('KYC bypassed for testing')));
+				Navigator.of(context).pop(true);
+				return;
 			}
-			for (int i = 0; i < _proofBytes.length; i++) {
-				final ref = FirebaseStorage.instance.ref('onboarding/$uid/proof_b$i.jpg');
-				await ref.putData(_proofBytes[i], SettableMetadata(contentType: 'image/jpeg'));
-				proofUrls.add(await ref.getDownloadURL());
-			}
-			if (_selfieBytes != null) {
-				final ref = FirebaseStorage.instance.ref('onboarding/$uid/selfie_${DateTime.now().millisecondsSinceEpoch}.jpg');
-				await ref.putData(_selfieBytes!, SettableMetadata(contentType: 'image/jpeg'));
-				selfieUrl = await ref.getDownloadURL();
-			}
-
-			await FirebaseFirestore.instance.collection('_onboarding').doc(uid).set({
-				'uid': uid,
-				'name': _name.text.trim(),
-				'email': _email.text.trim(),
-				'phone': _phone.text.trim(),
-				'address': _address.text.trim(),
-				'idType': _idType,
-				'idNumber': _idNumber.text.trim(),
-				'idDocUrl': idUrl,
-				'selfieUrl': selfieUrl,
-				'proofUrls': proofUrls,
-				'createdAt': FieldValue.serverTimestamp(),
-				'status': 'pending',
-			});
-
-			if (mounted) Navigator.of(context).pop(true);
-		} catch (e) {
-			if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit: $e')));
 		} finally {
 			if (mounted) setState(() => _saving = false);
 		}
