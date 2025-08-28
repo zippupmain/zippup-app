@@ -45,6 +45,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 		} catch (_) {}
 	}
 
+	Future<void> _toggleAvailable(bool v) async {
+		final uid = FirebaseAuth.instance.currentUser?.uid;
+		if (uid == null) return;
+		await FirebaseFirestore.instance.collection('vendors').doc(uid).set({'available': v}, SetOptions(merge: true));
+		setState(() => _available = v);
+	}
+
+	void _comingSoon(String title) {
+		ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title is coming soon')));
+	}
+
 	Future<void> _openSwitchRole() async {
 		final selected = await showModalBottomSheet<String>(
 			context: context,
@@ -76,17 +87,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 		}
 	}
 
-	Future<void> _toggleAvailable(bool v) async {
-		final uid = FirebaseAuth.instance.currentUser?.uid;
-		if (uid == null) return;
-		await FirebaseFirestore.instance.collection('vendors').doc(uid).set({'available': v}, SetOptions(merge: true));
-		setState(() => _available = v);
-	}
-
-	void _comingSoon(String title) {
-		ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title is coming soon')));
-	}
-
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
@@ -100,14 +100,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 							onChanged: _toggleAvailable,
 						),
 					ListTile(leading: const Icon(Icons.person), title: const Text('Profile settings'), onTap: () => context.push('/profile/settings')),
-					ListTile(leading: const Icon(Icons.verified_user), title: const Text('Apply as Service Provider / Vendor'), onTap: () => context.push('/providers/kyc')),
+					ListTile(leading: const Icon(Icons.verified_user), title: const Text('Apply as Service Provider / Vendor'), onTap: () => context.push('/providers')),
 					if (_approved) ListTile(leading: const Icon(Icons.admin_panel_settings), title: const Text('Vendor Admin'), onTap: () => context.push('/admin/dashboard')),
 					if (_isPlatformAdmin) ListTile(leading: const Icon(Icons.shield), title: const Text('Platform Admin'), onTap: () => context.push('/admin/platform')),
 					ListTile(leading: const Icon(Icons.account_balance_wallet), title: const Text('Wallet'), onTap: () => context.push('/wallet')),
 					ListTile(leading: const Icon(Icons.local_activity), title: const Text('Promo & vouchers'), onTap: () => context.push('/promos')),
 					ListTile(leading: const Icon(Icons.language), title: const Text('Languages'), onTap: () => context.push('/languages')),
 					ListTile(leading: const Icon(Icons.business), title: const Text('Business profiles hub'), onTap: () => context.push('/providers')),
-					ListTile(leading: const Icon(Icons.swap_horiz), title: const Text('Switch role'), onTap: () => _openSwitchRole()),
 					ListTile(leading: const Icon(Icons.assignment_outlined), title: const Text('My Bookings'), onTap: () => context.push('/bookings')),
 					ListTile(leading: const Icon(Icons.help_outline), title: const Text('Help / Report'), onTap: () => context.push('/support')),
 					ListTile(leading: const Icon(Icons.star_rate), title: const Text('Rate ZippUp'), onTap: () => context.push('/rate')),
