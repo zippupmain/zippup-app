@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class CreateServiceProfileScreen extends StatefulWidget {
 	const CreateServiceProfileScreen({super.key});
@@ -13,7 +14,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	final _desc = TextEditingController();
 	String? _category = 'transport';
 	String? _subcategory;
-	String _status = 'draft';
+	String _status = 'active';
 	String _type = 'individual';
 	bool _saving = false;
 
@@ -45,7 +46,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				'category': _category,
 				'subcategory': _subcategory,
 				'type': _type,
-				'status': _status,
+				'status': 'active',
 				'createdAt': nowIso,
 			});
 			// Create provider profile for Provider Hub (active for testing)
@@ -66,14 +67,15 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 					'type': _type,
 				},
 			});
-			// Add provider role to user
+			// Add provider role to user and set active role
 			await FirebaseFirestore.instance.collection('users').doc(uid).set({
-				'providerRoles': FieldValue.arrayUnion(['provider:$service'])
+				'providerRoles': FieldValue.arrayUnion(['provider:$service']),
+				'activeRole': 'provider:$service',
 			}, SetOptions(merge: true));
 			if (!mounted) return;
 			// Go to Hub
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile created')));
-			Navigator.of(context).pushReplacementNamed('/hub');
+			context.go('/hub');
 		} catch (e) {
 			if (mounted) {
 				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e')));
