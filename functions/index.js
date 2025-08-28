@@ -306,6 +306,57 @@ async function notifyParties(userIds, notif, data) {
 	await admin.messaging().sendToDevice(tokens, payload);
 }
 
+// Role & Provider functions
+exports.switchActiveRole = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const role = (data && data.role) || 'customer';
+	// Validate: if provider role, user must have a profile with status active
+	if (role.startsWith('provider:')) {
+		const service = role.split(':')[1];
+		const prof = await admin.firestore().collection('provider_profiles').where('userId', '==', uid).where('service', '==', service).where('status', '==', 'active').limit(1).get();
+		if (prof.empty) throw new functions.https.HttpsError('failed-precondition', 'Provider profile not active');
+	}
+	await admin.firestore().collection('users').doc(uid).set({ activeRole: role }, { merge: true });
+	return { ok: true, activeRole: role };
+});
+
+exports.toggleAvailability = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const { service, online } = data || {};
+	if (!service || typeof online !== 'boolean') throw new functions.https.HttpsError('invalid-argument', 'service, online required');
+	const q = await admin.firestore().collection('provider_profiles').where('userId', '==', uid).where('service', '==', service).limit(1).get();
+	if (q.empty) throw new functions.https.HttpsError('not-found', 'Profile not found');
+	await q.docs[0].ref.set({ availabilityOnline: online }, { merge: true });
+	return { ok: true };
+});
+
+exports.acceptOrder = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const { orderId } = data || {};
+	if (!orderId) throw new functions.https.HttpsError('invalid-argument', 'orderId required');
+	await admin.firestore().runTransaction(async (t) => {
+		const ref = admin.firestore().collection('orders').doc(orderId);
+		const snap = await t.get(ref);
+		if (!snap.exists) throw new functions.https.HttpsError('not-found', 'Order not found');
+		const d = snap.data() || {};
+		if (d.providerId) throw new functions.https.HttpsError('failed-precondition', 'Already assigned');
+		t.set(ref, { providerId: uid, status: 'accepted', acceptedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+	});
+	return { ok: true };
+});
+
+exports.declineOrder = functions.region('us-central1').https.onCall(async (data, context) => {
+	const uid = context.auth && context.auth.uid;
+	if (!uid) throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+	const { orderId } = data || {};
+	if (!orderId) throw new functions.https.HttpsError('invalid-argument', 'orderId required');
+	await admin.firestore().collection('orders').doc(orderId).collection('offers').doc(uid).set({ status: 'declined', updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+	return { ok: true };
+});
+
 // Wallet: Create Topup Checkout (Stripe/Flutterwave) - Scaffold
 exports.walletCreateTopup = functions.region('us-central1').https.onCall(async (data, context) => {
 	const uid = context.auth && context.auth.uid;
