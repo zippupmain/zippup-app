@@ -14,6 +14,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 	bool _available = false;
 	bool _approved = false;
 	bool _isPlatformAdmin = false;
+	String _activeRole = 'customer';
+	List<String> _providerRoles = const [];
 
 	@override
 	void initState() {
@@ -36,6 +38,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
 			final token = await FirebaseAuth.instance.currentUser?.getIdTokenResult(true);
 			setState(() => _isPlatformAdmin = (token?.claims?['admin'] == true || token?.claims?['role'] == 'admin'));
 		} catch (_) {}
+		try {
+			final u = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+			_activeRole = (u.data()?['activeRole']?.toString() ?? 'customer');
+			_providerRoles = List<String>.from((u.data()?['providerRoles'] as List?)?.map((e) => e.toString()) ?? const []);
+		} catch (_) {}
+	}
+
+	Future<void> _openSwitchRole() async {
+		final selected = await showModalBottomSheet<String>(
+			context: context,
+			builder: (c) {
+				final options = ['customer', ..._providerRoles];
+				return SafeArea(
+					child: Column(mainAxisSize: MainAxisSize.min, children: [
+						const SizedBox(height: 12),
+						const Text('Switch Role', style: TextStyle(fontWeight: FontWeight.w600)),
+						const SizedBox(height: 8),
+						...options.map((r) => ListTile(
+							title: Text(r == 'customer' ? 'Customer' : r.replaceFirst('provider:', 'Provider: ')),
+							trailing: r == _activeRole ? const Icon(Icons.check) : null,
+							onTap: () => Navigator.pop(c, r),
+						)),
+						const SizedBox(height: 12),
+					]),
+				);
+			},
+		);
+		if (selected == null || selected == _activeRole) return;
+		try {
+			await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).set({'activeRole': selected}, SetOptions(merge: true));
+			if (!mounted) return;
+			setState(() => _activeRole = selected);
+			ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Switched to ${selected == 'customer' ? 'Customer' : selected}')));
+		} catch (e) {
+			if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
+		}
 	}
 
 	Future<void> _toggleAvailable(bool v) async {
@@ -69,6 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 					ListTile(leading: const Icon(Icons.local_activity), title: const Text('Promo & vouchers'), onTap: () => context.push('/promos')),
 					ListTile(leading: const Icon(Icons.language), title: const Text('Languages'), onTap: () => context.push('/languages')),
 					ListTile(leading: const Icon(Icons.business), title: const Text('Business profiles hub'), onTap: () => context.push('/providers')),
+					ListTile(leading: const Icon(Icons.swap_horiz), title: const Text('Switch role'), onTap: () => _openSwitchRole()),
 					ListTile(leading: const Icon(Icons.assignment_outlined), title: const Text('My Bookings'), onTap: () => context.push('/bookings')),
 					ListTile(leading: const Icon(Icons.help_outline), title: const Text('Help / Report'), onTap: () => context.push('/support')),
 					ListTile(leading: const Icon(Icons.star_rate), title: const Text('Rate ZippUp'), onTap: () => context.push('/rate')),
