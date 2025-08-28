@@ -62,7 +62,6 @@ class FoodScreen extends StatelessWidget {
 				crossAxisSpacing: 12,
 				children: [
 					_CategoryCard(label: 'Fast Food', icon: Icons.fastfood, onTap: () => context.push('/food/vendors/fast_food')),
-					_CategoryCard(label: 'Grocery', icon: Icons.local_grocery_store, onTap: () => context.push('/food/vendors/grocery')),
 					_CategoryCard(label: 'Local', icon: Icons.restaurant, onTap: () => context.push('/food/vendors/local')),
 				],
 			),
