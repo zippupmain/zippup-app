@@ -11,7 +11,7 @@ class CreateServiceProfileScreen extends StatefulWidget {
 class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen> {
 	final _title = TextEditingController();
 	final _desc = TextEditingController();
-	String? _category;
+	String? _category = 'transport';
 	String? _subcategory;
 	String _status = 'draft';
 	String _type = 'individual';
@@ -30,26 +30,50 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	Future<void> _save() async {
 		setState(() => _saving = true);
 		try {
-			final uid = FirebaseAuth.instance.currentUser!.uid;
-			final ref = await FirebaseFirestore.instance.collection('business_profiles').doc(uid).collection('profiles').add({
+			final user = FirebaseAuth.instance.currentUser;
+			if (user == null) {
+				if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please sign in first')));
+				return;
+			}
+			final uid = user.uid;
+			final nowIso = DateTime.now().toIso8601String();
+			final service = (_category ?? 'transport');
+			// Write business profile (for admin management)
+			await FirebaseFirestore.instance.collection('business_profiles').doc(uid).collection('profiles').add({
 				'title': _title.text.trim(),
 				'description': _desc.text.trim(),
 				'category': _category,
 				'subcategory': _subcategory,
 				'type': _type,
 				'status': _status,
-				'createdAt': DateTime.now().toIso8601String(),
+				'createdAt': nowIso,
 			});
+			// Create provider profile for Provider Hub (active for testing)
+			await FirebaseFirestore.instance.collection('provider_profiles').add({
+				'userId': uid,
+				'service': service,
+				'status': 'active',
+				'availabilityOnline': false,
+				'rating': 0.0,
+				'totalRatings': 0,
+				'earnings': 0.0,
+				'createdAt': nowIso,
+				'metadata': {
+					'title': _title.text.trim(),
+					'description': _desc.text.trim(),
+					'category': _category,
+					'subcategory': _subcategory,
+					'type': _type,
+				},
+			});
+			// Add provider role to user
+			await FirebaseFirestore.instance.collection('users').doc(uid).set({
+				'providerRoles': FieldValue.arrayUnion(['provider:$service'])
+			}, SetOptions(merge: true));
 			if (!mounted) return;
-			// Route to extra registration forms for specific categories
-			final isVehicleRental = _category == 'rentals' && _subcategory == 'Vehicle';
-			if (_category == 'transport' || _category == 'food' || isVehicleRental) {
-				final params = <String, String>{'category': _category ?? ''};
-				if (isVehicleRental) params['subcategory'] = 'Vehicle';
-				Navigator.of(context).pushNamed('/profile/apply-provider', arguments: params);
-				return;
-			}
-			Navigator.pop(context, ref.id);
+			// Go to Hub
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile created')));
+			Navigator.of(context).pushReplacementNamed('/hub');
 		} catch (e) {
 			if (mounted) {
 				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e')));
