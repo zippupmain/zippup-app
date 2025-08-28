@@ -73,7 +73,7 @@ class _EmergencyProvidersScreenState extends State<EmergencyProvidersScreen> {
 			body: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
 				future: FirebaseFirestore.instance.collection('providers').where('category', isEqualTo: widget.type).get(const GetOptions(source: Source.server)),
 				builder: (context, snap) {
-					if (snap.hasError) return const Center(child: Text('Error loading providers'));
+					if (snap.hasError) return const Center(child: Text('No providers found'));
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
 					final docs = snap.data!.docs.where((d) {
 						if (_q.isEmpty) return true;

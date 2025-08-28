@@ -103,7 +103,7 @@ class _HireScreenState extends State<HireScreen> {
 							future: FirebaseFirestore.instance.collection('providers').where('category', isEqualTo: _filter).get(const GetOptions(source: Source.server)),
 							builder: (context, snap) {
 								if (snap.hasError) {
-									return const Center(child: Text('Error loading providers'));
+									return const Center(child: Text('No providers found'));
 								}
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
 								final allDocs = snap.data!.docs.where((d) {

@@ -37,7 +37,7 @@ class MyBookingsScreen extends StatelessWidget {
 			body: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
 				future: FirebaseFirestore.instance.collection('orders').where('buyerId', isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? 'self').orderBy('createdAt', descending: true).get(const GetOptions(source: Source.server)),
 				builder: (context, snap) {
-					if (snap.hasError) return const Center(child: Text('Error loading bookings'));
+					if (snap.hasError) return const Center(child: Text('No bookings found'));
 					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
 					final docs = snap.data!.docs;
 					if (docs.isEmpty) return const Center(child: Text('No bookings'));
