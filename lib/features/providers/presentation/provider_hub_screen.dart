@@ -53,9 +53,40 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 						await snap.docs.first.reference.set({'availabilityOnline': v}, SetOptions(merge: true));
 					}
 				});
+			if (v) {
+				// Auto-switch to provider mode for this service
+				await FirebaseFirestore.instance.collection('users').doc(uid).set({'activeRole': 'provider:${_service}'}, SetOptions(merge: true));
+			} else {
+				// If no active jobs, auto-switch back to customer
+				final hasActive = await _hasActiveJobs(uid);
+				if (!hasActive) {
+					await FirebaseFirestore.instance.collection('users').doc(uid).set({'activeRole': 'customer'}, SetOptions(merge: true));
+				}
+			}
 		} catch (e) {
 			if (mounted) setState(() => _online = !v);
 		}
+	}
+
+	Future<bool> _hasActiveJobs(String uid) async {
+		try {
+			const activeRide = ['accepted', 'arriving', 'arrived', 'enroute'];
+			const activeOrder = ['accepted', 'assigned', 'preparing', 'dispatched', 'enroute', 'arriving', 'arrived'];
+			final rideQ = await FirebaseFirestore.instance
+				.collection('rides')
+				.where('driverId', isEqualTo: uid)
+				.where('status', whereIn: activeRide)
+				.limit(1)
+				.get();
+			if (rideQ.docs.isNotEmpty) return true;
+			final orderQ = await FirebaseFirestore.instance
+				.collection('orders')
+				.where('providerId', isEqualTo: uid)
+				.where('status', whereIn: activeOrder)
+				.limit(1)
+				.get();
+			return orderQ.docs.isNotEmpty;
+		} catch (_) { return false; }
 	}
 
 	@override
