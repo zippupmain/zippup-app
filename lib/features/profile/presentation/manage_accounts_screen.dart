@@ -11,8 +11,7 @@ class ManageAccountsScreen extends StatefulWidget {
 class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
 	late final String _uid;
 	String? _activeId;
-	final _name = TextEditingController();
-	final _type = TextEditingController();
+	bool _frozen = false;
 
 	@override
 	void initState() {
@@ -21,14 +20,51 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
 		_loadActive();
 	}
 
-	Future<void> _loadActive() async {
-		final user = await FirebaseFirestore.instance.collection('users').doc(_uid).get();
-		setState(() => _activeId = user.data()?['activeProfileId']?.toString());
-	}
+  Future<void> _loadActive() async {
+    final user = await FirebaseFirestore.instance.collection('users').doc(_uid).get();
+    final data = user.data() ?? {};
+    setState(() {
+      _activeId = data['activeProfileId']?.toString();
+      _frozen = data['frozen'] == true;
+    });
+  }
 
-	Stream<QuerySnapshot<Map<String, dynamic>>> _profiles() {
-		return FirebaseFirestore.instance.collection('users').doc(_uid).collection('profiles').snapshots();
-	}
+  Future<void> _setFrozen(bool v) async {
+    await FirebaseFirestore.instance.collection('users').doc(_uid).set({'frozen': v, 'frozenAt': v ? DateTime.now().toIso8601String() : null}, SetOptions(merge: true));
+    setState(() => _frozen = v);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(v ? 'Account frozen' : 'Account reactivated')));
+  }
+
+  Future<void> _reactivateIfWithinWindow() async {
+    final doc = await FirebaseFirestore.instance.collection('users').doc(_uid).get();
+    final deletedAtStr = (doc.data() ?? const {})['deletedAt']?.toString();
+    if (deletedAtStr == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account not deleted'))); return; }
+    final deletedAt = DateTime.tryParse(deletedAtStr);
+    if (deletedAt == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cannot parse deletion date'))); return; }
+    if (DateTime.now().difference(deletedAt).inDays > 30) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cannot reactivate after 30 days'))); return; }
+    await FirebaseFirestore.instance.collection('users').doc(_uid).set({'deletedAt': null, 'frozen': false}, SetOptions(merge: true));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account reactivated')));
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (c) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Delete account'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: const [Text('If this is not a mistake, type DELETE to confirm.')]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () { if (controller.text.trim().toUpperCase() == 'DELETE') Navigator.pop(c, true); }, child: const Text('Confirm')),
+          ],
+        );
+      },
+    );
+    if (confirm != true) return;
+    await FirebaseFirestore.instance.collection('users').doc(_uid).set({'deletedAt': DateTime.now().toIso8601String()}, SetOptions(merge: true));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account scheduled for deletion')));
+  }
 
 	Future<void> _addProfile() async {
 		await FirebaseFirestore.instance.collection('users').doc(_uid).collection('profiles').add({
@@ -55,47 +91,19 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Manage accounts')),
-			body: Column(children: [
-				Padding(
-					padding: const EdgeInsets.all(16),
-					child: Row(children: [
-						Expanded(child: TextField(controller: _name, decoration: const InputDecoration(labelText: 'Profile name'))),
-						const SizedBox(width: 8),
-						Expanded(child: TextField(controller: _type, decoration: const InputDecoration(labelText: 'Profile type'))),
-						const SizedBox(width: 8),
-						FilledButton(onPressed: _addProfile, child: const Text('Add')),
-					]),
-				),
-				Expanded(
-					child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-						stream: _profiles(),
-						builder: (context, snap) {
-							if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-							final docs = snap.data!.docs;
-							if (docs.isEmpty) return const Center(child: Text('No additional profiles'));
-							return ListView.separated(
-								itemCount: docs.length,
-								separatorBuilder: (_, __) => const Divider(height: 1),
-								itemBuilder: (context, i) {
-									final d = docs[i];
-									final data = d.data();
-									final isActive = _activeId == d.id;
-									return ListTile(
-										title: Text(data['displayName']?.toString() ?? 'Profile'),
-										subtitle: Text(data['type']?.toString() ?? ''),
-										trailing: Wrap(spacing: 8, children: [
-											if (!isActive) TextButton(onPressed: () => _setActive(d.id), child: const Text('Switch')),
-											TextButton(onPressed: () => _delete(d.id), child: const Text('Delete', style: TextStyle(color: Colors.red))),
-										]),
-										leading: isActive ? const Icon(Icons.check_circle, color: Colors.green) : const SizedBox.shrink(),
-									);
-								},
-							);
-						},
-					),
-				),
-			]),
+			appBar: AppBar(title: const Text('Manage account')),
+			body: ListView(
+				padding: const EdgeInsets.all(16),
+				children: [
+					SwitchListTile(title: const Text('Freeze account'), value: _frozen, onChanged: (v) => _setFrozen(v)),
+					const Divider(),
+					ListTile(title: const Text('Reactivate deleted account'), subtitle: const Text('Within 30 days of deletion'), onTap: _reactivateIfWithinWindow),
+					const SizedBox(height: 32),
+					const Text('Danger zone', style: TextStyle(color: Colors.red)),
+					const SizedBox(height: 8),
+					TextButton(style: TextButton.styleFrom(foregroundColor: Colors.red), onPressed: _confirmDeleteAccount, child: const Text('Delete account')),
+				],
+			),
 		);
 	}
 }

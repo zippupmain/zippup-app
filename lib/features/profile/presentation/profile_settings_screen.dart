@@ -126,10 +126,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 					FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving…' : 'Save')),
 					const SizedBox(height: 48),
 					const Divider(),
-					const SizedBox(height: 8),
-					const Text('Danger zone', style: TextStyle(color: Colors.red)),
-					const SizedBox(height: 8),
-					TextButton(style: TextButton.styleFrom(foregroundColor: Colors.red), onPressed: _deleteAccount, child: const Text('Delete account')),
 				],
 			),
 		);
