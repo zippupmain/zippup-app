@@ -31,7 +31,8 @@ class _PositionedDraggablePanicState extends State<_PositionedDraggablePanic> {
 		if (!_initialized) {
 			final size = MediaQuery.of(context).size;
 			final dx = (size.width - 160).clamp(8.0, size.width - 80.0);
-			final dy = (size.height - 160).clamp(80.0, size.height - 80.0);
+			final bottomMargin = kBottomNavigationBarHeight + 120.0; // default a bit above footer
+			final dy = (size.height - bottomMargin).clamp(80.0, size.height - (kBottomNavigationBarHeight + 80.0));
 			pos = Offset(dx, dy);
 			_initialized = true;
 		}
