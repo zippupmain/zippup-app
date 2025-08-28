@@ -10,6 +10,7 @@ import 'package:zippup/services/notifications/notifications_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:zippup/core/config/payments_config.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:js' as js;
 import 'dart:async';
 import 'dart:ui' as ui;
 
@@ -86,8 +87,13 @@ class _BootstrapAppState extends State<_BootstrapApp> {
 		try {
 			await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 			if (kIsWeb) {
-				// Stabilize Firestore on web: disable persistence only
+				// Stabilize Firestore on web
 				FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
+				// Force long polling
+				try {
+					// ignore: undefined_prefixed_name
+					js.context['FIRESTORE_FORCE_LONG_POLLING'] = true;
+				} catch (_) {}
 			}
 			if (!kIsWeb) {
 				await NotificationsService.instance.init();
