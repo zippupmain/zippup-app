@@ -284,7 +284,7 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Personal', Icons.face_3, 'personal', Color(0xFFFFFFFF), Colors.black),
 		_QuickAction('Market(P)', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.black),
 		_QuickAction('Rentals', Icons.key, 'rentals', Color(0xFFFFF3E0), Colors.black),
-		_QuickAction('Grocery', Icons.local_grocery_store, 'food', Color(0xFFE8F5E9), Colors.black),
+		_QuickAction('Grocery', Icons.local_grocery_store, 'foodVendors', Color(0xFFE8F5E9), Colors.black),
 	];
 
 	@override
@@ -311,7 +311,13 @@ class _QuickActions extends StatelessWidget {
 					itemBuilder: (context, i) {
 						final a = actions[i];
 						return InkWell(
-							onTap: () => context.pushNamed(a.routeName),
+							onTap: () {
+								if (a.title == 'Grocery') {
+									context.push('/food/vendors/grocery');
+								} else {
+									context.pushNamed(a.routeName);
+								}
+							},
 							child: Column(
 								children: [
 									Container(
