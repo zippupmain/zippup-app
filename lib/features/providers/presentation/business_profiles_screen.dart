@@ -84,6 +84,16 @@ class _ApprovedHub extends StatelessWidget {
 									ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile deleted')));
 								},
 								child: ListTile(
+									onTap: () async {
+										await FirebaseFirestore.instance.collection('users').doc(uid).set({'activeProfileId': d.id}, SetOptions(merge: true));
+										final category = (p['category']?.toString() ?? '').toLowerCase();
+										if (category == 'food' || category == 'restaurant' || category == 'fast food' || category == 'local' || category == 'bakery') {
+											if (context.mounted) context.push('/hub/food');
+											return;
+										}
+										// Default to generic orders for now
+										if (context.mounted) context.push('/hub/orders');
+									},
 									title: Text(p['title']?.toString() ?? 'Untitled'),
 									subtitle: Text('${p['category'] ?? ''} • ${p['subcategory'] ?? ''} • ${p['type'] ?? 'individual'} • ${p['status'] ?? 'draft'}'),
 									trailing: IconButton(icon: const Icon(Icons.edit), onPressed: () => context.push('/providers/create?profileId=${d.id}')),

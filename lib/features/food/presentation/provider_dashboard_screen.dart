@@ -41,7 +41,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Provider Dashboard')),
+			appBar: AppBar(title: const Text('Food Provider Dashboard'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]),
 			body: Stack(
 				children: [
 					StreamBuilder<List<Order>>(
