@@ -119,8 +119,42 @@ exports.timeoutJobs = functions.pubsub.schedule('every 1 minutes').onRun(async (
   for (const d of rides.docs) {
     const createdAt = new Date(d.get('createdAt') || now).getTime();
     if (now - createdAt > 70 * 1000) {
+      // mark timeout and clear any stale driver
       await d.ref.set({ timeout: true, driverId: null }, { merge: true });
-      // TODO: Optionally enqueue fan-out to next nearest available driver here
+      // Fan-out to next available driver not yet attempted
+      const attempted = Array.isArray(d.get('attemptedDrivers')) ? d.get('attemptedDrivers') : [];
+      if (attempted.length >= 5) {
+        // Give up after 5 attempts
+        await d.ref.set({ status: 'cancelled', cancelReason: 'no_driver_found', cancelledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        continue;
+      }
+      const providersSnap = await admin.firestore().collection('provider_profiles')
+        .where('service', '==', 'transport')
+        .where('status', '==', 'active')
+        .where('availabilityOnline', '==', true)
+        .limit(50)
+        .get();
+      const candidates = providersSnap.docs
+        .map(p => ({ id: p.id, userId: p.get('userId') }))
+        .filter(p => p.userId && !attempted.includes(p.userId));
+      if (candidates.length === 0) {
+        // No candidates online
+        await d.ref.set({ noDriverOnline: true }, { merge: true });
+        continue;
+      }
+      // Pick first candidate (could randomize or sort by distance if available)
+      const next = candidates[0];
+      await d.ref.set({ driverId: next.userId, timeout: false, attemptedDrivers: admin.firestore.FieldValue.arrayUnion(next.userId) }, { merge: true });
+      // Optional: push a notification record for the driver
+      await admin.firestore().collection('notifications').add({
+        userId: next.userId,
+        title: 'New ride request',
+        body: 'You have a new ride to accept',
+        type: 'ride',
+        rideId: d.id,
+        read: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     }
   }
   // Scheduled orders timeout logic (24h or 7h if within 24h)
