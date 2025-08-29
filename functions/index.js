@@ -355,6 +355,26 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+// Propagate users/{uid}.lastLat,lastLng to provider_profiles for proximity fan-out
+exports.onUserLocationUpdate = functions.firestore.document('users/{uid}').onUpdate(async (change, context) => {
+  const before = change.before.data() || {};
+  const after = change.after.data() || {};
+  const latB = (before.lastLat != null) ? Number(before.lastLat) : null;
+  const lngB = (before.lastLng != null) ? Number(before.lastLng) : null;
+  const latA = (after.lastLat != null) ? Number(after.lastLat) : null;
+  const lngA = (after.lastLng != null) ? Number(after.lastLng) : null;
+  if (latA == null || lngA == null) return null;
+  if (latB === latA && lngB === lngA) return null;
+  const uid = context.params.uid;
+  const snap = await admin.firestore().collection('provider_profiles').where('userId', '==', uid).get();
+  const batch = admin.firestore().batch();
+  for (const doc of snap.docs) {
+    batch.set(doc.ref, { lat: latA, lng: lngA, locationUpdatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+  }
+  if (!snap.empty) await batch.commit();
+  return null;
+});
+
 // Role & Provider functions
 exports.switchActiveRole = functions.region('us-central1').https.onCall(async (data, context) => {
 	const uid = context.auth && context.auth.uid;
