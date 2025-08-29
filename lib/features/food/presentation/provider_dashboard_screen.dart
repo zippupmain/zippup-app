@@ -17,6 +17,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	String _providerId = '';
 	Stream<List<Order>>? _pendingStream;
 	bool _kitchenOpen = true;
+	bool _hideNewWhenClosed = true;
 	OrderStatus? _filterStatus;
 
 	@override
@@ -98,6 +99,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 												onSelected: (_) { setState(() => _filterStatus = s); },
 											),
 										)),
+										const SizedBox(width: 8),
+										if (!_kitchenOpen)
+											FilterChip(
+												label: const Text('Hide new when closed'),
+												selected: _hideNewWhenClosed,
+												onSelected: (_) { setState(() => _hideNewWhenClosed = !_hideNewWhenClosed); },
+											),
 									]),
 								),
 								Expanded(
@@ -108,6 +116,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 											separatorBuilder: (_, __) => const Divider(height: 1),
 											itemBuilder: (context, i) {
 												final o = orders[i];
+												if (!_kitchenOpen && _hideNewWhenClosed && o.status == OrderStatus.pending) {
+													return const SizedBox.shrink();
+												}
 												return ListTile(
 													title: Text('Order ${o.id.substring(0, 6)} • ${o.category.name}'),
 													subtitle: Text('Status: ${o.status.name}'),
