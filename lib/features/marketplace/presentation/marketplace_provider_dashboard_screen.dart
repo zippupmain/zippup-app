@@ -6,6 +6,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:zippup/common/models/order.dart';
+import 'package:zippup/features/food/providers/order_service.dart';
 
 class MarketplaceProviderDashboardScreen extends StatefulWidget {
 	const MarketplaceProviderDashboardScreen({super.key});
@@ -17,6 +19,8 @@ class _MarketplaceProviderDashboardScreenState extends State<MarketplaceProvider
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
 	Stream<QuerySnapshot<Map<String, dynamic>>>? _incoming;
+	final _service = OrderService();
+	OrderStatus? _filter;
 
 	@override
 	void initState() {
@@ -28,6 +32,25 @@ class _MarketplaceProviderDashboardScreenState extends State<MarketplaceProvider
 	}
 
 	Stream<QuerySnapshot<Map<String, dynamic>>> _listings(String uid) => _db.collection('listings').where('ownerId', isEqualTo: uid).orderBy('createdAt', descending: true).snapshots();
+
+	Stream<QuerySnapshot<Map<String, dynamic>>> _orders(String uid) => _db.collection('orders').where('providerId', isEqualTo: uid).orderBy('createdAt', descending: true).snapshots();
+
+	Future<void> _promptAssignCourier(BuildContext context, String orderId) async {
+		final controller = TextEditingController();
+		final courier = await showDialog<String>(
+			context: context,
+			builder: (context) => AlertDialog(
+				title: const Text('Assign courier'),
+				content: TextField(controller: controller, decoration: const InputDecoration(hintText: 'Courier UID or phone')),
+				actions: [
+					TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+					FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Assign')),
+				],
+			),
+		);
+		if (courier == null || courier.isEmpty) return;
+		await _db.collection('orders').doc(orderId).set({'deliveryId': courier, 'status': 'assigned'}, SetOptions(merge: true));
+	}
 
 	Future<void> _openAddListing() async { await showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => _ListingForm()); }
 
@@ -46,24 +69,27 @@ class _MarketplaceProviderDashboardScreenState extends State<MarketplaceProvider
 					Tab(icon: Icon(Icons.bar_chart), text: 'Analytics'),
 				])),
 				body: TabBarView(children: [
-					// Incoming
+					// Incoming/Orders
 					StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-						stream: _incoming,
+						stream: _orders(uid),
 						builder: (context, s) {
 							if (!s.hasData) return const Center(child: CircularProgressIndicator());
-							final docs = s.data!.docs;
-							if (docs.isEmpty) return const Center(child: Text('No incoming orders'));
+							var docs = s.data!.docs;
+							if (_filter != null) docs = docs.where((e) => (e.data()['status'] ?? '') == _filter!.name).toList();
+							if (docs.isEmpty) return const Center(child: Text('No orders'));
 							return ListView.separated(
 								itemCount: docs.length,
 								separatorBuilder: (_, __) => const Divider(height: 1),
 								itemBuilder: (context, i) {
-									final d = docs[i].data();
+									final id = docs[i].id; final d = docs[i].data();
 									return ListTile(
-										title: Text('Order • ${(d['category'] ?? '').toString()}'),
-										subtitle: Text('Order ${docs[i].id.substring(0,6)} • ${(d['status'] ?? '').toString()}'),
+										title: Text('Order ${id.substring(0,6)} • ${(d['status'] ?? '').toString()}'),
+										subtitle: Text('To: ${(d['buyerId'] ?? '').toString()}'),
 										trailing: Wrap(spacing: 6, children: [
-											FilledButton(onPressed: () => _db.collection('orders').doc(docs[i].id).set({'status': 'accepted'}, SetOptions(merge: true)), child: const Text('Accept')),
-											TextButton(onPressed: () => _db.collection('orders').doc(docs[i].id).set({'status': 'cancelled'}, SetOptions(merge: true)), child: const Text('Decline')),
+											if ((d['status'] ?? '') == 'pending') TextButton(onPressed: () => _db.collection('orders').doc(id).set({'status': 'accepted'}, SetOptions(merge: true)), child: const Text('Accept')),
+											if ((d['status'] ?? '') == 'dispatched') TextButton(onPressed: () => _promptAssignCourier(context, id), child: const Text('Assign courier')),
+											if ((d['status'] ?? '') == 'assigned') TextButton(onPressed: () => _db.collection('orders').doc(id).set({'status': 'enroute'}, SetOptions(merge: true)), child: const Text('Enroute')),
+											if ((d['status'] ?? '') == 'enroute') TextButton(onPressed: () => _db.collection('orders').doc(id).set({'status': 'arrived'}, SetOptions(merge: true)), child: const Text('Arrived')),
 										]),
 									);
 								},
