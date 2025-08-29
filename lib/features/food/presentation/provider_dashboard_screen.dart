@@ -17,6 +17,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	String _providerId = '';
 	Stream<List<Order>>? _pendingStream;
 	bool _kitchenOpen = true;
+	OrderStatus? _filterStatus;
 
 	@override
 	void initState() {
@@ -65,7 +66,6 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 						builder: (context, snapshot) {
 							if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 							List<Order> orders = snapshot.data!;
-							// Status chips
 							final statuses = [
 								OrderStatus.pending,
 								OrderStatus.preparing,
@@ -75,18 +75,28 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 								OrderStatus.arrived,
 								OrderStatus.delivered,
 							];
-							OrderStatus? filter;
+							if (_filterStatus != null) {
+								orders = orders.where((o) => o.status == _filterStatus).toList();
+							}
 							return Column(children: [
 								SingleChildScrollView(
 									scrollDirection: Axis.horizontal,
 									child: Row(children: [
 										Padding(
 											padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-											child: FilterChip(label: const Text('All'), selected: filter == null, onSelected: (_) { setState(() {}); }),
+											child: FilterChip(
+												label: const Text('All'),
+												selected: _filterStatus == null,
+												onSelected: (_) { setState(() => _filterStatus = null); },
+											),
 										),
 										...statuses.map((s) => Padding(
 											padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-											child: FilterChip(label: Text(s.name), selected: false, onSelected: (_) { setState(() { /* future: store filter in state */ }); }),
+											child: FilterChip(
+												label: Text(s.name),
+												selected: _filterStatus == s,
+												onSelected: (_) { setState(() => _filterStatus = s); },
+											),
 										)),
 									]),
 								),
@@ -151,10 +161,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
 	List<Widget> _foodActions(BuildContext context, Order o, OrderService s) {
 		return [
+			if (o.status == OrderStatus.pending)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.preparing), child: const Text('Prepare')),
 			if (o.status == OrderStatus.preparing)
 				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.dispatched), child: const Text('Dispatch')),
 			if (o.status == OrderStatus.dispatched)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.assigned), child: const Text('Assign courier')),
+				TextButton(onPressed: () => _promptAssignCourier(context, o, s), child: const Text('Assign courier')),
 			if (o.status == OrderStatus.assigned)
 				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.enroute), child: const Text('Enroute')),
 			if (o.status == OrderStatus.enroute)
@@ -206,6 +218,26 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 		await s.updateStatus(orderId: o.id, status: OrderStatus.delivered, extra: {'deliveryCodeEntered': code});
 		if (context.mounted) {
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delivery completed')));
+		}
+	}
+
+	Future<void> _promptAssignCourier(BuildContext context, Order o, OrderService s) async {
+		final controller = TextEditingController();
+		final courier = await showDialog<String>(
+			context: context,
+			builder: (context) => AlertDialog(
+				title: const Text('Assign courier'),
+				content: TextField(controller: controller, decoration: const InputDecoration(hintText: 'Courier UID or phone')), 
+				actions: [
+					TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+					FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Assign')),
+				],
+			),
+		);
+		if (courier == null || courier.isEmpty) return;
+		await s.updateStatus(orderId: o.id, status: OrderStatus.assigned, deliveryId: courier);
+		if (context.mounted) {
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Courier assigned')));
 		}
 	}
 }
