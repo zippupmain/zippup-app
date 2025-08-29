@@ -98,15 +98,15 @@ class _ApprovedHub extends StatelessWidget {
 											if (context.mounted) context.push('/hub/transport');
 											return;
 										}
-										if (category == 'grocery' || category == 'groceries' || category == 'grocery store') {
+										if (category == 'grocery' || category == 'groceries') {
 											if (context.mounted) context.push('/hub/grocery');
 											return;
 										}
-										if (category == 'hire' || category == 'services' || category == 'auto') {
+										if (category == 'hire' || category == 'services') {
 											if (context.mounted) context.push('/hub/hire');
 											return;
 										}
-										if (category == 'emergency' || category == 'ambulance' || category == 'fire' || category == 'security' || category == 'towing' || category == 'roadside') {
+										if (category == 'emergency' || category == 'ambulance' || category == 'fire' || category == 'security' || category == 'towing') {
 											if (context.mounted) context.push('/hub/emergency');
 											return;
 										}
@@ -116,6 +116,18 @@ class _ApprovedHub extends StatelessWidget {
 										}
 										if (category == 'personal' || category == 'nails' || category == 'hair' || category == 'massage' || category == 'pedicure' || category == 'makeups') {
 											if (context.mounted) context.push('/hub/personal');
+											return;
+										}
+										if (category == 'rentals' || category == 'vehicle' || category == 'houses' || category == 'other rentals') {
+											if (context.mounted) context.push('/hub/rentals');
+											return;
+										}
+										if (category == 'marketplace') {
+											if (context.mounted) context.push('/hub/marketplace-provider');
+											return;
+										}
+										if (category == 'others' || category == 'events' || category == 'tickets' || category == 'tutors') {
+											if (context.mounted) context.push('/hub/others-provider');
 											return;
 										}
 										// Default to generic orders for now

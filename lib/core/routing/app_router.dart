@@ -69,6 +69,9 @@ import 'package:zippup/features/emergency/presentation/emergency_provider_dashbo
 import 'package:zippup/features/personal/presentation/personal_provider_dashboard_screen.dart' as personaldash;
 import 'package:zippup/features/grocery/presentation/grocery_provider_dashboard_screen.dart' as grocerydash;
 import 'package:zippup/features/moving/presentation/moving_provider_dashboard_screen.dart' as movingdash;
+import 'package:zippup/features/rentals/presentation/rentals_provider_dashboard_screen.dart' as rentalsdash;
+import 'package:zippup/features/marketplace/presentation/marketplace_provider_dashboard_screen.dart' as mkdash;
+import 'package:zippup/features/others/presentation/others_provider_dashboard_screen.dart' as othersdash;
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -423,6 +426,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/hub/moving',
         name: 'movingProviderDashboard',
         builder: (context, state) => const movingdash.MovingProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/rentals',
+        name: 'rentalsProviderDashboard',
+        builder: (context, state) => const rentalsdash.RentalsProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/marketplace-provider',
+        name: 'marketplaceProviderDashboard',
+        builder: (context, state) => const mkdash.MarketplaceProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/others-provider',
+        name: 'othersProviderDashboard',
+        builder: (context, state) => const othersdash.OthersProviderDashboardScreen(),
       ),
       GoRoute(
         path: '/providers',
