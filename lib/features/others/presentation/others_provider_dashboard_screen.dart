@@ -78,7 +78,7 @@ class _OthersProviderDashboardScreenState extends State<OthersProviderDashboardS
 						]),
 						const SizedBox(height: 16),
 						// Could list existing items later
-					])) ,
+					])),
 					// Analytics
 					FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
 						future: _db.collection('orders').where('providerId', isEqualTo: uid).get(const GetOptions(source: Source.server)),
