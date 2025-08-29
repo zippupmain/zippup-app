@@ -93,7 +93,10 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 	Widget build(BuildContext context) {
 		if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 		return Scaffold(
-			appBar: AppBar(title: const Text('Provider Hub'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]),
+			appBar: AppBar(title: const Text('Provider Hub'), actions: [
+				IconButton(icon: const Icon(Icons.home_outlined), onPressed: () => context.go('/')),
+				IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
+			]),
 			body: !_isProviderMode
 				? _BecomeProvider()
 				: ListView(children: [

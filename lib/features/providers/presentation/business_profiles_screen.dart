@@ -21,7 +21,10 @@ class BusinessProfilesScreen extends StatelessWidget {
 			);
 		}
 		// BYPASS KYC for testing: always show approved hub
-		return Scaffold(appBar: AppBar(title: const Text('Business profiles'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]), body: _ApprovedHub(uid: uid));
+		return Scaffold(appBar: AppBar(title: const Text('Business profiles'), actions: [
+			IconButton(icon: const Icon(Icons.home_outlined), onPressed: () => context.go('/')),
+			IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
+		]), body: _ApprovedHub(uid: uid));
 	}
 }
 

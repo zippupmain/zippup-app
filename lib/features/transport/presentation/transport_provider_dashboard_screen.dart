@@ -63,7 +63,10 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 	Widget build(BuildContext context) {
 		final uid = _auth.currentUser?.uid ?? '';
 		return Scaffold(
-			appBar: AppBar(title: const Text('Transport Provider'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]),
+			appBar: AppBar(title: const Text('Transport Provider'), actions: [
+				IconButton(icon: const Icon(Icons.home_outlined), onPressed: () => context.go('/')),
+				IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
+			]),
 			body: Column(children: [
 				Padding(
 					padding: const EdgeInsets.all(12),
@@ -136,7 +139,10 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 	List<Widget> _actionsFor(Ride r) {
 		switch (r.status) {
 			case RideStatus.requested:
-				return [FilledButton(onPressed: () => _updateRide(r.id, RideStatus.accepted), child: const Text('Accept'))];
+				return [
+					FilledButton(onPressed: () => _updateRide(r.id, RideStatus.accepted), child: const Text('Accept')),
+					TextButton(onPressed: () => _db.collection('rides').doc(r.id).set({ 'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp() }, SetOptions(merge: true)), child: const Text('Decline')),
+				];
 			case RideStatus.accepted:
 				return [TextButton(onPressed: () => _updateRide(r.id, RideStatus.arriving), child: const Text('Arriving'))];
 			case RideStatus.arriving:
