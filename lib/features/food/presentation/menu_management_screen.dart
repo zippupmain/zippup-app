@@ -75,7 +75,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
 		setState(() => _saving = true);
 		try {
 			String? url;
-			if (_imageBytes != null || _image != null) {
+			if (_imageBytes != null) {
 				final ref = FirebaseStorage.instance.ref('vendors/$vendorId/menu/${DateTime.now().millisecondsSinceEpoch}.jpg');
 				if (_imageBytes != null) { await ref.putData(_imageBytes!, SettableMetadata(contentType: 'image/jpeg')); }
 				url = await ref.getDownloadURL();
