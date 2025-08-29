@@ -243,6 +243,82 @@ exports.onOrderStatusChange = functions.firestore.document('orders/{orderId}').o
 	return null;
 });
 
+// When a food/grocery order is dispatched without a deliveryId, auto fan-out to delivery couriers
+exports.onOrderDispatchedFanout = functions.firestore.document('orders/{orderId}').onUpdate(async (change, context) => {
+  const before = change.before.data() || {};
+  const after = change.after.data() || {};
+  if (before.status === after.status) return null;
+  if (after.status !== 'dispatched') return null;
+  if (after.deliveryId) return null; // already assigned by vendor
+  const providerId = after.providerId;
+  if (!providerId) return null;
+
+  // Resolve pickup coordinates from provider profile or vendor doc
+  let plat = null, plng = null;
+  try {
+    const profSnap = await admin.firestore().collection('provider_profiles')
+      .where('userId', '==', providerId)
+      .limit(1)
+      .get();
+    if (!profSnap.empty) {
+      const p = profSnap.docs[0].data();
+      if (p && p.lat != null && p.lng != null) { plat = Number(p.lat); plng = Number(p.lng); }
+    }
+  } catch(_) {}
+  if (plat == null || plng == null) {
+    try {
+      const vendorDoc = await admin.firestore().collection('vendors').doc(providerId).get();
+      const v = vendorDoc.exists ? vendorDoc.data() : {};
+      if (v && v.lat != null && v.lng != null) { plat = Number(v.lat); plng = Number(v.lng); }
+    } catch(_) {}
+  }
+
+  // Find online delivery couriers
+  let candidates = [];
+  try {
+    const baseQuery = admin.firestore().collection('provider_profiles')
+      .where('service', '==', 'delivery')
+      .where('status', '==', 'active')
+      .where('availabilityOnline', '==', true);
+
+    if (plat != null && plng != null) {
+      // Geohash proximity search similar to rides
+      const precisions = [6, 5, 4];
+      for (const prec of precisions) {
+        const prefix = encodeGeohash(plat, plng, prec);
+        const snap = await baseQuery
+          .where('geohash', '>=', prefix)
+          .where('geohash', '<=', prefix + '\uf8ff')
+          .limit(200)
+          .get();
+        candidates = snap.docs
+          .map(d => ({ id: d.id, userId: d.get('userId'), lat: d.get('lat'), lng: d.get('lng') }))
+          .map(c => ({ ...c, dist: (c.lat != null && c.lng != null) ? haversineKm(plat, plng, Number(c.lat), Number(c.lng)) : 99999 }))
+          .sort((a, b) => a.dist - b.dist);
+        if (candidates.length > 0) break;
+      }
+    }
+    if (candidates.length === 0) {
+      const snap = await baseQuery.limit(50).get();
+      candidates = snap.docs.map(d => ({ id: d.id, userId: d.get('userId') }));
+    }
+  } catch (e) {
+    console.error('delivery fanout query error', e);
+  }
+
+  if (candidates.length === 0) {
+    await change.after.ref.set({ noCourierOnline: true }, { merge: true });
+    return null;
+  }
+
+  const courier = candidates[0];
+  await change.after.ref.set({ deliveryId: courier.userId, status: 'assigned', assignedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+  try {
+    await notifyParties([courier.userId], { title: 'New delivery', body: 'A delivery has been assigned to you' }, { type: 'order', orderId: context.params.orderId, status: 'assigned' });
+  } catch(_) {}
+  return null;
+});
+
 exports.onRideStatusChange = functions.firestore.document('rides/{rideId}').onUpdate(async (change, context) => {
 	const before = change.before.data();
 	const after = change.after.data();
