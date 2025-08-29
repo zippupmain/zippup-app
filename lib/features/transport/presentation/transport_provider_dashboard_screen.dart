@@ -95,6 +95,7 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 						},
 					),
 				),
+				),
 				body: Column(children: [
 					Padding(
 						padding: const EdgeInsets.all(12),
