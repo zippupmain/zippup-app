@@ -112,7 +112,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 								OrderStatus.accepted,
 								OrderStatus.enroute,
 								OrderStatus.arrived,
-								OrderStatus.delivered,
+								OrderStatus.completed,
 								OrderStatus.cancelled,
 							].map((s) => Padding(
 								padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -205,7 +205,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 			case OrderStatus.enroute:
 				return [TextButton(onPressed: () => _updateOrder(o.id, OrderStatus.arrived), child: const Text('Arrived'))];
 			case OrderStatus.arrived:
-				return [FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.delivered), child: const Text('Complete'))];
+				return [FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.completed), child: const Text('Complete'))];
 			default:
 				return const [];
 		}

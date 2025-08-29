@@ -81,7 +81,7 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 						scrollDirection: Axis.horizontal,
 						child: Row(children: [
 							FilterChip(label: const Text('All'), selected: _filter == null, onSelected: (_) => setState(() => _filter = null)),
-							...['requested','accepted','assigned','enroute','arrived','completed','cancelled'].map((s) => Padding(
+							...['requested','accepted','assigned','enroute','arrived','delivered','cancelled'].map((s) => Padding(
 								padding: const EdgeInsets.symmetric(horizontal: 4),
 								child: FilterChip(label: Text(s), selected: _filter == s, onSelected: (_) => setState(() => _filter = s)),
 							)),
