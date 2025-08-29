@@ -6,6 +6,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
+import 'package:zippup/core/config/flags_service.dart';
 
 class CreateServiceProfileScreen extends StatefulWidget {
 	final String? profileId;
@@ -32,6 +33,10 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	Uint8List? _trafficRegisterBytes;
 	Uint8List? _operationalLicenseBytes; // food/grocery
 	bool _inspectionRequired = false; // admin-only flag (prepared)
+
+	// Public images
+	Uint8List? _publicImageBytes;
+	Uint8List? _bannerImageBytes;
 
 	final Map<String, List<String>> _cats = const {
 		'transport': ['Taxi','Bike','Tricycle','Bus','Courier','Driver'],
@@ -89,6 +94,23 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		]);
 	}
 
+	Widget _publicImagesSection() {
+		return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+			const Divider(),
+			const Text('Public profile images', style: TextStyle(fontWeight: FontWeight.w600)),
+			const SizedBox(height: 8),
+			Row(children: [
+				Expanded(child: OutlinedButton.icon(onPressed: () async { final b = await _pickImage(); if (b != null) setState(() => _publicImageBytes = b); }, icon: const Icon(Icons.account_circle), label: Text(_publicImageBytes == null ? 'Upload public image / logo' : 'Public image selected'))),
+			]),
+			if (_publicImageBytes != null) Padding(padding: const EdgeInsets.only(top: 8), child: Container(height: 80, color: Colors.black12, child: const Center(child: Icon(Icons.image)))) ,
+			const SizedBox(height: 8),
+			Row(children: [
+				Expanded(child: OutlinedButton.icon(onPressed: () async { final b = await _pickImage(); if (b != null) setState(() => _bannerImageBytes = b); }, icon: const Icon(Icons.photo_size_select_large), label: Text(_bannerImageBytes == null ? 'Upload banner / cover' : 'Banner selected'))),
+			]),
+			if (_bannerImageBytes != null) Padding(padding: const EdgeInsets.only(top: 8), child: Container(height: 80, color: Colors.black12, child: const Center(child: Icon(Icons.panorama)))) ,
+		]);
+	}
+
 	Future<void> _save() async {
 		setState(() => _saving = true);
 		try {
@@ -100,6 +122,21 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			final uid = user.uid;
 			final nowIso = DateTime.now().toIso8601String();
 			final service = (_category ?? 'transport');
+			final bool bypass = await FlagsService.instance.bypassKyc();
+			// Upload KYC files
+			final storage = FirebaseStorage.instance;
+			Future<String> _put(String path, String name, Uint8List bytes) async {
+				final ref = storage.ref('$path/${DateTime.now().millisecondsSinceEpoch}_$name.jpg');
+				await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+				return await ref.getDownloadURL();
+			}
+
+			// Public images upload first so URLs are available for both docs
+			String? publicImageUrl;
+			String? bannerUrl;
+			if (_publicImageBytes != null) publicImageUrl = await _put('public/$uid', 'public_image', _publicImageBytes!);
+			if (_bannerImageBytes != null) bannerUrl = await _put('public/$uid', 'banner', _bannerImageBytes!);
+
 			// Write business profile (for admin management)
 			await FirebaseFirestore.instance.collection('business_profiles').doc(uid).collection('profiles').add({
 				'title': _title.text.trim(),
@@ -109,25 +146,22 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				'type': _type,
 				'status': 'active',
 				'createdAt': nowIso,
+				'publicImageUrl': publicImageUrl,
+				'bannerUrl': bannerUrl,
+				'kycBypassed': bypass,
 			});
 			// Upload KYC files
-			final storage = FirebaseStorage.instance;
 			final uploads = <String, String>{};
-			Future<String> _put(String name, Uint8List bytes) async {
-				final ref = storage.ref('kyc/$uid/${DateTime.now().millisecondsSinceEpoch}_$name.jpg');
-				await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
-				return await ref.getDownloadURL();
-			}
-			if (_driverLicenseBytes != null) uploads['driverLicenseUrl'] = await _put('driver_license', _driverLicenseBytes!);
-			if (_vehiclePapersBytes != null) uploads['vehiclePapersUrl'] = await _put('vehicle_papers', _vehiclePapersBytes!);
-			if (_trafficRegisterBytes != null) uploads['trafficRegisterUrl'] = await _put('traffic_register', _trafficRegisterBytes!);
+			if (_driverLicenseBytes != null) uploads['driverLicenseUrl'] = await _put('kyc/$uid', 'driver_license', _driverLicenseBytes!);
+			if (_vehiclePapersBytes != null) uploads['vehiclePapersUrl'] = await _put('kyc/$uid', 'vehicle_papers', _vehiclePapersBytes!);
+			if (_trafficRegisterBytes != null) uploads['trafficRegisterUrl'] = await _put('kyc/$uid', 'traffic_register', _trafficRegisterBytes!);
 			final vehiclePhotoUrls = <String>[];
-			for (final b in _vehiclePhotos360) { vehiclePhotoUrls.add(await _put('vehicle_360', b)); }
-			if (_operationalLicenseBytes != null) uploads['operationalLicenseUrl'] = await _put('operational_license', _operationalLicenseBytes!);
+			for (final b in _vehiclePhotos360) { vehiclePhotoUrls.add(await _put('kyc/$uid', 'vehicle_360', b)); }
+			if (_operationalLicenseBytes != null) uploads['operationalLicenseUrl'] = await _put('kyc/$uid', 'operational_license', _operationalLicenseBytes!);
 
 			final catLower = (service).toLowerCase();
 			final requiresAdmin = ['transport','moving','emergency','food','grocery'].contains(catLower);
-			final initialStatus = requiresAdmin ? 'pending_review' : 'active';
+			final initialStatus = (requiresAdmin && !bypass) ? 'pending_review' : 'active';
 
 			// Create provider profile for Provider Hub
 			try {
@@ -146,6 +180,8 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						'category': _category,
 						'subcategory': _subcategory,
 						'type': _type,
+						'publicImageUrl': publicImageUrl,
+						'bannerUrl': bannerUrl,
 						'publicDetails': {
 							'driverName': _driverName.text.trim().isEmpty ? null : _driverName.text.trim(),
 							'plateNumber': _plateNumber.text.trim().isEmpty ? null : _plateNumber.text.trim(),
@@ -153,7 +189,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						},
 						'adminDocs': uploads,
 						'inspectionRequired': _inspectionRequired,
-						'kycStatus': requiresAdmin ? 'submitted' : 'n/a',
+						'kycStatus': requiresAdmin ? (bypass ? 'bypassed' : 'submitted') : 'n/a',
 					},
 				});
 			} catch (_) {}
@@ -213,6 +249,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				TextField(controller: _title, decoration: const InputDecoration(labelText: 'Business title')),
 				TextField(controller: _desc, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
 				const SizedBox(height: 12),
+				_publicImagesSection(),
 				_kycSection(),
 				FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving...' : 'Create')),
 			]),
