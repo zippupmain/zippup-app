@@ -77,23 +77,42 @@ class _MarketplaceProviderDashboardScreenState extends State<MarketplaceProvider
 							var docs = s.data!.docs;
 							if (_filter != null) docs = docs.where((e) => (e.data()['status'] ?? '') == _filter!.name).toList();
 							if (docs.isEmpty) return const Center(child: Text('No orders'));
-							return ListView.separated(
-								itemCount: docs.length,
-								separatorBuilder: (_, __) => const Divider(height: 1),
-								itemBuilder: (context, i) {
-									final id = docs[i].id; final d = docs[i].data();
-									return ListTile(
-										title: Text('Order ${id.substring(0,6)} • ${(d['status'] ?? '').toString()}'),
-										subtitle: Text('To: ${(d['buyerId'] ?? '').toString()}'),
-										trailing: Wrap(spacing: 6, children: [
-											if ((d['status'] ?? '') == 'pending') TextButton(onPressed: () => _db.collection('orders').doc(id).set({'status': 'accepted'}, SetOptions(merge: true)), child: const Text('Accept')),
-											if ((d['status'] ?? '') == 'dispatched') TextButton(onPressed: () => _promptAssignCourier(context, id), child: const Text('Assign courier')),
-											if ((d['status'] ?? '') == 'assigned') TextButton(onPressed: () => _db.collection('orders').doc(id).set({'status': 'enroute'}, SetOptions(merge: true)), child: const Text('Enroute')),
-											if ((d['status'] ?? '') == 'enroute') TextButton(onPressed: () => _db.collection('orders').doc(id).set({'status': 'arrived'}, SetOptions(merge: true)), child: const Text('Arrived')),
-										]),
+							return Column(children: [
+								SingleChildScrollView(
+									scrollDirection: Axis.horizontal,
+									child: Row(children: [
+										FilterChip(label: const Text('All'), selected: _filter == null, onSelected: (_) => setState(() => _filter = null)),
+										...[
+											OrderStatus.pending,
+											OrderStatus.dispatched,
+											OrderStatus.assigned,
+											OrderStatus.enroute,
+											OrderStatus.arrived,
+											OrderStatus.delivered,
+										].map((s) => Padding(
+											padding: const EdgeInsets.symmetric(horizontal: 4),
+											child: FilterChip(label: Text(s.name), selected: _filter == s, onSelected: (_) => setState(() => _filter = s)),
+										)),
+									]),
+								),
+								Expanded(child: ListView.separated(
+									itemCount: docs.length,
+									separatorBuilder: (_, __) => const Divider(height: 1),
+									itemBuilder: (context, i) {
+										final id = docs[i].id; final d = docs[i].data();
+										return ListTile(
+											title: Text('Order ${id.substring(0,6)} • ${(d['status'] ?? '').toString()}'),
+											subtitle: Text('To: ${(d['buyerId'] ?? '').toString()}'),
+											trailing: Wrap(spacing: 6, children: [
+												if ((d['status'] ?? '') == 'pending') TextButton(onPressed: () => _db.collection('orders').doc(id).set({'status': 'accepted'}, SetOptions(merge: true)), child: const Text('Accept')),
+												if ((d['status'] ?? '') == 'dispatched') TextButton(onPressed: () => _promptAssignCourier(context, id), child: const Text('Assign courier')),
+												if ((d['status'] ?? '') == 'assigned') TextButton(onPressed: () => _db.collection('orders').doc(id).set({'status': 'enroute'}, SetOptions(merge: true)), child: const Text('Enroute')),
+												if ((d['status'] ?? '') == 'enroute') TextButton(onPressed: () => _db.collection('orders').doc(id).set({'status': 'arrived'}, SetOptions(merge: true)), child: const Text('Arrived')),
+									]),
 									);
-								},
-							);
+									},
+								))
+							]);
 						},
 					),
 					// Listings
