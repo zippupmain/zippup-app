@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
 class CreateServiceProfileScreen extends StatefulWidget {
-	const CreateServiceProfileScreen({super.key});
+	final String? profileId;
+	const CreateServiceProfileScreen({super.key, this.profileId});
 	@override
 	State<CreateServiceProfileScreen> createState() => _CreateServiceProfileScreenState();
 }

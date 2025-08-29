@@ -105,10 +105,9 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 						]),
 					),
 					const Divider(),
-					ListTile(leading: const Icon(Icons.inbox), title: const Text('Incoming requests'), subtitle: const Text('Requests routed to you'), onTap: () => context.push('/providers')), // reuse business hub for now
-					ListTile(leading: const Icon(Icons.list_alt), title: const Text('Active jobs')), // TODO wire list
-					ListTile(leading: const Icon(Icons.bar_chart), title: const Text('Analytics')), // TODO wire charts
-					ListTile(leading: const Icon(Icons.settings_suggest), title: const Text('Manage service profile'), onTap: () => context.push('/providers')),
+					ListTile(leading: const Icon(Icons.inbox), title: const Text('Incoming & Active orders'), subtitle: const Text('Requests routed to you'), onTap: () => context.push('/hub/orders')),
+					ListTile(leading: const Icon(Icons.bar_chart), title: const Text('Analytics'), onTap: () => context.push('/hub/analytics')),
+					ListTile(leading: const Icon(Icons.settings_suggest), title: const Text('Manage service profiles'), onTap: () => context.push('/providers')),
 					const SizedBox(height: 24),
 				]),
 		);

@@ -9,9 +9,6 @@ import 'package:zippup/features/transport/presentation/transport_screen.dart';
 import 'package:zippup/features/food/presentation/food_screen.dart';
 import 'package:zippup/features/hire/presentation/hire_screen.dart';
 import 'package:zippup/features/digital/presentation/digital_screen.dart';
-import 'package:zippup/features/digital/presentation/airtime_screen.dart';
-import 'package:zippup/features/digital/presentation/data_screen.dart';
-import 'package:zippup/features/digital/presentation/bills_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_list_screen.dart';
 import 'package:zippup/features/auth/presentation/auth_gate.dart';
 import 'package:zippup/features/cart/presentation/cart_screen.dart';
@@ -61,6 +58,8 @@ import 'package:zippup/features/providers/presentation/kyc_onboarding_screen.dar
 import 'package:zippup/features/providers/presentation/business_profiles_screen.dart';
 import 'package:zippup/features/providers/presentation/create_service_profile_screen.dart';
 import 'package:zippup/features/providers/presentation/provider_hub_screen.dart';
+import 'package:zippup/features/providers/presentation/provider_orders_screen.dart';
+import 'package:zippup/features/providers/presentation/provider_analytics_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -109,21 +108,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					path: '/digital',
 					name: 'digital',
 					builder: (context, state) => const DigitalScreen(),
-				),
-				GoRoute(
-					path: '/digital/airtime',
-					name: 'digitalAirtime',
-					builder: (context, state) => const AirtimeScreen(),
-				),
-				GoRoute(
-					path: '/digital/data',
-					name: 'digitalData',
-					builder: (context, state) => const DataScreen(),
-				),
-				GoRoute(
-					path: '/digital/bills',
-					name: 'digitalBills',
-					builder: (context, state) => const BillsScreen(),
 				),
 				GoRoute(
 					path: '/courier',
@@ -377,6 +361,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ProviderHubScreen(),
       ),
       GoRoute(
+        path: '/hub/orders',
+        name: 'providerOrders',
+        builder: (context, state) => const ProviderOrdersScreen(),
+      ),
+      GoRoute(
+        path: '/hub/analytics',
+        name: 'providerAnalytics',
+        builder: (context, state) => const ProviderAnalyticsScreen(),
+      ),
+      GoRoute(
         path: '/providers',
         name: 'businessProfiles',
         builder: (context, state) => const BusinessProfilesScreen(),
@@ -384,7 +378,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/providers/create',
         name: 'createServiceProfile',
-        builder: (context, state) => const CreateServiceProfileScreen(),
+        builder: (context, state) => CreateServiceProfileScreen(profileId: state.uri.queryParameters['profileId']),
       ),
     ],
   );

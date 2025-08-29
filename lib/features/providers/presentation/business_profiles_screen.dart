@@ -75,10 +75,19 @@ class _ApprovedHub extends StatelessWidget {
 						),
 						...docs.map((d) {
 							final p = d.data();
-							return ListTile(
-								title: Text(p['title']?.toString() ?? 'Untitled'),
-								subtitle: Text('${p['category'] ?? ''} • ${p['subcategory'] ?? ''} • ${p['type'] ?? 'individual'} • ${p['status'] ?? 'draft'}'),
-								trailing: IconButton(icon: const Icon(Icons.edit), onPressed: () => context.push('/providers/create?profileId=${d.id}')),
+							return Dismissible(
+								key: ValueKey(d.id),
+								background: Container(color: Colors.redAccent),
+								direction: DismissDirection.endToStart,
+								onDismissed: (_) async {
+									await d.reference.delete();
+									ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile deleted')));
+								},
+								child: ListTile(
+									title: Text(p['title']?.toString() ?? 'Untitled'),
+									subtitle: Text('${p['category'] ?? ''} • ${p['subcategory'] ?? ''} • ${p['type'] ?? 'individual'} • ${p['status'] ?? 'draft'}'),
+									trailing: IconButton(icon: const Icon(Icons.edit), onPressed: () => context.push('/providers/create?profileId=${d.id}')),
+								),
 							);
 						}),
 					],
