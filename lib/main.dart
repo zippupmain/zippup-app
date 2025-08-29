@@ -13,6 +13,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'dart:js' as js; // disabled for wasm compatibility
 import 'dart:async';
 import 'dart:ui' as ui;
+import 'package:zippup/features/notifications/widgets/global_incoming_listener.dart';
 
 Future<void> main() async {
 	WidgetsFlutterBinding.ensureInitialized();
@@ -146,8 +147,16 @@ class _BootstrapAppState extends State<_BootstrapApp> {
 						),
 					);
 				}
-				return const ZippUpApp();
+				return const GlobalIncomingApp();
 			},
 		);
+	}
+}
+
+class GlobalIncomingApp extends StatelessWidget {
+	const GlobalIncomingApp({super.key});
+	@override
+	Widget build(BuildContext context) {
+		return GlobalIncomingListener(child: const ZippUpApp());
 	}
 }

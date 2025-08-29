@@ -184,6 +184,14 @@ class _HireScreenState extends State<HireScreen> {
 												final pid = allDocs[i].id;
 												final dist = _distanceText(p);
 												return ListTile(
+													leading: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+														future: FirebaseFirestore.instance.collection('provider_profiles').where('userId', isEqualTo: pid).limit(1).get(const GetOptions(source: Source.server)).then((s) => s.docs.isNotEmpty ? s.docs.first.reference.get() : Future.value(null)),
+														builder: (context, profSnap) {
+															String? img;
+															try { final data = profSnap.data?.data() ?? {}; img = ((data['metadata'] as Map?)?['publicImageUrl'] ?? '').toString(); } catch (_) {}
+															return CircleAvatar(backgroundImage: (img != null && img!.isNotEmpty) ? NetworkImage(img!) : null, child: (img == null || img!.isEmpty) ? const Icon(Icons.business) : null);
+														},
+													),
 													title: Text(p['name'] ?? 'Provider', style: const TextStyle(color: Colors.black)),
 													subtitle: Text('Rating: ${(p['rating'] ?? 0).toString()} • Fee: ₦${(p['fee'] ?? 0).toString()}${dist.isNotEmpty ? ' • $dist' : ''}', style: const TextStyle(color: Colors.black54)),
 													trailing: Wrap(spacing: 8, children: [

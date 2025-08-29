@@ -145,6 +145,14 @@ class _EmergencyProvidersScreenState extends State<EmergencyProvidersScreen> {
 									final id = docs[i].id;
 									final dist = _distanceText(p);
 									return ListTile(
+										leading: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+											future: FirebaseFirestore.instance.collection('provider_profiles').where('userId', isEqualTo: id).limit(1).get(const GetOptions(source: Source.server)).then((s) => s.docs.isNotEmpty ? s.docs.first.reference.get() : Future.value(null)),
+											builder: (context, profSnap) {
+												String? img;
+												try { final data = profSnap.data?.data() ?? {}; img = ((data['metadata'] as Map?)?['publicImageUrl'] ?? '').toString(); } catch (_) {}
+												return CircleAvatar(backgroundImage: (img != null && img!.isNotEmpty) ? NetworkImage(img!) : null, child: (img == null || img!.isEmpty) ? const Icon(Icons.business) : null);
+											},
+										),
 										title: Text(p['name'] ?? 'Provider'),
 										subtitle: Text([p['title']?.toString() ?? '', if (dist.isNotEmpty) dist].where((e) => e.isNotEmpty).join(' • ')),
 										trailing: FilledButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: id))), child: const Text('View')),
