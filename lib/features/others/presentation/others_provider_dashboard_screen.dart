@@ -70,15 +70,20 @@ class _OthersProviderDashboardScreenState extends State<OthersProviderDashboardS
 						},
 					),
 					// Manage
-					SingleChildScrollView(child: Padding(padding: const EdgeInsets.all(12), child: Column(children: [
-						Row(children: [
-							FilledButton.icon(onPressed: _openAddEvent, icon: const Icon(Icons.event), label: const Text('Add event/tickets')),
-							const SizedBox(width: 8),
-							FilledButton.icon(onPressed: _openAddTutor, icon: const Icon(Icons.school), label: const Text('Add tutor service')),
-						]),
-						const SizedBox(height: 16),
-						// Could list existing items later
-					])),
+					SingleChildScrollView(
+						child: Padding(
+							padding: const EdgeInsets.all(12),
+							child: Column(children: [
+								Row(children: [
+									FilledButton.icon(onPressed: _openAddEvent, icon: const Icon(Icons.event), label: const Text('Add event/tickets')),
+									const SizedBox(width: 8),
+									FilledButton.icon(onPressed: _openAddTutor, icon: const Icon(Icons.school), label: const Text('Add tutor service')),
+								]),
+								const SizedBox(height: 16),
+								// Could list existing items later
+							]),
+						),
+					),
 					// Analytics
 					FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
 						future: _db.collection('orders').where('providerId', isEqualTo: uid).get(const GetOptions(source: Source.server)),
