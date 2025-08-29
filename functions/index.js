@@ -510,6 +510,35 @@ exports.onUserLocationUpdate = functions.firestore.document('users/{uid}').onUpd
   return null;
 });
 
+// On delivered: settle payouts to vendor and courier wallets
+exports.onOrderDeliveredSettle = functions.firestore.document('orders/{orderId}').onUpdate(async (change, context) => {
+  const before = change.before.data() || {};
+  const after = change.after.data() || {};
+  if (before.status === after.status) return null;
+  if (after.status !== 'delivered') return null;
+  const vendorId = after.providerId;
+  const courierId = after.deliveryId || null;
+  const price = Number(after.price || 0);
+  const deliveryFee = Number(after.deliveryFee || Math.round(price * 0.15));
+  const platformFee = Number(after.platformFee || Math.round(price * 0.10));
+  const vendorShare = Math.max(0, price - deliveryFee - platformFee);
+  const now = admin.firestore.FieldValue.serverTimestamp();
+
+  const batch = admin.firestore().batch();
+  if (vendorId) {
+    const w = admin.firestore().collection('wallets').doc(vendorId);
+    batch.set(w, { balance: admin.firestore.FieldValue.increment(vendorShare) }, { merge: true });
+    batch.set(w.collection('tx').doc(), { type: 'credit', ref: context.params.orderId, amount: vendorShare, note: 'Order payout', createdAt: now }, { merge: true });
+  }
+  if (courierId && deliveryFee > 0) {
+    const w = admin.firestore().collection('wallets').doc(courierId);
+    batch.set(w, { balance: admin.firestore.FieldValue.increment(deliveryFee) }, { merge: true });
+    batch.set(w.collection('tx').doc(), { type: 'credit', ref: context.params.orderId, amount: deliveryFee, note: 'Delivery payout', createdAt: now }, { merge: true });
+  }
+  await batch.commit();
+  return null;
+});
+
 // Role & Provider functions
 exports.switchActiveRole = functions.region('us-central1').https.onCall(async (data, context) => {
 	const uid = context.auth && context.auth.uid;

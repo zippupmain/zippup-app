@@ -232,6 +232,8 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
 							child: Column(children: [
 								StatusTimeline(steps: steps, currentIndex: idx),
 								if (_etaMinutes != null) Padding(padding: const EdgeInsets.only(top: 8.0), child: Text('ETA: $_etaMinutes min')),
+								if ((order.category == OrderCategory.food || order.category == OrderCategory.groceries) && FirebaseAuth.instance.currentUser?.uid == order.buyerId && data['deliveryCode'] != null && (order.status.index < OrderStatus.delivered.index))
+									Padding(padding: const EdgeInsets.only(top: 8.0), child: Text('Your delivery code: ${data['deliveryCode']}', style: const TextStyle(fontWeight: FontWeight.bold))),
 								if (_cancelable(order)) Align(
 									alignment: Alignment.centerRight,
 									child: TextButton.icon(onPressed: () => _promptCancel(context, order), icon: const Icon(Icons.cancel_outlined), label: const Text('Cancel')),

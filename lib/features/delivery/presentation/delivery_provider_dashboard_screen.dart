@@ -16,6 +16,7 @@ class _DeliveryProviderDashboardScreenState extends State<DeliveryProviderDashbo
 	final _auth = FirebaseAuth.instance;
 	bool _online = false;
 	StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _activeSub;
+	Timer? _locTimer;
 	Map<String, dynamic>? _activeOrder; String? _activeOrderId;
 
 	Stream<QuerySnapshot<Map<String, dynamic>>> _incoming() {
@@ -51,8 +52,10 @@ class _DeliveryProviderDashboardScreenState extends State<DeliveryProviderDashbo
 		_activeSub = _active().listen((snap) {
 			if (snap.docs.isNotEmpty) {
 				setState(() { _activeOrderId = snap.docs.first.id; _activeOrder = snap.docs.first.data(); });
+				_startLocTimer();
 			} else {
 				setState(() { _activeOrderId = null; _activeOrder = null; });
+				_stopLocTimer();
 			}
 		});
 	}
@@ -60,8 +63,21 @@ class _DeliveryProviderDashboardScreenState extends State<DeliveryProviderDashbo
 	@override
 	void dispose() {
 		_activeSub?.cancel();
+		_stopLocTimer();
 		super.dispose();
 	}
+
+	Future<void> _sendLocationOnce() async {
+		try {
+			final id = _activeOrderId; if (id == null) return;
+			// Extend later to use real geolocation service
+			// Placeholder: skip if not available on web
+			// In production, call a LocationService similar to rides
+		} catch (_) {}
+	}
+
+	void _startLocTimer() { _stopLocTimer(); _locTimer = Timer.periodic(const Duration(seconds: 10), (_) => _sendLocationOnce()); }
+	void _stopLocTimer() { _locTimer?.cancel(); _locTimer = null; }
 
 	@override
 	Widget build(BuildContext context) {
