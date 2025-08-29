@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:zippup/common/models/chat_message.dart';
+import 'package:zippup/features/calls/services/call_service.dart';
 
 class ChatScreen extends StatefulWidget {
 	const ChatScreen({super.key, required this.threadId, required this.title});
@@ -13,6 +14,21 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
 	final _text = TextEditingController();
+	final _callService = CallService();
+	String? _callId;
+
+	Future<void> _startCall() async {
+		// In a real app, resolve the other party id from the thread document
+		final thread = await FirebaseFirestore.instance.collection('chats').doc(widget.threadId).get();
+		final participants = (thread.data()?['participants'] as List?)?.cast<String>() ?? const <String>[];
+		final myId = FirebaseAuth.instance.currentUser?.uid;
+		final calleeId = participants.firstWhere((p) => p != myId, orElse: () => '');
+		if (calleeId.isEmpty) return;
+		final id = await _callService.startCall(calleeId: calleeId, threadId: widget.threadId);
+		setState(() => _callId = id);
+		if (!mounted) return;
+		showDialog(context: context, barrierDismissible: false, builder: (_) => _CallDialog(callId: id, callService: _callService));
+	}
 
 	Stream<List<ChatMessage>> _stream() {
 		return FirebaseFirestore.instance
@@ -39,7 +55,7 @@ class _ChatScreenState extends State<ChatScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: Text(widget.title), actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.call))]),
+			appBar: AppBar(title: Text(widget.title), actions: [IconButton(onPressed: _startCall, icon: const Icon(Icons.call))]),
 			body: Column(
 				children: [
 					Expanded(
@@ -80,6 +96,29 @@ class _ChatScreenState extends State<ChatScreen> {
 					),
 				],
 			),
+		);
+	}
+}
+
+class _CallDialog extends StatefulWidget {
+	const _CallDialog({required this.callId, required this.callService});
+	final String callId;
+	final CallService callService;
+	@override
+	State<_CallDialog> createState() => _CallDialogState();
+}
+
+class _CallDialogState extends State<_CallDialog> {
+	@override
+	Widget build(BuildContext context) {
+		return AlertDialog(
+			title: const Text('In-app call'),
+			content: const Text('Ringing...'),
+			actions: [
+				TextButton(onPressed: () { widget.callService.busy(callId: widget.callId); Navigator.pop(context); }, child: const Text('Busy')),
+				TextButton(onPressed: () { widget.callService.decline(callId: widget.callId); Navigator.pop(context); }, child: const Text('Decline')),
+				FilledButton(onPressed: () { widget.callService.accept(callId: widget.callId); Navigator.pop(context); }, child: const Text('Accept')),
+			],
 		);
 	}
 }
