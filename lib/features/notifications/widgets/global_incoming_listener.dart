@@ -149,9 +149,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	}
 
 	bool _shouldShowHere() {
-		final loc = GoRouter.of(context).location;
-		// Avoid duplicate popups on dedicated dashboards that already handle overlays
-		if (loc.startsWith('/hub/')) return false;
+		// Show popups globally regardless of current page
 		return true;
 	}
 
@@ -172,6 +170,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 
 	Future<void> _acceptDelivery(String id) async {
 		await FirebaseFirestore.instance.collection('orders').doc(id).set({'status': 'enroute'}, SetOptions(merge: true));
+	}
+
+	Future<void> _updateMoving(String id, String status) async {
+		await FirebaseFirestore.instance.collection('moving_requests').doc(id).set({'status': status}, SetOptions(merge: true));
 	}
 
 	String _nextStatusForCategory(String c) {

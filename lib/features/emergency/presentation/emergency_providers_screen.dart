@@ -145,12 +145,17 @@ class _EmergencyProvidersScreenState extends State<EmergencyProvidersScreen> {
 									final id = docs[i].id;
 									final dist = _distanceText(p);
 									return ListTile(
-										leading: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-											future: FirebaseFirestore.instance.collection('provider_profiles').where('userId', isEqualTo: id).limit(1).get(const GetOptions(source: Source.server)).then((s) => s.docs.isNotEmpty ? s.docs.first.reference.get() : Future.value(null)),
+										leading: FutureBuilder<Map<String, dynamic>?>(
+											future: FirebaseFirestore.instance
+												.collection('provider_profiles')
+												.where('userId', isEqualTo: id)
+												.limit(1)
+												.get(const GetOptions(source: Source.server))
+												.then((s) => s.docs.isNotEmpty ? (s.docs.first.data()['metadata'] as Map<String, dynamic>?) : null),
 											builder: (context, profSnap) {
-												String? img;
-												try { final data = profSnap.data?.data() ?? {}; img = ((data['metadata'] as Map?)?['publicImageUrl'] ?? '').toString(); } catch (_) {}
-												return CircleAvatar(backgroundImage: (img != null && img!.isNotEmpty) ? NetworkImage(img!) : null, child: (img == null || img!.isEmpty) ? const Icon(Icons.business) : null);
+												final meta = profSnap.data;
+												final img = (meta?['publicImageUrl'] ?? '').toString();
+												return CircleAvatar(backgroundImage: img.isNotEmpty ? NetworkImage(img) : null, child: img.isEmpty ? const Icon(Icons.business) : null);
 											},
 										),
 										title: Text(p['name'] ?? 'Provider'),
