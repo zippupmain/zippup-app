@@ -66,10 +66,33 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 			appBar: AppBar(title: const Text('Transport Provider'), actions: [
 				IconButton(icon: const Icon(Icons.home_outlined), onPressed: () => context.go('/')),
 				IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
-			], bottom: TabBar(tabs: [
-				const Tab(icon: Icon(Icons.notifications_active), text: 'Incoming'),
-				const Tab(icon: Icon(Icons.list), text: 'Rides'),
-			]))),
+			], bottom: PreferredSize(
+				preferredSize: const Size.fromHeight(48),
+				child: StreamBuilder<List<Ride>>(
+					stream: _incomingStream,
+					builder: (context, s) {
+						final count = (s.data?.length ?? 0);
+						Widget iconWithBadge(IconData icon, int c) {
+							return Stack(clipBehavior: Clip.none, children: [
+								Icon(icon),
+								if (c > 0) Positioned(
+									right: -6, top: -4,
+									child: Container(
+										padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+										decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+										constraints: const BoxConstraints(minWidth: 16),
+										child: Text('$c', style: const TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
+									),
+								),
+							]);
+						}
+						return TabBar(tabs: [
+							Tab(icon: iconWithBadge(Icons.notifications_active, count), text: count > 0 ? 'Incoming ($count)' : 'Incoming'),
+							const Tab(icon: Icon(Icons.list), text: 'Rides'),
+						]);
+					},
+				),
+			))),
 			body: Column(children: [
 				Padding(
 					padding: const EdgeInsets.all(12),
