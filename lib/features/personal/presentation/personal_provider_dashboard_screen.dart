@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/common/models/order.dart';
+import 'package:zippup/features/providers/widgets/provider_header.dart';
 
 class PersonalProviderDashboardScreen extends StatefulWidget {
 	const PersonalProviderDashboardScreen({super.key});
@@ -95,6 +96,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 				),
 				),
 				body: Column(children: [
+					const ProviderHeader(service: 'personal'),
 					Padding(
 						padding: const EdgeInsets.all(12),
 						child: Row(children: [

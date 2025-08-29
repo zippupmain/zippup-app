@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/common/models/ride.dart';
+import 'package:zippup/features/providers/widgets/provider_header.dart';
 
 class TransportProviderDashboardScreen extends StatefulWidget {
 	const TransportProviderDashboardScreen({super.key});
@@ -97,6 +98,7 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 				),
 				),
 				body: Column(children: [
+					const ProviderHeader(service: 'transport'),
 					Padding(
 						padding: const EdgeInsets.all(12),
 						child: Row(children: [

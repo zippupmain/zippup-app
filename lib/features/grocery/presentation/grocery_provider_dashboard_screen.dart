@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/common/models/order.dart';
 import 'package:zippup/features/food/providers/order_service.dart';
+import 'package:zippup/features/providers/widgets/provider_header.dart';
 
 class GroceryProviderDashboardScreen extends StatefulWidget {
 	const GroceryProviderDashboardScreen({super.key});
@@ -92,6 +93,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 				),
 				),
 				body: Column(children: [
+					const ProviderHeader(service: 'grocery'),
 					Padding(
 						padding: const EdgeInsets.all(12),
 						child: Row(children: [
