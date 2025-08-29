@@ -9,25 +9,22 @@ class KitchenHoursScreen extends StatefulWidget {
 }
 
 class _KitchenHoursScreenState extends State<KitchenHoursScreen> {
-	final Map<String, TimeOfDayRange> _hours = {
-		'Mon': const TimeOfDayRange(start: TimeOfDay(hour: 8, minute: 0), end: TimeOfDay(hour: 20, minute: 0)),
-		'Tue': const TimeOfDayRange(start: TimeOfDay(hour: 8, minute: 0), end: TimeOfDay(hour: 20, minute: 0)),
-		'Wed': const TimeOfDayRange(start: TimeOfDay(hour: 8, minute: 0), end: TimeOfDay(hour: 20, minute: 0)),
-		'Thu': const TimeOfDayRange(start: TimeOfDay(hour: 8, minute: 0), end: TimeOfDay(hour: 20, minute: 0)),
-		'Fri': const TimeOfDayRange(start: TimeOfDay(hour: 8, minute: 0), end: TimeOfDay(hour: 22, minute: 0)),
-		'Sat': const TimeOfDayRange(start: TimeOfDay(hour: 9, minute: 0), end: TimeOfDay(hour: 22, minute: 0)),
-		'Sun': const TimeOfDayRange(start: TimeOfDay(hour: 10, minute: 0), end: TimeOfDay(hour: 20, minute: 0)),
+	final Map<String, Map<String, TimeOfDay>> _hours = {
+		'Mon': {'start': const TimeOfDay(hour: 8, minute: 0), 'end': const TimeOfDay(hour: 20, minute: 0)},
+		'Tue': {'start': const TimeOfDay(hour: 8, minute: 0), 'end': const TimeOfDay(hour: 20, minute: 0)},
+		'Wed': {'start': const TimeOfDay(hour: 8, minute: 0), 'end': const TimeOfDay(hour: 20, minute: 0)},
+		'Thu': {'start': const TimeOfDay(hour: 8, minute: 0), 'end': const TimeOfDay(hour: 20, minute: 0)},
+		'Fri': {'start': const TimeOfDay(hour: 8, minute: 0), 'end': const TimeOfDay(hour: 22, minute: 0)},
+		'Sat': {'start': const TimeOfDay(hour: 9, minute: 0), 'end': const TimeOfDay(hour: 22, minute: 0)},
+		'Sun': {'start': const TimeOfDay(hour: 10, minute: 0), 'end': const TimeOfDay(hour: 20, minute: 0)},
 	};
 	bool _saving = false;
 
 	Future<void> _pickTime(String day, bool isStart) async {
-		final initial = isStart ? _hours[day]!.start : _hours[day]!.end;
+		final initial = isStart ? _hours[day]!['start']! : _hours[day]!['end']!;
 		final res = await showTimePicker(context: context, initialTime: initial);
 		if (res != null) {
-			setState(() {
-				final r = _hours[day]!;
-				_hours[day] = TimeOfDayRange(start: isStart ? res : r.start, end: isStart ? r.end : res);
-			});
+			setState(() => _hours[day]![isStart ? 'start' : 'end'] = res);
 		}
 	}
 
@@ -36,7 +33,7 @@ class _KitchenHoursScreenState extends State<KitchenHoursScreen> {
 		try {
 			final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
 			if (uid.isEmpty) return;
-			final map = _hours.map((k, v) => MapEntry(k, {'start': _fmt(v.start), 'end': _fmt(v.end)}));
+			final map = _hours.map((k, v) => MapEntry(k, {'start': _fmt(v['start']!), 'end': _fmt(v['end']!)}));
 			await FirebaseFirestore.instance.collection('vendors').doc(uid).set({'hours': map}, SetOptions(merge: true));
 			if (mounted) Navigator.maybePop(context);
 		} finally {
@@ -56,7 +53,7 @@ class _KitchenHoursScreenState extends State<KitchenHoursScreen> {
 				children: _hours.entries.map((e) {
 					return ListTile(
 						title: Text(e.key),
-						subtitle: Text('${_fmt(e.value.start)} - ${_fmt(e.value.end)}'),
+						subtitle: Text('${_fmt(e.value['start']!)} - ${_fmt(e.value['end']!)}'),
 						trailing: Wrap(spacing: 8, children: [
 							OutlinedButton(onPressed: () => _pickTime(e.key, true), child: const Text('Start')),
 							OutlinedButton(onPressed: () => _pickTime(e.key, false), child: const Text('End')),

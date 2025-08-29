@@ -1,4 +1,3 @@
-import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,10 +13,10 @@ class MenuManagementScreen extends StatefulWidget {
 	State<MenuManagementScreen> createState() => _MenuManagementScreenState();
 }
 
+
 class _MenuManagementScreenState extends State<MenuManagementScreen> {
 	final _title = TextEditingController();
 	final _price = TextEditingController();
-	File? _image;
 	Uint8List? _imageBytes;
 	bool _saving = false;
 
@@ -65,8 +64,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
 	Future<void> _pick() async {
 		final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
 		if (file != null) {
-			try { setState(() => _imageBytes = await file.readAsBytes()); }
-			catch (_) { setState(() => _image = File(file.path)); }
+			final bytes = await file.readAsBytes();
+			if (mounted) setState(() => _imageBytes = bytes);
 		}
 	}
 
@@ -79,7 +78,6 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
 			if (_imageBytes != null || _image != null) {
 				final ref = FirebaseStorage.instance.ref('vendors/$vendorId/menu/${DateTime.now().millisecondsSinceEpoch}.jpg');
 				if (_imageBytes != null) { await ref.putData(_imageBytes!, SettableMetadata(contentType: 'image/jpeg')); }
-				else { await ref.putFile(_image!); }
 				url = await ref.getDownloadURL();
 			}
 			await FirebaseFirestore.instance.collection('vendors').doc(vendorId).collection('menu').add({
@@ -90,7 +88,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
 			});
 			_title.clear();
 			_price.clear();
-			_image = null; _imageBytes = null;
+			_imageBytes = null;
 			setState(() {});
 		} finally {
 			setState(() => _saving = false);
