@@ -93,6 +93,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 						},
 					),
 				),
+				),
 				body: Column(children: [
 					Padding(
 						padding: const EdgeInsets.all(12),

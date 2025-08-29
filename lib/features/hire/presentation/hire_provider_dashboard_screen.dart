@@ -93,6 +93,7 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 						},
 					),
 				),
+				),
 				body: Column(children: [
 					Padding(
 						padding: const EdgeInsets.all(12),

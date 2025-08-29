@@ -93,6 +93,7 @@ class _EmergencyProviderDashboardScreenState extends State<EmergencyProviderDash
 						},
 					),
 				),
+				),
 				body: Column(children: [
 					Padding(
 						padding: const EdgeInsets.all(12),

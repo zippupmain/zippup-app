@@ -73,6 +73,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 						},
 					),
 				),
+				),
 				body: Column(children: [
 					Padding(
 						padding: const EdgeInsets.all(12),
