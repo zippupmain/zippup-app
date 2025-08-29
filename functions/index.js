@@ -183,6 +183,18 @@ exports.timeoutJobs = functions.pubsub.schedule('every 1 minutes').onRun(async (
         read: false,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+      // Try FCM push
+      try {
+        const userDoc = await admin.firestore().collection('users').doc(next.userId).get();
+        const token = userDoc.get('fcmToken');
+        if (token) {
+          const payload = {
+            notification: { title: 'New ride request', body: 'You have a new ride to accept', sound: 'default' },
+            data: { type: 'ride', rideId: String(d.id) },
+          };
+          await admin.messaging().sendToDevice(token, payload);
+        }
+      } catch (_) {}
     }
   }
   // Scheduled orders timeout logic (24h or 7h if within 24h)
