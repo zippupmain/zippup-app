@@ -63,6 +63,7 @@ import 'package:zippup/features/providers/presentation/provider_hub_screen.dart'
 import 'package:zippup/features/providers/presentation/provider_orders_screen.dart';
 import 'package:zippup/features/providers/presentation/provider_analytics_screen.dart';
 import 'package:zippup/features/food/presentation/provider_dashboard_screen.dart' as fooddash;
+import 'package:zippup/features/transport/presentation/transport_provider_dashboard_screen.dart' as tp;
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -387,6 +388,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/hub/food',
         name: 'foodProviderDashboard',
         builder: (context, state) => const fooddash.ProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/transport',
+        name: 'transportProviderDashboard',
+        builder: (context, state) => const tp.TransportProviderDashboardScreen(),
       ),
       GoRoute(
         path: '/providers',

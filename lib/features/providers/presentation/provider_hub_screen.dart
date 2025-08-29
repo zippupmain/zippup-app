@@ -108,6 +108,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 					ListTile(leading: const Icon(Icons.inbox), title: const Text('Incoming & Active orders'), subtitle: const Text('Requests routed to you'), onTap: () => context.push('/hub/orders')),
 					ListTile(leading: const Icon(Icons.bar_chart), title: const Text('Analytics'), onTap: () => context.push('/hub/analytics')),
 					if (_service == 'food') ListTile(leading: const Icon(Icons.restaurant_menu), title: const Text('Food dashboard'), onTap: () => context.push('/hub/food')),
+					if (_service == 'transport') ListTile(leading: const Icon(Icons.local_taxi), title: const Text('Transport dashboard'), onTap: () => context.push('/hub/transport')),
 					ListTile(leading: const Icon(Icons.settings_suggest), title: const Text('Manage service profiles'), onTap: () => context.push('/providers')),
 					const SizedBox(height: 24),
 				]),

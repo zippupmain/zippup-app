@@ -91,6 +91,10 @@ class _ApprovedHub extends StatelessWidget {
 											if (context.mounted) context.push('/hub/food');
 											return;
 										}
+										if (category == 'transport' || category == 'taxi' || category == 'bike' || category == 'tricycle' || category == 'bus' || category == 'courier' || category == 'driver') {
+											if (context.mounted) context.push('/hub/transport');
+											return;
+										}
 										// Default to generic orders for now
 										if (context.mounted) context.push('/hub/orders');
 									},
