@@ -118,6 +118,10 @@ class _ApprovedHub extends StatelessWidget {
 											if (context.mounted) context.push('/hub/personal');
 											return;
 										}
+										if (category == 'delivery' || category == 'courier (food)') {
+											if (context.mounted) context.push('/hub/delivery');
+											return;
+										}
 										if (category == 'rentals' || category == 'vehicle' || category == 'houses' || category == 'other rentals') {
 											if (context.mounted) context.push('/hub/rentals');
 											return;

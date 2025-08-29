@@ -117,6 +117,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 					if (_service == 'emergency') ListTile(leading: const Icon(Icons.emergency), title: const Text('Emergency dashboard'), onTap: () => context.push('/hub/emergency')),
 					if (_service == 'moving') ListTile(leading: const Icon(Icons.local_shipping), title: const Text('Moving dashboard'), onTap: () => context.push('/hub/moving')),
 					if (_service == 'personal') ListTile(leading: const Icon(Icons.spa), title: const Text('Personal dashboard'), onTap: () => context.push('/hub/personal')),
+					if (_service == 'delivery') ListTile(leading: const Icon(Icons.delivery_dining), title: const Text('Delivery dashboard'), onTap: () => context.push('/hub/delivery')),
 					ListTile(leading: const Icon(Icons.settings_suggest), title: const Text('Manage service profiles'), onTap: () => context.push('/providers')),
 					const SizedBox(height: 24),
 				]),
