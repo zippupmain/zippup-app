@@ -17,6 +17,11 @@ class OrderService {
 			'status': isTransport ? OrderStatus.pending.name : OrderStatus.preparing.name,
 			'createdAt': now.toIso8601String(),
 			'estimatedPreparedAt': estimated?.toIso8601String(),
+			if (category == OrderCategory.food || category == OrderCategory.groceries) ...{
+				'price': (extra != null && extra['price'] != null) ? extra['price'] : 0,
+				' deliveryFee': (extra != null && extra['deliveryFee'] != null) ? extra['deliveryFee'] : null,
+				'platformFee': (extra != null && extra['platformFee'] != null) ? extra['platformFee'] : null,
+			},
 			...?(extra ?? {}),
 		};
 		final ref = await _db.collection('orders').add(data);
