@@ -15,6 +15,7 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 	final _auth = FirebaseAuth.instance;
 	bool _online = false;
 	RideStatus? _filter;
+	Stream<List<Ride>>? _incomingStream;
 
 	@override
 	void initState() {
@@ -31,6 +32,13 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 			_online = snap.docs.first.get('availabilityOnline') == true;
 			if (mounted) setState(() {});
 		}
+		// incoming assigned ride requests (requested and addressed to me)
+		_incomingStream = _db
+			.collection('rides')
+			.where('driverId', isEqualTo: uid)
+			.where('status', isEqualTo: RideStatus.requested.name)
+			.snapshots()
+			.map((s) => s.docs.map((d) => Ride.fromJson(d.id, d.data())).toList());
 	}
 
 	Stream<List<Ride>> _ridesStream(String uid) {
@@ -98,6 +106,28 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 							);
 						},
 					),
+				),
+				// Incoming request overlay/ping
+				StreamBuilder<List<Ride>>(
+					stream: _incomingStream,
+					builder: (context, s) {
+						if (!s.hasData || s.data!.isEmpty) return const SizedBox.shrink();
+						final r = s.data!.first;
+						WidgetsBinding.instance.addPostFrameCallback((_) {
+							showDialog(
+								context: context,
+								builder: (_) => AlertDialog(
+									title: const Text('New ride request'),
+									content: Text('${r.type.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
+									actions: [
+										TextButton(onPressed: () { Navigator.pop(context); _updateRide(r.id, RideStatus.accepted); }, child: const Text('Accept')),
+										TextButton(onPressed: () { Navigator.pop(context); _db.collection('rides').doc(r.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)); }, child: const Text('Decline')),
+									],
+								),
+							);
+						});
+						return const SizedBox.shrink();
+					},
 				),
 			]),
 		);
