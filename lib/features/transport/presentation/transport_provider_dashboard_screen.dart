@@ -62,11 +62,14 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 	@override
 	Widget build(BuildContext context) {
 		final uid = _auth.currentUser?.uid ?? '';
-		return Scaffold(
+		return DefaultTabController(length: 2, child: Scaffold(
 			appBar: AppBar(title: const Text('Transport Provider'), actions: [
 				IconButton(icon: const Icon(Icons.home_outlined), onPressed: () => context.go('/')),
 				IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
-			]),
+			], bottom: TabBar(tabs: [
+				const Tab(icon: Icon(Icons.notifications_active), text: 'Incoming'),
+				const Tab(icon: Icon(Icons.list), text: 'Rides'),
+			]))),
 			body: Column(children: [
 				Padding(
 					padding: const EdgeInsets.all(12),
@@ -86,8 +89,33 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 						)),
 					]),
 				),
-				Expanded(
-					child: StreamBuilder<List<Ride>>(
+				Expanded(child: TabBarView(children: [
+					// Incoming tab
+					StreamBuilder<List<Ride>>(
+						stream: _incomingStream,
+						builder: (context, s) {
+							final list = s.data ?? const <Ride>[];
+							if (list.isEmpty) return const Center(child: Text('No incoming requests'));
+							return ListView.separated(
+								itemCount: list.length,
+								separatorBuilder: (_, __) => const Divider(height: 1),
+								itemBuilder: (context, i) {
+									final r = list[i];
+									return ListTile(
+										title: Text('REQUEST • ${r.type.name.toUpperCase()}'),
+										subtitle: Text('From: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
+										isThreeLine: true,
+										trailing: Wrap(spacing: 6, children: [
+											FilledButton(onPressed: () => _updateRide(r.id, RideStatus.accepted), child: const Text('Accept')),
+											TextButton(onPressed: () => _db.collection('rides').doc(r.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
+										]),
+									);
+								},
+							);
+						},
+					),
+					// Rides tab
+					StreamBuilder<List<Ride>>(
 						stream: _ridesStream(uid),
 						builder: (context, snap) {
 							if (!snap.hasData) return const Center(child: CircularProgressIndicator());
@@ -109,7 +137,7 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 							);
 						},
 					),
-				),
+				])),
 				// Incoming request overlay/ping
 				StreamBuilder<List<Ride>>(
 					stream: _incomingStream,
