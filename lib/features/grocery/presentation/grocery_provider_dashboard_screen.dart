@@ -83,6 +83,12 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 								try { await _db.collection('vendors').doc(_providerId).set({'storeOpen': v}, SetOptions(merge: true)); } catch (_) {}
 							})),
 							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: () => context.push('/food/vendor/menu?vendorId=${_providerId}'), icon: const Icon(Icons.menu_book), label: const Text('Manage products')),
+							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: () => context.push('/food/menu/manage'), icon: const Icon(Icons.edit_note), label: const Text('Add/Edit items')),
+							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: () => context.push('/food/kitchen/hours'), icon: const Icon(Icons.schedule), label: const Text('Store hours')),
+							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/hub/orders'), icon: const Icon(Icons.list_alt), label: const Text('All orders')),
 						]),
 					),

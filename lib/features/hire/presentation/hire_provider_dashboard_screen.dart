@@ -88,7 +88,7 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 							}
 							return TabBar(tabs: [
 								Tab(icon: iconWithBadge(Icons.notifications_active, count), text: count > 0 ? 'Incoming ($count)' : 'Incoming'),
-								const Tab(icon: Icon(Icons.list), text: 'Orders'),
+								const Tab(icon: Icon(Icons.list), text: 'Jobs'),
 							]);
 						},
 					),
@@ -107,7 +107,14 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 						scrollDirection: Axis.horizontal,
 						child: Row(children: [
 							FilterChip(label: const Text('All'), selected: _filter == null, onSelected: (_) => setState(() => _filter = null)),
-							...OrderStatus.values.map((s) => Padding(
+							...[
+								OrderStatus.pending,
+								OrderStatus.accepted,
+								OrderStatus.enroute,
+								OrderStatus.arrived,
+								OrderStatus.delivered,
+								OrderStatus.cancelled,
+							].map((s) => Padding(
 								padding: const EdgeInsets.symmetric(horizontal: 4),
 								child: FilterChip(label: Text(s.name), selected: _filter == s, onSelected: (_) => setState(() => _filter = s)),
 							)),
