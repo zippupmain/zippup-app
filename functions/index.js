@@ -114,13 +114,13 @@ exports.scheduledReminders = functions.pubsub.schedule('every 5 minutes').onRun(
 // Auto-timeout/cleanup for orders and rides
 exports.timeoutJobs = functions.pubsub.schedule('every 1 minutes').onRun(async () => {
   const now = Date.now();
-  // Handle ride acceptance timeout (70s)
+  // Handle ride acceptance timeout (70s): mark timeout and clear driver to allow fan-out
   const rides = await admin.firestore().collection('rides').where('status', '==', 'requested').get();
   for (const d of rides.docs) {
     const createdAt = new Date(d.get('createdAt') || now).getTime();
     if (now - createdAt > 70 * 1000) {
-      // write a notification to rider; frontend will prompt
-      await d.ref.set({ timeout: true }, { merge: true });
+      await d.ref.set({ timeout: true, driverId: null }, { merge: true });
+      // TODO: Optionally enqueue fan-out to next nearest available driver here
     }
   }
   // Scheduled orders timeout logic (24h or 7h if within 24h)
