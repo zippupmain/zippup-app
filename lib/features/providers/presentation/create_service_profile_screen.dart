@@ -25,6 +25,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'moving': ['Truck','Pickup/Backie','Courier'],
 		'food': ['Restaurant','Fast Food','Local','Bakery','Drinks'],
 		'grocery': ['Grocery store'],
+		'delivery': ['Food & Grocery courier'],
 		'hire': ['Plumbing','Electrical','Carpentry','Painting','AC/Fridge','Auto mechanic','Cleaning','IT/Computer','Beauty'],
 		'emergency': ['Ambulance','Fire','Security','Towing','Roadside'],
 		'rentals': ['Vehicle','Houses','Other rentals'],

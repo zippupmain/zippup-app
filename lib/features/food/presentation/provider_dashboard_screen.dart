@@ -20,6 +20,24 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	bool _hideNewWhenClosed = true;
 	OrderStatus? _filterStatus;
 
+	Future<void> _dispatchNextReady() async {
+		try {
+			final uid = _providerId;
+			final q = await FirebaseFirestore.instance
+				.collection('orders')
+				.where('providerId', isEqualTo: uid)
+				.where('status', isEqualTo: OrderStatus.dispatched.name)
+				.limit(1)
+				.get();
+			if (q.docs.isEmpty) {
+				if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No orders to dispatch')));
+				return;
+			}
+			await q.docs.first.reference.set({'status': 'dispatched'}, SetOptions(merge: true));
+			if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dispatching to courier…')));
+		} catch (_) {}
+	}
+
 	@override
 	void initState() {
 		super.initState();
@@ -60,6 +78,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 							OutlinedButton.icon(onPressed: () => context.push('/food/menu/manage'), icon: const Icon(Icons.edit_note), label: const Text('Add/Edit items')),
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/food/kitchen/hours'), icon: const Icon(Icons.schedule), label: const Text('Kitchen hours')),
+							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: _dispatchNextReady, icon: const Icon(Icons.delivery_dining), label: const Text('Dispatch to courier')),
 						]),
 					),
 					StreamBuilder<List<Order>>(

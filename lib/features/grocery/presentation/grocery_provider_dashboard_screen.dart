@@ -21,6 +21,23 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 	Stream<List<Order>>? _incomingStream;
 	late final String _providerId;
 
+	Future<void> _dispatchNextReady() async {
+		try {
+			final q = await _db
+				.collection('orders')
+				.where('providerId', isEqualTo: _providerId)
+				.where('status', isEqualTo: OrderStatus.dispatched.name)
+				.limit(1)
+				.get();
+			if (q.docs.isEmpty) {
+				if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No orders to dispatch')));
+				return;
+			}
+			await q.docs.first.reference.set({'status': 'dispatched'}, SetOptions(merge: true));
+			if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dispatching to courier…')));
+		} catch (_) {}
+	}
+
 	@override
 	void initState() {
 		super.initState();
@@ -88,6 +105,8 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 							OutlinedButton.icon(onPressed: () => context.push('/food/menu/manage'), icon: const Icon(Icons.edit_note), label: const Text('Add/Edit items')),
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/food/kitchen/hours'), icon: const Icon(Icons.schedule), label: const Text('Open hours')),
+							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: _dispatchNextReady, icon: const Icon(Icons.delivery_dining), label: const Text('Dispatch to courier')),
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/hub/orders'), icon: const Icon(Icons.list_alt), label: const Text('All orders')),
 						]),
