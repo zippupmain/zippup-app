@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:zippup/common/models/order.dart';
 import 'package:zippup/features/food/providers/order_service.dart';
+import 'package:go_router/go_router.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
 	const ProviderDashboardScreen({super.key});
@@ -15,6 +16,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	late final OrderService _service;
 	String _providerId = '';
 	Stream<List<Order>>? _pendingStream;
+	bool _kitchenOpen = true;
 
 	@override
 	void initState() {
@@ -44,6 +46,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 			appBar: AppBar(title: const Text('Food Provider Dashboard'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]),
 			body: Stack(
 				children: [
+					Padding(
+						padding: const EdgeInsets.all(12),
+						child: Row(children: [
+							Expanded(child: SwitchListTile(title: const Text('Kitchen open'), value: _kitchenOpen, onChanged: (v) async {
+								setState(() => _kitchenOpen = v);
+								try {
+									await FirebaseFirestore.instance.collection('vendors').doc(_providerId).set({'kitchenOpen': v}, SetOptions(merge: true));
+								} catch (_) {}
+							})),
+							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: () => context.push('/food/vendor/menu?vendorId=${_providerId}'), icon: const Icon(Icons.menu_book), label: const Text('Manage menu')),
+						]),
+					),
 					StreamBuilder<List<Order>>(
 						stream: _ordersStream(_providerId),
 						builder: (context, snapshot) {
