@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zippup/features/cart/providers/cart_provider.dart';
 import 'package:zippup/features/cart/models/cart_item.dart';
 import 'package:zippup/services/location/location_service.dart';
+import 'package:zippup/common/models/order.dart';
 
 class ProductDetailScreen extends ConsumerWidget {
 	const ProductDetailScreen({super.key, required this.productId});
@@ -42,7 +43,7 @@ class ProductDetailScreen extends ConsumerWidget {
 	void _addToCart(WidgetRef ref, Map<String, dynamic> p) {
 		final price = (p['price'] is num) ? (p['price'] as num).toDouble() : 0;
 		final vendorId = (p['sellerId'] ?? '').toString();
-		ref.read(cartProvider.notifier).add(CartItem(id: productId, vendorId: vendorId, title: (p['title'] ?? 'Item').toString(), price: price, quantity: 1));
+		ref.read(cartProvider.notifier).add(CartItem(id: productId, vendorId: vendorId, title: (p['title'] ?? 'Item').toString(), price: price.toDouble(), quantity: 1));
 	}
 
 	Future<void> _checkout(BuildContext context, Map<String, dynamic> p) async {
@@ -84,7 +85,7 @@ class ProductDetailScreen extends ConsumerWidget {
 		final orderId = await OrderService().createOrder(category: OrderCategory.marketplace, providerId: sellerId, extra: {
 			'price': price,
 			'platformFee': null,
-			' deliveryFee': delivery ? deliveryFee : 0,
+			'deliveryFee': delivery ? deliveryFee : 0,
 		});
 		if (context.mounted) {
 			ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Order ${orderId.substring(0,6)} created')));
