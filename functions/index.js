@@ -134,9 +134,14 @@ exports.timeoutJobs = functions.pubsub.schedule('every 1 minutes').onRun(async (
         .where('availabilityOnline', '==', true)
         .limit(50)
         .get();
+      const pickup = d.get('pickup') || d.get('pickupLocation');
+      const plat = pickup && (pickup.lat || pickup.latitude);
+      const plng = pickup && (pickup.lng || pickup.longitude);
       const candidates = providersSnap.docs
-        .map(p => ({ id: p.id, userId: p.get('userId') }))
-        .filter(p => p.userId && !attempted.includes(p.userId));
+        .map(p => ({ id: p.id, userId: p.get('userId'), lat: p.get('lat'), lng: p.get('lng') }))
+        .filter(p => p.userId && !attempted.includes(p.userId))
+        .map(p => ({ ...p, dist: (plat && plng && p.lat && p.lng) ? haversineKm(Number(plat), Number(plng), Number(p.lat), Number(p.lng)) : 99999 }))
+        .sort((a,b) => a.dist - b.dist);
       if (candidates.length === 0) {
         // No candidates online
         await d.ref.set({ noDriverOnline: true }, { merge: true });
@@ -338,6 +343,16 @@ async function notifyParties(userIds, notif, data) {
 	if (tokens.length === 0) return;
 	const payload = { notification: { title: notif.title, body: notif.body, sound: 'default' }, data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) };
 	await admin.messaging().sendToDevice(tokens, payload);
+}
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  function toRad(d) { return d * Math.PI / 180; }
+  const R = 6371; // km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
 }
 
 // Role & Provider functions
