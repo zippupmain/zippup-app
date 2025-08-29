@@ -15,6 +15,7 @@ class ProfileSettingsScreen extends StatefulWidget {
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 	final _name = TextEditingController();
 	final _phone = TextEditingController();
+	final _email = TextEditingController();
 	String? _photoUrl;
 	Uint8List? _photoBytes; // web & mobile compatible
 	bool _saving = false;
@@ -25,6 +26,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 		final u = FirebaseAuth.instance.currentUser;
 		_name.text = u?.displayName ?? '';
 		_phone.text = u?.phoneNumber ?? '';
+		_email.text = u?.email ?? '';
 		_photoUrl = u?.photoURL;
 		_prefillFromFirestore();
 	}
@@ -39,6 +41,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			if ((data['name'] ?? '').toString().trim().isNotEmpty) _name.text = data['name'];
 			if ((data['phone'] ?? '').toString().trim().isNotEmpty) _phone.text = data['phone'];
 			if ((data['photoUrl'] ?? '').toString().trim().isNotEmpty) setState(() => _photoUrl = data['photoUrl']);
+			if ((data['email'] ?? '').toString().trim().isNotEmpty) _email.text = data['email'];
 		} catch (_) {}
 	}
 
@@ -61,12 +64,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 				url = await ref.getDownloadURL();
 			}
 			final name = _name.text.trim();
+			final email = _email.text.trim();
 			await u.updateDisplayName(name);
+			if (email.isNotEmpty && email != (u.email ?? '')) {
+				try { await u.updateEmail(email); } catch (_) {}
+			}
 			// Save private profile
 			await FirebaseFirestore.instance.collection('users').doc(u.uid).set({
 				'uid': u.uid,
 				'name': name,
 				'phone': _phone.text.trim(),
+				'email': email,
 				'photoUrl': url,
 				'updatedAt': FieldValue.serverTimestamp(),
 			}, SetOptions(merge: true));
@@ -122,6 +130,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 					const SizedBox(height: 8),
 					TextField(controller: _name, decoration: const InputDecoration(labelText: 'Public name')),
 					TextField(controller: _phone, decoration: const InputDecoration(labelText: 'Phone number')),
+					TextField(controller: _email, decoration: const InputDecoration(labelText: 'Email address')),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving…' : 'Save')),
 					const SizedBox(height: 48),
