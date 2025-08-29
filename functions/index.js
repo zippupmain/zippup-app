@@ -355,6 +355,29 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+// Simple geohash encoder (base32) for proximity indexing
+const _base32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+function encodeGeohash(lat, lon, precision = 7) {
+  let idx = 0, bit = 0, evenBit = true;
+  let latMin = -90, latMax = 90;
+  let lonMin = -180, lonMax = 180;
+  let geohash = '';
+  while (geohash.length < precision) {
+    if (evenBit) {
+      const lonMid = (lonMin + lonMax) / 2;
+      if (lon >= lonMid) { idx = idx * 2 + 1; lonMin = lonMid; }
+      else { idx = idx * 2; lonMax = lonMid; }
+    } else {
+      const latMid = (latMin + latMax) / 2;
+      if (lat >= latMid) { idx = idx * 2 + 1; latMin = latMid; }
+      else { idx = idx * 2; latMax = latMid; }
+    }
+    evenBit = !evenBit;
+    if (++bit == 5) { geohash += _base32.charAt(idx); bit = 0; idx = 0; }
+  }
+  return geohash;
+}
+
 // Propagate users/{uid}.lastLat,lastLng to provider_profiles for proximity fan-out
 exports.onUserLocationUpdate = functions.firestore.document('users/{uid}').onUpdate(async (change, context) => {
   const before = change.before.data() || {};
@@ -369,7 +392,8 @@ exports.onUserLocationUpdate = functions.firestore.document('users/{uid}').onUpd
   const snap = await admin.firestore().collection('provider_profiles').where('userId', '==', uid).get();
   const batch = admin.firestore().batch();
   for (const doc of snap.docs) {
-    batch.set(doc.ref, { lat: latA, lng: lngA, locationUpdatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    const geohash = encodeGeohash(latA, lngA, 7);
+    batch.set(doc.ref, { lat: latA, lng: lngA, geohash, locationUpdatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
   }
   if (!snap.empty) await batch.commit();
   return null;
