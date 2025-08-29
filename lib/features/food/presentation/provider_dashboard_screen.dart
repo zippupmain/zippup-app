@@ -32,12 +32,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	}
 
 	Stream<List<Order>> _ordersStream(String providerId) {
-		return FirebaseFirestore.instance
-			.collection('orders')
-			.where('providerId', isEqualTo: providerId)
-			.orderBy('createdAt', descending: true)
-			.snapshots()
-			.map((snap) => snap.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+		Query<Map<String, dynamic>> q = FirebaseFirestore.instance.collection('orders').where('providerId', isEqualTo: providerId);
+		// Optional: filter by status when kitchen is open (show actionable first)
+		return q.orderBy('createdAt', descending: true).snapshots().map((snap) => snap.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
 	}
 
 	@override
@@ -59,26 +56,57 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 							OutlinedButton.icon(onPressed: () => context.push('/food/vendor/menu?vendorId=${_providerId}'), icon: const Icon(Icons.menu_book), label: const Text('Manage menu')),
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/food/menu/manage'), icon: const Icon(Icons.edit_note), label: const Text('Add/Edit items')),
+							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: () => context.push('/food/kitchen/hours'), icon: const Icon(Icons.schedule), label: const Text('Kitchen hours')),
 						]),
 					),
 					StreamBuilder<List<Order>>(
 						stream: _ordersStream(_providerId),
 						builder: (context, snapshot) {
 							if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-							final orders = snapshot.data!;
-							if (orders.isEmpty) return const Center(child: Text('No orders yet'));
-							return ListView.separated(
-								itemCount: orders.length,
-								separatorBuilder: (_, __) => const Divider(height: 1),
-								itemBuilder: (context, i) {
-									final o = orders[i];
-									return ListTile(
-										title: Text('Order ${o.id.substring(0, 6)} • ${o.category.name}'),
-										subtitle: Text('Status: ${o.status.name}'),
-										trailing: Wrap(spacing: 8, children: _actionsFor(context, o, _service)),
-									);
-								},
-							);
+							List<Order> orders = snapshot.data!;
+							// Status chips
+							final statuses = [
+								OrderStatus.pending,
+								OrderStatus.preparing,
+								OrderStatus.dispatched,
+								OrderStatus.assigned,
+								OrderStatus.enroute,
+								OrderStatus.arrived,
+								OrderStatus.delivered,
+							];
+							OrderStatus? filter;
+							return Column(children: [
+								SingleChildScrollView(
+									scrollDirection: Axis.horizontal,
+									child: Row(children: [
+										Padding(
+											padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+											child: FilterChip(label: const Text('All'), selected: filter == null, onSelected: (_) { setState(() {}); }),
+										),
+										...statuses.map((s) => Padding(
+											padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+											child: FilterChip(label: Text(s.name), selected: false, onSelected: (_) { setState(() { /* future: store filter in state */ }); }),
+										)),
+									]),
+								),
+								Expanded(
+									child: orders.isEmpty
+										? const Center(child: Text('No orders yet'))
+										: ListView.separated(
+											itemCount: orders.length,
+											separatorBuilder: (_, __) => const Divider(height: 1),
+											itemBuilder: (context, i) {
+												final o = orders[i];
+												return ListTile(
+													title: Text('Order ${o.id.substring(0, 6)} • ${o.category.name}'),
+													subtitle: Text('Status: ${o.status.name}'),
+													trailing: Wrap(spacing: 8, children: _actionsFor(context, o, _service)),
+												);
+											},
+										),
+								),
+							]);
 						},
 					),
 					// Listener overlay
