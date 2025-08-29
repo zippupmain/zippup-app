@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:zippup/services/location/location_service.dart';
 
 class DeliveryProviderDashboardScreen extends StatefulWidget {
 	const DeliveryProviderDashboardScreen({super.key});
@@ -70,9 +71,13 @@ class _DeliveryProviderDashboardScreenState extends State<DeliveryProviderDashbo
 	Future<void> _sendLocationOnce() async {
 		try {
 			final id = _activeOrderId; if (id == null) return;
-			// Extend later to use real geolocation service
-			// Placeholder: skip if not available on web
-			// In production, call a LocationService similar to rides
+			final pos = await LocationService.getCurrentPosition();
+			if (pos == null) return;
+			await _db.collection('orders').doc(id).set({
+				'courierLat': pos.latitude,
+				'courierLng': pos.longitude,
+				'courierLocAt': DateTime.now().toIso8601String(),
+			}, SetOptions(merge: true));
 		} catch (_) {}
 	}
 

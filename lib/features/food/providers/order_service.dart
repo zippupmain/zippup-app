@@ -19,7 +19,7 @@ class OrderService {
 			'estimatedPreparedAt': estimated?.toIso8601String(),
 			if (category == OrderCategory.food || category == OrderCategory.groceries) ...{
 				'price': (extra != null && extra['price'] != null) ? extra['price'] : 0,
-				' deliveryFee': (extra != null && extra['deliveryFee'] != null) ? extra['deliveryFee'] : null,
+				'deliveryFee': (extra != null && extra['deliveryFee'] != null) ? extra['deliveryFee'] : null,
 				'platformFee': (extra != null && extra['platformFee'] != null) ? extra['platformFee'] : null,
 			},
 			...?(extra ?? {}),
