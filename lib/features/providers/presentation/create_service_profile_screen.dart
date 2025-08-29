@@ -20,13 +20,16 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	bool _saving = false;
 
 	final Map<String, List<String>> _cats = const {
-		'food': ['Fast Food','Local','Grocery'],
-		'hire': ['Home','Tech','Construction','Auto','Personal'],
-		'transport': ['Taxi','Bus','Tricycle','Bike','Courier'],
-		'rentals': ['Vehicle','Houses','Other rentals'],
+		'transport': ['Taxi','Bike','Tricycle','Bus','Courier','Driver'],
+		'moving': ['Truck','Pickup/Backie','Courier'],
+		'food': ['Restaurant','Fast Food','Local','Bakery','Drinks'],
+		'grocery': ['Grocery store'],
+		'hire': ['Plumbing','Electrical','Carpentry','Painting','AC/Fridge','Auto mechanic','Cleaning','IT/Computer','Beauty'],
 		'emergency': ['Ambulance','Fire','Security','Towing','Roadside'],
+		'rentals': ['Vehicle','Houses','Other rentals'],
+		'marketplace': ['Electronics','Vehicles','Property','Fashion','Services','Jobs'],
 		'personal': ['Nails','Hair','Massage','Pedicure','Makeups'],
-		'marketplace': ['Electronics','Vehicles','Property','Services'],
+		'others': ['Events','Tickets','Tutors'],
 	};
 
 	Future<void> _save() async {
