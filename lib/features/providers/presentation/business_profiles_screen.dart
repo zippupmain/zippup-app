@@ -21,7 +21,7 @@ class BusinessProfilesScreen extends StatelessWidget {
 			);
 		}
 		// BYPASS KYC for testing: always show approved hub
-		return Scaffold(appBar: AppBar(title: const Text('Business profiles')), body: _ApprovedHub(uid: uid));
+		return Scaffold(appBar: AppBar(title: const Text('Business profiles'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]), body: _ApprovedHub(uid: uid));
 	}
 }
 

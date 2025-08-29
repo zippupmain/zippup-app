@@ -8,7 +8,7 @@ class ProviderOrdersScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
 		return Scaffold(
-			appBar: AppBar(title: const Text('Orders')),
+			appBar: AppBar(title: const Text('Orders'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]),
 			body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
 				stream: FirebaseFirestore.instance.collection('orders').where('providerId', isEqualTo: uid).orderBy('createdAt', descending: true).snapshots(),
 				builder: (context, snap) {

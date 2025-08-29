@@ -8,7 +8,7 @@ class ProviderAnalyticsScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
 		return Scaffold(
-			appBar: AppBar(title: const Text('Analytics')),
+			appBar: AppBar(title: const Text('Analytics'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]),
 			body: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
 				future: FirebaseFirestore.instance.collection('orders').where('providerId', isEqualTo: uid).get(const GetOptions(source: Source.server)),
 				builder: (context, snap) {
