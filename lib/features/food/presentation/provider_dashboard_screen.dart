@@ -57,6 +57,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 							})),
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/food/vendor/menu?vendorId=${_providerId}'), icon: const Icon(Icons.menu_book), label: const Text('Manage menu')),
+							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: () => context.push('/food/menu/manage'), icon: const Icon(Icons.edit_note), label: const Text('Add/Edit items')),
 						]),
 					),
 					StreamBuilder<List<Order>>(

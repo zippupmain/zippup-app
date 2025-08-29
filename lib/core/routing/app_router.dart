@@ -46,6 +46,7 @@ import 'package:zippup/features/admin/presentation/platform_admin_screen.dart';
 import 'package:zippup/features/others/presentation/ticket_detail_screen.dart';
 import 'package:zippup/features/admin/presentation/admin_users_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_menu_screen.dart';
+import 'package:zippup/features/food/presentation/menu_management_screen.dart';
 import 'package:zippup/features/notifications/presentation/notifications_screen.dart';
 import 'package:zippup/features/navigation/map_booking_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_screen.dart';
@@ -309,6 +310,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/food/vendor/menu',
         name: 'vendorMenu',
         builder: (context, state) => VendorMenuScreen(vendorId: state.uri.queryParameters['vendorId'] ?? ''),
+      ),
+      GoRoute(
+        path: '/food/menu/manage',
+        name: 'menuManage',
+        builder: (context, state) => const MenuManagementScreen(),
       ),
       GoRoute(
         path: '/notifications',
