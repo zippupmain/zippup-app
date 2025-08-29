@@ -46,7 +46,7 @@ class _KitchenHoursScreenState extends State<KitchenHoursScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Kitchen Hours'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]),
+			appBar: AppBar(title: const Text('Open Hours'), actions: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context))]),
 			floatingActionButton: FloatingActionButton.extended(onPressed: _saving ? null : _save, icon: const Icon(Icons.save), label: const Text('Save')),
 			body: ListView(
 				padding: const EdgeInsets.all(16),
