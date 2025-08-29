@@ -64,6 +64,11 @@ import 'package:zippup/features/providers/presentation/provider_orders_screen.da
 import 'package:zippup/features/providers/presentation/provider_analytics_screen.dart';
 import 'package:zippup/features/food/presentation/provider_dashboard_screen.dart' as fooddash;
 import 'package:zippup/features/transport/presentation/transport_provider_dashboard_screen.dart' as tp;
+import 'package:zippup/features/hire/presentation/hire_provider_dashboard_screen.dart' as hiredash;
+import 'package:zippup/features/emergency/presentation/emergency_provider_dashboard_screen.dart' as emergdash;
+import 'package:zippup/features/personal/presentation/personal_provider_dashboard_screen.dart' as personaldash;
+import 'package:zippup/features/grocery/presentation/grocery_provider_dashboard_screen.dart' as grocerydash;
+import 'package:zippup/features/moving/presentation/moving_provider_dashboard_screen.dart' as movingdash;
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -393,6 +398,31 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/hub/transport',
         name: 'transportProviderDashboard',
         builder: (context, state) => const tp.TransportProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/hire',
+        name: 'hireProviderDashboard',
+        builder: (context, state) => const hiredash.HireProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/emergency',
+        name: 'emergencyProviderDashboard',
+        builder: (context, state) => const emergdash.EmergencyProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/personal',
+        name: 'personalProviderDashboard',
+        builder: (context, state) => const personaldash.PersonalProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/grocery',
+        name: 'groceryProviderDashboard',
+        builder: (context, state) => const grocerydash.GroceryProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/moving',
+        name: 'movingProviderDashboard',
+        builder: (context, state) => const movingdash.MovingProviderDashboardScreen(),
       ),
       GoRoute(
         path: '/providers',

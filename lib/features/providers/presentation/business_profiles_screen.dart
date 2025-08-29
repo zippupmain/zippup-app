@@ -98,6 +98,26 @@ class _ApprovedHub extends StatelessWidget {
 											if (context.mounted) context.push('/hub/transport');
 											return;
 										}
+										if (category == 'grocery' || category == 'groceries' || category == 'grocery store') {
+											if (context.mounted) context.push('/hub/grocery');
+											return;
+										}
+										if (category == 'hire' || category == 'services' || category == 'auto') {
+											if (context.mounted) context.push('/hub/hire');
+											return;
+										}
+										if (category == 'emergency' || category == 'ambulance' || category == 'fire' || category == 'security' || category == 'towing' || category == 'roadside') {
+											if (context.mounted) context.push('/hub/emergency');
+											return;
+										}
+										if (category == 'moving' || category == 'pickup/backie' || category == 'truck' || category == 'courier') {
+											if (context.mounted) context.push('/hub/moving');
+											return;
+										}
+										if (category == 'personal' || category == 'nails' || category == 'hair' || category == 'massage' || category == 'pedicure' || category == 'makeups') {
+											if (context.mounted) context.push('/hub/personal');
+											return;
+										}
 										// Default to generic orders for now
 										if (context.mounted) context.push('/hub/orders');
 									},
