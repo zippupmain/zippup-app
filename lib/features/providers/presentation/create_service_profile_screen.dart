@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
 class CreateServiceProfileScreen extends StatefulWidget {
 	final String? profileId;
@@ -20,6 +23,16 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	String _type = 'individual';
 	bool _saving = false;
 
+	// KYC/public/admin details
+	final _driverName = TextEditingController();
+	final _plateNumber = TextEditingController();
+	final List<Uint8List> _vehiclePhotos360 = [];
+	Uint8List? _driverLicenseBytes;
+	Uint8List? _vehiclePapersBytes;
+	Uint8List? _trafficRegisterBytes;
+	Uint8List? _operationalLicenseBytes; // food/grocery
+	bool _inspectionRequired = false; // admin-only flag (prepared)
+
 	final Map<String, List<String>> _cats = const {
 		'transport': ['Taxi','Bike','Tricycle','Bus','Courier','Driver'],
 		'moving': ['Truck','Pickup/Backie','Courier'],
@@ -33,6 +46,48 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'personal': ['Nails','Hair','Massage','Pedicure','Makeups'],
 		'others': ['Events','Tickets','Tutors'],
 	};
+
+	Future<Uint8List?> _pickImage() async {
+		final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+		if (x == null) return null;
+		return await x.readAsBytes();
+	}
+
+	Widget _kycSection() {
+		final cat = (_category ?? '').toLowerCase();
+		final needsVehicle = ['transport','moving','emergency'].contains(cat);
+		final needsFoodDocs = ['food','grocery'].contains(cat);
+		if (!needsVehicle && !needsFoodDocs) return const SizedBox.shrink();
+		return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+			const Divider(),
+			const Text('KYC / Compliance', style: TextStyle(fontWeight: FontWeight.w600)),
+			const SizedBox(height: 8),
+			if (needsVehicle) ...[
+				TextField(controller: _driverName, decoration: const InputDecoration(labelText: 'Driver name (public)')),
+				TextField(controller: _plateNumber, decoration: const InputDecoration(labelText: 'Plate number (public)')),
+				const SizedBox(height: 8),
+				Wrap(spacing: 8, runSpacing: 8, children: [
+					..._vehiclePhotos360.map((b) => Container(width: 64, height: 64, color: Colors.black12, child: const Icon(Icons.photo))),
+					OutlinedButton.icon(onPressed: () async { final b = await _pickImage(); if (b != null) setState(() => _vehiclePhotos360.add(b)); }, icon: const Icon(Icons.add_a_photo), label: const Text('Add 360° photo')),
+				]),
+				const SizedBox(height: 8),
+				Row(children: [
+					Expanded(child: OutlinedButton.icon(onPressed: () async { final b = await _pickImage(); if (b != null) setState(() => _driverLicenseBytes = b); }, icon: const Icon(Icons.badge), label: Text(_driverLicenseBytes == null ? 'Upload driver license (admin)' : 'Driver license selected'))),
+				]),
+				Row(children: [
+					Expanded(child: OutlinedButton.icon(onPressed: () async { final b = await _pickImage(); if (b != null) setState(() => _vehiclePapersBytes = b); }, icon: const Icon(Icons.description), label: Text(_vehiclePapersBytes == null ? 'Upload vehicle papers (admin)' : 'Vehicle papers selected'))),
+				]),
+				Row(children: [
+					Expanded(child: OutlinedButton.icon(onPressed: () async { final b = await _pickImage(); if (b != null) setState(() => _trafficRegisterBytes = b); }, icon: const Icon(Icons.folder), label: Text(_trafficRegisterBytes == null ? 'Upload traffic register (admin)' : 'Traffic register selected'))),
+				]),
+			],
+			if (needsFoodDocs) ...[
+				Row(children: [
+					Expanded(child: OutlinedButton.icon(onPressed: () async { final b = await _pickImage(); if (b != null) setState(() => _operationalLicenseBytes = b); }, icon: const Icon(Icons.verified), label: Text(_operationalLicenseBytes == null ? 'Upload operational license' : 'Operational license selected'))),
+				]),
+			],
+		]);
+	}
 
 	Future<void> _save() async {
 		setState(() => _saving = true);
@@ -55,12 +110,31 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				'status': 'active',
 				'createdAt': nowIso,
 			});
-			// Create provider profile for Provider Hub (active for testing)
+			// Upload KYC files
+			final storage = FirebaseStorage.instance;
+			final uploads = <String, String>{};
+			Future<String> _put(String name, Uint8List bytes) async {
+				final ref = storage.ref('kyc/$uid/${DateTime.now().millisecondsSinceEpoch}_$name.jpg');
+				await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+				return await ref.getDownloadURL();
+			}
+			if (_driverLicenseBytes != null) uploads['driverLicenseUrl'] = await _put('driver_license', _driverLicenseBytes!);
+			if (_vehiclePapersBytes != null) uploads['vehiclePapersUrl'] = await _put('vehicle_papers', _vehiclePapersBytes!);
+			if (_trafficRegisterBytes != null) uploads['trafficRegisterUrl'] = await _put('traffic_register', _trafficRegisterBytes!);
+			final vehiclePhotoUrls = <String>[];
+			for (final b in _vehiclePhotos360) { vehiclePhotoUrls.add(await _put('vehicle_360', b)); }
+			if (_operationalLicenseBytes != null) uploads['operationalLicenseUrl'] = await _put('operational_license', _operationalLicenseBytes!);
+
+			final catLower = (service).toLowerCase();
+			final requiresAdmin = ['transport','moving','emergency','food','grocery'].contains(catLower);
+			final initialStatus = requiresAdmin ? 'pending_review' : 'active';
+
+			// Create provider profile for Provider Hub
 			try {
 				await FirebaseFirestore.instance.collection('provider_profiles').add({
 					'userId': uid,
 					'service': service,
-					'status': 'active',
+					'status': initialStatus,
 					'availabilityOnline': false,
 					'rating': 0.0,
 					'totalRatings': 0,
@@ -72,6 +146,14 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						'category': _category,
 						'subcategory': _subcategory,
 						'type': _type,
+						'publicDetails': {
+							'driverName': _driverName.text.trim().isEmpty ? null : _driverName.text.trim(),
+							'plateNumber': _plateNumber.text.trim().isEmpty ? null : _plateNumber.text.trim(),
+							'vehiclePhotos360': vehiclePhotoUrls,
+						},
+						'adminDocs': uploads,
+						'inspectionRequired': _inspectionRequired,
+						'kycStatus': requiresAdmin ? 'submitted' : 'n/a',
 					},
 				});
 			} catch (_) {}
@@ -131,6 +213,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				TextField(controller: _title, decoration: const InputDecoration(labelText: 'Business title')),
 				TextField(controller: _desc, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
 				const SizedBox(height: 12),
+				_kycSection(),
 				FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving...' : 'Create')),
 			]),
 		);
