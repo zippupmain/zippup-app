@@ -128,20 +128,43 @@ exports.timeoutJobs = functions.pubsub.schedule('every 1 minutes').onRun(async (
         await d.ref.set({ status: 'cancelled', cancelReason: 'no_driver_found', cancelledAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
         continue;
       }
-      const providersSnap = await admin.firestore().collection('provider_profiles')
-        .where('service', '==', 'transport')
-        .where('status', '==', 'active')
-        .where('availabilityOnline', '==', true)
-        .limit(50)
-        .get();
       const pickup = d.get('pickup') || d.get('pickupLocation');
       const plat = pickup && (pickup.lat || pickup.latitude);
       const plng = pickup && (pickup.lng || pickup.longitude);
-      const candidates = providersSnap.docs
-        .map(p => ({ id: p.id, userId: p.get('userId'), lat: p.get('lat'), lng: p.get('lng') }))
-        .filter(p => p.userId && !attempted.includes(p.userId))
-        .map(p => ({ ...p, dist: (plat && plng && p.lat && p.lng) ? haversineKm(Number(plat), Number(plng), Number(p.lat), Number(p.lng)) : 99999 }))
-        .sort((a,b) => a.dist - b.dist);
+      let candidates = [];
+      if (plat && plng) {
+        // Geohash prefix search at decreasing precision to emulate radius
+        const precisions = [6, 5, 4];
+        for (const prec of precisions) {
+          const prefix = encodeGeohash(Number(plat), Number(plng), prec);
+          const snap = await admin.firestore().collection('provider_profiles')
+            .where('geohash', '>=', prefix)
+            .where('geohash', '<=', prefix + '\uf8ff')
+            .limit(200)
+            .get();
+          candidates = snap.docs
+            .map(p => ({ id: p.id, userId: p.get('userId'), lat: p.get('lat'), lng: p.get('lng'), service: p.get('service'), status: p.get('status'), online: p.get('availabilityOnline') }))
+            .filter(p => p.service === 'transport' && p.status === 'active' && p.online === true)
+            .filter(p => p.userId && !attempted.includes(p.userId))
+            .map(p => ({ ...p, dist: (p.lat && p.lng) ? haversineKm(Number(plat), Number(plng), Number(p.lat), Number(p.lng)) : 99999 }))
+            .sort((a,b) => a.dist - b.dist);
+          if (candidates.length > 0) break;
+        }
+      }
+      // Fallback broad scan if no geo candidates
+      if (candidates.length === 0) {
+        const providersSnap = await admin.firestore().collection('provider_profiles')
+          .where('service', '==', 'transport')
+          .where('status', '==', 'active')
+          .where('availabilityOnline', '==', true)
+          .limit(50)
+          .get();
+        candidates = providersSnap.docs
+          .map(p => ({ id: p.id, userId: p.get('userId'), lat: p.get('lat'), lng: p.get('lng') }))
+          .filter(p => p.userId && !attempted.includes(p.userId))
+          .map(p => ({ ...p, dist: (plat && plng && p.lat && p.lng) ? haversineKm(Number(plat), Number(plng), Number(p.lat), Number(p.lng)) : 99999 }))
+          .sort((a,b) => a.dist - b.dist);
+      }
       if (candidates.length === 0) {
         // No candidates online
         await d.ref.set({ noDriverOnline: true }, { merge: true });
