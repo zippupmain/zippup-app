@@ -2,13 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zippup/features/food/providers/order_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zippup/features/cart/providers/cart_provider.dart';
+import 'package:zippup/features/cart/models/cart_item.dart';
 import 'package:zippup/services/location/location_service.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends ConsumerWidget {
 	const ProductDetailScreen({super.key, required this.productId});
 	final String productId;
 	@override
-	Widget build(BuildContext context) {
+	Widget build(BuildContext context, WidgetRef ref) {
 		return Scaffold(
 			appBar: AppBar(title: const Text('Listing')),
 			body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -25,15 +28,21 @@ class ProductDetailScreen extends StatelessWidget {
 							Text('Price: ${p['price'] ?? ''}'),
 							const Spacer(),
 							Row(children: [
-								OutlinedButton(onPressed: () => _checkout(context, p), child: const Text('Buy')),
+								OutlinedButton(onPressed: () => _checkout(context, p), child: const Text('Buy now')),
 								const SizedBox(width: 8),
-								FilledButton(onPressed: () {}, child: const Text('Chat with seller')),
+								FilledButton(onPressed: () { _addToCart(ref, p); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to cart'))); }, child: const Text('Add to cart')),
 							]),
 						]),
 					);
 				},
 			),
 		);
+	}
+
+	void _addToCart(WidgetRef ref, Map<String, dynamic> p) {
+		final price = (p['price'] is num) ? (p['price'] as num).toDouble() : 0;
+		final vendorId = (p['sellerId'] ?? '').toString();
+		ref.read(cartProvider.notifier).add(CartItem(id: productId, vendorId: vendorId, title: (p['title'] ?? 'Item').toString(), price: price, quantity: 1));
 	}
 
 	Future<void> _checkout(BuildContext context, Map<String, dynamic> p) async {

@@ -11,7 +11,9 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 	void add(CartItem item) {
 		// Enforce single-vendor checkout
 		if (state.isNotEmpty && state.first.vendorId != item.vendorId) {
-			return; // ignore add; require checkout/clear first
+			// Replace cart with new vendor's item for simplicity
+			state = [item];
+			return;
 		}
 		final existingIndex = state.indexWhere((e) => e.id == item.id);
 		if (existingIndex >= 0) {
