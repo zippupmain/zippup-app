@@ -20,6 +20,12 @@ class _AddListingScreenState extends State<AddListingScreen> {
 	final _desc = TextEditingController();
 	final List<Uint8List> _imageBytes = [];
 	bool _saving = false;
+	bool _deliveryEnabled = false;
+	final _deliveryBaseFee = TextEditingController();
+	final _deliveryPerKm = TextEditingController();
+	final _pickupAddress = TextEditingController();
+	double? _pickupLat; double? _pickupLng;
+	bool _allowCOD = false;
 
 	final _categories = const [
 		'Electronics', 'Vehicles', 'Property', 'Home & Garden', 'Fashion', 'Jobs', 'Services', 'Baby & Kids', 'Sports', 'Hobbies', 'Free Stuff',
@@ -51,6 +57,13 @@ class _AddListingScreenState extends State<AddListingScreen> {
 				'description': _desc.text.trim(),
 				'imageUrls': urls,
 				'sellerId': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous',
+				'deliveryEnabled': _deliveryEnabled,
+				'deliveryBaseFee': double.tryParse(_deliveryBaseFee.text.trim() == '' ? '0' : _deliveryBaseFee.text.trim()) ?? 0,
+				'deliveryPerKm': double.tryParse(_deliveryPerKm.text.trim() == '' ? '0' : _deliveryPerKm.text.trim()) ?? 0,
+				'pickupAddress': _pickupAddress.text.trim(),
+				'pickupLat': _pickupLat,
+				'pickupLng': _pickupLng,
+				'allowCOD': _allowCOD,
 				'createdAt': FieldValue.serverTimestamp(),
 			});
 			if (mounted) Navigator.of(context).pop(true);
@@ -80,6 +93,13 @@ class _AddListingScreenState extends State<AddListingScreen> {
 							OutlinedButton.icon(onPressed: _pickImage, icon: const Icon(Icons.add), label: const Text('Add image')),
 						]),
 						const SizedBox(height: 12),
+						SwitchListTile(title: const Text('Enable delivery'), value: _deliveryEnabled, onChanged: (v) => setState(()=> _deliveryEnabled=v)),
+						if (_deliveryEnabled) ...[
+							TextField(controller: _deliveryBaseFee, decoration: const InputDecoration(labelText: 'Delivery base fee'), keyboardType: TextInputType.number),
+							TextField(controller: _deliveryPerKm, decoration: const InputDecoration(labelText: 'Delivery per km'), keyboardType: TextInputType.number),
+							TextField(controller: _pickupAddress, decoration: const InputDecoration(labelText: 'Pickup address (optional)')),
+							SwitchListTile(title: const Text('Allow cash on delivery (COD)'), value: _allowCOD, onChanged: (v) => setState(()=> _allowCOD=v)),
+						],
 						FilledButton(onPressed: _saving?null:_save, child: Text(_saving? 'Saving…':'Save')),
 					],
 				),

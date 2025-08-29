@@ -76,6 +76,8 @@ class _MarketplaceProviderDashboardScreenState extends State<MarketplaceProvider
 							padding: const EdgeInsets.all(12),
 							child: Row(children: [
 								FilledButton.icon(onPressed: _openAddListing, icon: const Icon(Icons.add), label: const Text('Add listing')),
+								const SizedBox(width: 8),
+								OutlinedButton.icon(onPressed: () => _db.collection('orders').where('providerId', isEqualTo: uid).where('status', isEqualTo: 'dispatched').limit(1).get().then((q) async { if (q.docs.isNotEmpty) { await q.docs.first.reference.set({'status': 'dispatched'}, SetOptions(merge: true)); } }), icon: const Icon(Icons.delivery_dining), label: const Text('Dispatch to courier')),
 							]),
 						),
 						Expanded(
