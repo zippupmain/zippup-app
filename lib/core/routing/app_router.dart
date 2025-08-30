@@ -19,6 +19,7 @@ import 'package:zippup/features/admin/presentation/admin_applications_screen.dar
 import 'package:zippup/features/orders/presentation/my_bookings_screen.dart';
 import 'package:zippup/features/orders/presentation/track_order_screen.dart';
 import 'package:zippup/features/transport/presentation/ride_track_screen.dart';
+import 'package:zippup/features/transport/presentation/driver_ride_nav_screen.dart';
 import 'package:zippup/features/transport/presentation/courier_dashboard_screen.dart';
 import 'package:zippup/features/search/presentation/search_results_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_screen.dart';
@@ -167,6 +168,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/driver/delivery',
         name: 'driverDelivery',
         builder: (context, state) => DriverDeliveryScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
+      ),
+      GoRoute(
+        path: '/driver/ride',
+        name: 'driverRideNav',
+        builder: (context, state) => DriverRideNavScreen(rideId: state.uri.queryParameters['rideId'] ?? ''),
       ),
 				GoRoute(
 					path: '/chat/:threadId',

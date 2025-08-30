@@ -179,7 +179,12 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 					}
 					if (driverLat != null && driverLng != null) {
 						final pos = LatLng(driverLat, driverLng);
-						markers.add(Marker(markerId: const MarkerId('driver'), position: pos, infoWindow: const InfoWindow(title: 'Driver')));
+						markers.add(Marker(
+							markerId: const MarkerId('driver'),
+							position: pos,
+							infoWindow: const InfoWindow(title: 'Driver'),
+							icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+						));
 						center = pos;
 					}
 
@@ -208,12 +213,17 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 									if (center == null) return const Center(child: Text('Waiting for provider...'));
 									try {
 										if (kIsWeb) {
-											final fmMarkers = markers.map<lm.Marker>((m) => lm.Marker(
-												point: ll.LatLng(m.position.latitude, m.position.longitude),
-												width: 36,
-												height: 36,
-												child: const Icon(Icons.location_on, color: Colors.redAccent),
-											)).toList();
+											final fmMarkers = markers.map<lm.Marker>((m) {
+												final isDriver = (m.markerId == const MarkerId('driver'));
+												return lm.Marker(
+													point: ll.LatLng(m.position.latitude, m.position.longitude),
+													width: isDriver ? 44 : 36,
+													height: isDriver ? 44 : 36,
+													child: isDriver
+														? const Icon(Icons.directions_car, color: Colors.blue, size: 40)
+														: const Icon(Icons.location_on, color: Colors.redAccent),
+												);
+											}).toList();
 											return lm.FlutterMap(
 												options: lm.MapOptions(initialCenter: ll.LatLng(center!.latitude, center!.longitude), initialZoom: 14),
 												children: [
@@ -242,6 +252,14 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 								padding: const EdgeInsets.all(16),
 								child: Column(
 									children: [
+										if (ride.driverId != null) Card(
+											child: ListTile(
+												leading: const CircleAvatar(child: Icon(Icons.person)),
+												title: const Text('Your driver'),
+												subtitle: Text('ID: ${ride.driverId!.substring(0, 6)} • ${ride.type.name.toUpperCase()}'),
+												trailing: const Icon(Icons.star_border),
+											),
+										),
 										StatusTimeline(steps: steps, currentIndex: idx),
 										if (_etaMinutes != null) Padding(
 											padding: const EdgeInsets.only(top: 8.0),

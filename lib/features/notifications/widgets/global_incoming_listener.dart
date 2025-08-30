@@ -103,7 +103,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			content: Text('${(m['type'] ?? 'ride').toString().toUpperCase()}\nFrom: ${(m['pickupAddress'] ?? '').toString()}'),
 			actions: [
 				TextButton(onPressed: () { Navigator.pop(ctx); _declineRide(id); }, child: const Text('Decline')),
-				FilledButton(onPressed: () { Navigator.pop(ctx); _acceptRide(id); _go('/hub/transport'); }, child: const Text('Accept')),
+				FilledButton(onPressed: () { Navigator.pop(ctx); _acceptRide(id); _go('/driver/ride?rideId=' + id); }, child: const Text('Accept')),
 			],
 		));
 	}
