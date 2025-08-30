@@ -170,8 +170,23 @@ class _VendorListScreenState extends State<VendorListScreen> {
 								final vid = docs[i].id;
 								final dist = _dist(v);
 								final rating = (v['rating'] as num?)?.toDouble() ?? 0.0;
-								final isOpen = v['isOpen'] ?? true;
+								final branchName = v['branchName'] ?? v['branch'] ?? '';
+								final openTime = v['openTime'] ?? '8:00 AM';
+								final closeTime = v['closeTime'] ?? '10:00 PM';
 								final deliveryTime = v['deliveryTime'] ?? '30-45 min';
+								final minOrder = v['minOrder'] ?? 0;
+								final deliveryFee = v['deliveryFee'] ?? 200;
+								final specialties = (v['specialties'] as List?)?.cast<String>() ?? [];
+								
+								// Determine if open based on current time
+								final now = DateTime.now();
+								final currentHour = now.hour;
+								bool isOpen = v['isOpen'] ?? true;
+								if (v['openHour'] != null && v['closeHour'] != null) {
+									final openHour = v['openHour'] as int;
+									final closeHour = v['closeHour'] as int;
+									isOpen = currentHour >= openHour && currentHour < closeHour;
+								}
 								
 								return Container(
 									margin: const EdgeInsets.only(bottom: 16),
@@ -217,14 +232,27 @@ class _VendorListScreenState extends State<VendorListScreen> {
 														child: Column(
 															crossAxisAlignment: CrossAxisAlignment.start,
 															children: [
+																// Vendor name and branch
 																Text(
 																	v['name'] ?? 'Vendor',
 																	style: const TextStyle(
 																		fontWeight: FontWeight.bold,
 																		fontSize: 16,
+																		color: Colors.black87,
 																	),
 																),
-																const SizedBox(height: 6),
+																if (branchName.isNotEmpty) ...[
+																	const SizedBox(height: 2),
+																	Text(
+																		'📍 $branchName Branch',
+																		style: TextStyle(
+																			fontSize: 13,
+																			color: Colors.grey.shade600,
+																			fontWeight: FontWeight.w500,
+																		),
+																	),
+																],
+																const SizedBox(height: 8),
 																
 																// Status and rating row
 																Row(
@@ -258,45 +286,132 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																		Text('(${rating.toStringAsFixed(1)})', style: const TextStyle(fontSize: 12)),
 																	],
 																),
-																const SizedBox(height: 4),
+																const SizedBox(height: 6),
 																
-																// Delivery info
+																// Opening hours
 																Row(
 																	children: [
-																		Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),
+																		Icon(Icons.schedule, size: 14, color: Colors.blue.shade600),
 																		const SizedBox(width: 4),
-																		Text(deliveryTime, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+																		Text(
+																			'$openTime - $closeTime',
+																			style: TextStyle(color: Colors.blue.shade600, fontSize: 12, fontWeight: FontWeight.w500),
+																		),
+																	],
+																),
+																const SizedBox(height: 4),
+																
+																// Delivery info row
+																Row(
+																	children: [
+																		Icon(Icons.delivery_dining, size: 14, color: Colors.orange.shade600),
+																		const SizedBox(width: 4),
+																		Text(deliveryTime, style: TextStyle(color: Colors.orange.shade600, fontSize: 12)),
+																		const SizedBox(width: 8),
+																		Icon(Icons.attach_money, size: 14, color: Colors.green.shade600),
+																		Text('₦$deliveryFee fee', style: TextStyle(color: Colors.green.shade600, fontSize: 12)),
+																	],
+																),
+																const SizedBox(height: 4),
+																
+																// Location and min order
+																Row(
+																	children: [
 																		if (dist.isNotEmpty) ...[
-																			const SizedBox(width: 8),
 																			Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
 																			const SizedBox(width: 4),
 																			Text(dist, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+																			const SizedBox(width: 8),
+																		],
+																		if (minOrder > 0) ...[
+																			Icon(Icons.shopping_cart, size: 14, color: Colors.purple.shade600),
+																			const SizedBox(width: 4),
+																			Text('Min ₦$minOrder', style: TextStyle(color: Colors.purple.shade600, fontSize: 12)),
 																		],
 																	],
 																),
+																
+																// Specialties tags
+																if (specialties.isNotEmpty) ...[
+																	const SizedBox(height: 6),
+																	Wrap(
+																		spacing: 4,
+																		children: specialties.take(3).map((specialty) {
+																			return Container(
+																				padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+																				decoration: BoxDecoration(
+																					color: gradient.colors.first.withOpacity(0.2),
+																					borderRadius: BorderRadius.circular(8),
+																				),
+																				child: Text(
+																					specialty,
+																					style: TextStyle(
+																						fontSize: 10,
+																						color: gradient.colors.first,
+																						fontWeight: FontWeight.w600,
+																					),
+																				),
+																			);
+																		}).toList(),
+																	),
+																],
 															],
 														),
 													),
 													
 													// Action buttons
 													Column(
+														mainAxisAlignment: MainAxisAlignment.spaceBetween,
 														children: [
-															Container(
-																padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+															// Quick order indicator
+															if (widget.category == 'grocery') Container(
+																padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
 																decoration: BoxDecoration(
-																	gradient: gradient,
-																	borderRadius: BorderRadius.circular(20),
+																	color: Colors.blue.shade100,
+																	borderRadius: BorderRadius.circular(8),
 																),
 																child: const Text(
-																	'VIEW MENU',
+																	'🛒 GROCERY',
 																	style: TextStyle(
-																		color: Colors.white,
+																		color: Colors.blue,
 																		fontWeight: FontWeight.bold,
-																		fontSize: 11,
+																		fontSize: 9,
 																	),
 																),
 															),
+															
 															const SizedBox(height: 8),
+															
+															// Menu button
+															InkWell(
+																onTap: () => context.push('/food/vendor?vendorId=$vid'),
+																child: Container(
+																	padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+																	decoration: BoxDecoration(
+																		gradient: gradient,
+																		borderRadius: BorderRadius.circular(20),
+																		boxShadow: [
+																			BoxShadow(
+																				color: gradient.colors.first.withOpacity(0.3),
+																				blurRadius: 4,
+																				offset: const Offset(0, 2),
+																			),
+																		],
+																	),
+																	child: const Text(
+																		'VIEW MENU',
+																		style: TextStyle(
+																			color: Colors.white,
+																			fontWeight: FontWeight.bold,
+																			fontSize: 11,
+																		),
+																	),
+																),
+															),
+															
+															const SizedBox(height: 8),
+															
+															// Chat button
 															InkWell(
 																onTap: () => context.pushNamed('chat', 
 																	pathParameters: {'threadId': 'vendor_$vid'}, 
@@ -304,10 +419,12 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																child: Container(
 																	padding: const EdgeInsets.all(8),
 																	decoration: BoxDecoration(
-																		color: Colors.grey.shade100,
+																		gradient: const LinearGradient(
+																			colors: [Color(0xFF607D8B), Color(0xFF90A4AE)],
+																		),
 																		shape: BoxShape.circle,
 																	),
-																	child: const Icon(Icons.chat_bubble_outline, size: 16),
+																	child: const Icon(Icons.chat_bubble_outline, size: 16, color: Colors.white),
 																),
 															),
 														],

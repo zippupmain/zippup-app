@@ -10,11 +10,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-// Temporary stubs to unblock build; replace with real implementations
+// Enhanced implementations with colorful design
 Widget _PositionedUnreadDot() => const SizedBox.shrink();
 Widget _HomeSearchBar() => const _HomeSearchBarWidget();
-Widget _Promotions() => const SizedBox.shrink();
-Widget _DynamicCard({required int index}) => const SizedBox.shrink();
+Widget _Promotions() => const _PromotionsCarousel();
+Widget _DynamicCard({required int index}) => _ColorfulDynamicCard(index: index);
 
 class _PositionedDraggablePanic extends StatefulWidget {
 	@override
@@ -806,5 +806,194 @@ class _UserAvatar extends StatelessWidget {
 			);
 		}
 		return const Icon(Icons.person);
+	}
+}
+
+class _PromotionsCarousel extends StatelessWidget {
+	const _PromotionsCarousel();
+	
+	@override
+	Widget build(BuildContext context) {
+		final promotions = [
+			{
+				'title': '🍕 Free Delivery Weekend',
+				'subtitle': 'Order food with no delivery fees',
+				'gradient': const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF06292)]),
+				'action': 'Order Now',
+			},
+			{
+				'title': '🚗 50% Off First Ride',
+				'subtitle': 'New users get huge discounts',
+				'gradient': const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF64B5F6)]),
+				'action': 'Book Ride',
+			},
+			{
+				'title': '🔧 Hire Services Sale',
+				'subtitle': 'Professional services at best prices',
+				'gradient': const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)]),
+				'action': 'Hire Now',
+			},
+		];
+		
+		return Container(
+			height: 120,
+			margin: const EdgeInsets.symmetric(horizontal: 16),
+			child: PageView.builder(
+				itemCount: promotions.length,
+				itemBuilder: (context, index) {
+					final promo = promotions[index];
+					return Container(
+						margin: const EdgeInsets.symmetric(horizontal: 4),
+						decoration: BoxDecoration(
+							gradient: promo['gradient'] as LinearGradient,
+							borderRadius: BorderRadius.circular(16),
+							boxShadow: [
+								BoxShadow(
+									color: (promo['gradient'] as LinearGradient).colors.first.withOpacity(0.3),
+									blurRadius: 8,
+									offset: const Offset(0, 4),
+								),
+							],
+						),
+						child: Padding(
+							padding: const EdgeInsets.all(16),
+							child: Row(
+								children: [
+									Expanded(
+										child: Column(
+											crossAxisAlignment: CrossAxisAlignment.start,
+											mainAxisAlignment: MainAxisAlignment.center,
+											children: [
+												Text(
+													promo['title'] as String,
+													style: const TextStyle(
+														color: Colors.white,
+														fontWeight: FontWeight.bold,
+														fontSize: 16,
+													),
+												),
+												const SizedBox(height: 4),
+												Text(
+													promo['subtitle'] as String,
+													style: const TextStyle(
+														color: Colors.white,
+														fontSize: 12,
+													),
+												),
+											],
+										),
+									),
+									Container(
+										padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+										decoration: BoxDecoration(
+											color: Colors.white.withOpacity(0.2),
+											borderRadius: BorderRadius.circular(20),
+										),
+										child: Text(
+											promo['action'] as String,
+											style: const TextStyle(
+												color: Colors.white,
+												fontWeight: FontWeight.bold,
+												fontSize: 12,
+											),
+										),
+									),
+								],
+							),
+						),
+					);
+				},
+			),
+		);
+	}
+}
+
+class _ColorfulDynamicCard extends StatelessWidget {
+	const _ColorfulDynamicCard({required this.index});
+	final int index;
+	
+	@override
+	Widget build(BuildContext context) {
+		final cards = [
+			{
+				'title': '⚡ Quick Services',
+				'subtitle': 'Emergency & instant help',
+				'gradient': const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]),
+				'icon': Icons.flash_on,
+			},
+			{
+				'title': '🎯 Popular Now',
+				'subtitle': 'Trending services in your area',
+				'gradient': const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]),
+				'icon': Icons.trending_up,
+			},
+			{
+				'title': '💎 Premium Services',
+				'subtitle': 'High-quality verified providers',
+				'gradient': const LinearGradient(colors: [Color(0xFF673AB7), Color(0xFF9575CD)]),
+				'icon': Icons.diamond,
+			},
+		];
+		
+		if (index >= cards.length) return const SizedBox.shrink();
+		
+		final card = cards[index];
+		return Container(
+			margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+			decoration: BoxDecoration(
+				gradient: card['gradient'] as LinearGradient,
+				borderRadius: BorderRadius.circular(12),
+				boxShadow: [
+					BoxShadow(
+						color: (card['gradient'] as LinearGradient).colors.first.withOpacity(0.3),
+						blurRadius: 6,
+						offset: const Offset(0, 3),
+					),
+				],
+			),
+			child: Padding(
+				padding: const EdgeInsets.all(12),
+				child: Row(
+					children: [
+						Container(
+							padding: const EdgeInsets.all(8),
+							decoration: BoxDecoration(
+								color: Colors.white.withOpacity(0.2),
+								shape: BoxShape.circle,
+							),
+							child: Icon(
+								card['icon'] as IconData,
+								color: Colors.white,
+								size: 20,
+							),
+						),
+						const SizedBox(width: 12),
+						Expanded(
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Text(
+										card['title'] as String,
+										style: const TextStyle(
+											color: Colors.white,
+											fontWeight: FontWeight.bold,
+											fontSize: 14,
+										),
+									),
+									const SizedBox(height: 2),
+									Text(
+										card['subtitle'] as String,
+										style: const TextStyle(
+											color: Colors.white,
+											fontSize: 11,
+										),
+									),
+								],
+							),
+						),
+					],
+				),
+			),
+		);
 	}
 }
