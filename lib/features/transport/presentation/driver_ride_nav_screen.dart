@@ -214,6 +214,7 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 											icon: const Icon(Icons.navigation),
 											label: const Text('Open in Maps')
 										)),
+									]),
 									const SizedBox(height: 8),
 									_statusActions(ride, data),
 								],
