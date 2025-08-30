@@ -120,6 +120,39 @@ class _MovingScreenState extends State<MovingScreen> {
 				'createdAt': DateTime.now().toIso8601String(),
 				'status': 'requested',
 			});
+
+			// Best-effort auto-assignment to an online moving provider
+			try {
+				final db = FirebaseFirestore.instance;
+				final req = _subcategory; // 'truck' | 'backie' | 'courier'
+				final List<String> allowed = req == 'truck'
+					? ['Truck']
+					: req == 'backie'
+						? ['Pickup/Backie', 'Backie/Pickup']
+						: ['Courier'];
+				final profs = await db
+					.collection('provider_profiles')
+					.where('service', isEqualTo: 'moving')
+					.where('availabilityOnline', isEqualTo: true)
+					.limit(50)
+					.get(const GetOptions(source: Source.server));
+				final candidates = profs.docs
+					.map((d) => d.data())
+					.where((m) {
+						final meta = (m['metadata'] as Map<String, dynamic>?) ?? const {};
+						final sub = (meta['subcategory'] ?? '').toString();
+						return allowed.contains(sub);
+					})
+					.where((m) => (m['userId'] ?? '') != uid)
+					.toList();
+				if (candidates.isNotEmpty) {
+					final chosen = candidates[Math.Random().nextInt(candidates.length)];
+					final providerId = (chosen['userId'] ?? '').toString();
+					if (providerId.isNotEmpty) {
+						await db.collection('moving_requests').doc(doc.id).set({'assignedProviderId': providerId}, SetOptions(merge: true));
+					}
+				}
+			} catch (_) {/* ignore assignment failures */}
 			if (!mounted) return;
 			if (_scheduled) {
 				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Moving request scheduled')));
