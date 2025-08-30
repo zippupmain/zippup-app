@@ -174,16 +174,16 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				
 				// Create public profile if missing but user profile exists
 				if (!results[0].exists && results[1].exists && u['name'] != null) {
-					try {
-						await FirebaseFirestore.instance.collection('public_profiles').doc(riderId).set({
-							'name': u['name'],
-							'photoUrl': u['photoUrl'] ?? '',
-							'createdAt': DateTime.now().toIso8601String(),
-						});
+					// Fire and forget - create profile in background
+					FirebaseFirestore.instance.collection('public_profiles').doc(riderId).set({
+						'name': u['name'],
+						'photoUrl': u['photoUrl'] ?? '',
+						'createdAt': DateTime.now().toIso8601String(),
+					}).then((_) {
 						print('✅ Created missing public profile for customer: ${u['name']}');
-					} catch (e) {
+					}).catchError((e) {
 						print('❌ Failed to create public profile: $e');
-					}
+					});
 				}
 				
 				// Better name resolution with multiple fallbacks

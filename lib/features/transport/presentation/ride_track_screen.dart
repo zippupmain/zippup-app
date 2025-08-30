@@ -577,16 +577,16 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 													
 													// Create public profile if missing but user profile exists
 													if (!(s.data?[1] as DocumentSnapshot?)!.exists && (s.data?[0] as DocumentSnapshot?)!.exists && u['name'] != null) {
-														try {
-															await FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).set({
-																'name': u['name'],
-																'photoUrl': u['photoUrl'] ?? '',
-																'createdAt': DateTime.now().toIso8601String(),
-															});
+														// Fire and forget - don't await in builder
+														FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).set({
+															'name': u['name'],
+															'photoUrl': u['photoUrl'] ?? '',
+															'createdAt': DateTime.now().toIso8601String(),
+														}).then((_) {
 															print('✅ Created missing public profile for driver: ${u['name']}');
-														} catch (e) {
+														}).catchError((e) {
 															print('❌ Failed to create driver public profile: $e');
-														}
+														});
 													}
 													
 													// Better name resolution with fallbacks
