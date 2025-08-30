@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:zippup/features/profile/presentation/provider_profile_screen.dart';
 import 'package:zippup/services/location/location_service.dart';
 import 'package:geolocator/geolocator.dart' as geo;
@@ -202,28 +204,99 @@ class _HireScreenState extends State<HireScreen> {
 													trailing: Wrap(spacing: 8, children: [
 														TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid))), child: const Text('Profile')),
 														FilledButton(onPressed: () async {
-															final daddr=_dest.text.trim();
-															if(daddr.isEmpty){
-																ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter destination')));
+															final daddr = _dest.text.trim();
+															if (daddr.isEmpty) {
+																ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter service address')));
 																return;
 															}
-															final cls = await showDialog<String>(context: context, builder: (ctx){
-																return SimpleDialog(title: const Text('Choose service class'), children:[
-																	SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Basic'), child: const Text('Basic • ₦2,000 / 2hrs')),
-																	SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Standard'), child: const Text('Standard • ₦3,500 / 2hrs')),
-																	SimpleDialogOption(onPressed: ()=> Navigator.pop(ctx,'Pro'), child: const Text('Pro • ₦5,000 / 2hrs')),
-																]);
+															
+															final serviceDetails = await showDialog<Map<String, dynamic>>(context: context, builder: (ctx) {
+																final descController = TextEditingController();
+																String selectedClass = 'Basic';
+																return StatefulBuilder(builder: (context, setState) {
+																	return AlertDialog(
+																		title: const Text('Book Hire Service'),
+																		content: Column(
+																			mainAxisSize: MainAxisSize.min,
+																			children: [
+																				TextField(
+																					controller: descController,
+																					decoration: const InputDecoration(
+																						labelText: 'Describe what you need',
+																						border: OutlineInputBorder(),
+																					),
+																					maxLines: 2,
+																				),
+																				const SizedBox(height: 16),
+																				const Text('Service Class:', style: TextStyle(fontWeight: FontWeight.bold)),
+																				RadioListTile<String>(
+																					value: 'Basic',
+																					groupValue: selectedClass,
+																					onChanged: (value) => setState(() => selectedClass = value!),
+																					title: const Text('Basic • ₦2,000 / 2hrs'),
+																				),
+																				RadioListTile<String>(
+																					value: 'Standard',
+																					groupValue: selectedClass,
+																					onChanged: (value) => setState(() => selectedClass = value!),
+																					title: const Text('Standard • ₦3,500 / 2hrs'),
+																				),
+																				RadioListTile<String>(
+																					value: 'Pro',
+																					groupValue: selectedClass,
+																					onChanged: (value) => setState(() => selectedClass = value!),
+																					title: const Text('Pro • ₦5,000 / 2hrs'),
+																				),
+																			],
+																		),
+																		actions: [
+																			TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+																			FilledButton(
+																				onPressed: () => Navigator.pop(ctx, {
+																					'description': descController.text.trim(),
+																					'class': selectedClass,
+																					'fee': selectedClass == 'Basic' ? 2000 : (selectedClass == 'Standard' ? 3500 : 5000),
+																				}),
+																				child: const Text('Book'),
+																			),
+																		],
+																	);
+																});
 															});
-															if (cls == null) return;
-															showDialog(context: context, barrierDismissible: false, builder: (ctx)=> AlertDialog(
-																title: Text('Finding $cls ${_filter}…'),
-																content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
-																actions: [TextButton(onPressed: ()=> Navigator.pop(ctx), child: const Text('Cancel'))],
-															));
-															await Future.delayed(const Duration(seconds: 8));
-															if (!mounted) return;
-															Navigator.of(context).pop();
-															Navigator.push(context, MaterialPageRoute(builder: (_) => ProviderProfileScreen(providerId: pid)));
+															
+															if (serviceDetails == null) return;
+															
+															// Create hire booking
+															try {
+																final uid = FirebaseAuth.instance.currentUser?.uid;
+																if (uid == null) return;
+																
+																final bookingRef = FirebaseFirestore.instance.collection('hire_bookings').doc();
+																await bookingRef.set({
+																	'clientId': uid,
+																	'providerId': pid,
+																	'type': _filter,
+																	'serviceCategory': _filter,
+																	'description': serviceDetails['description'],
+																	'serviceAddress': daddr,
+																	'createdAt': DateTime.now().toIso8601String(),
+																	'isScheduled': false,
+																	'feeEstimate': serviceDetails['fee'],
+																	'etaMinutes': 30,
+																	'status': 'requested',
+																	'currency': 'NGN',
+																	'serviceClass': serviceDetails['class'],
+																});
+																
+																// Navigate to tracking
+																if (mounted) {
+																	context.push('/track/hire?bookingId=${bookingRef.id}');
+																}
+															} catch (e) {
+																if (mounted) {
+																	ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booking failed: $e')));
+																}
+															}
 														}, child: const Text('Book')),
 													]),
 												);
