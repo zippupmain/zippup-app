@@ -57,7 +57,8 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 	}
 
 	Future<void> _updateRide(String id, RideStatus status) async {
-		await _db.collection('rides').doc(id).set({'status': status.name}, SetOptions(merge: true));
+		final uid = _auth.currentUser?.uid;
+		await _db.collection('rides').doc(id).set({'status': status.name, if (status == RideStatus.accepted && uid != null) 'driverId': uid}, SetOptions(merge: true));
 	}
 
 	@override
@@ -186,9 +187,33 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 									context: context,
 									builder: (_) => AlertDialog(
 										title: const Text('New ride request'),
-										content: Text('${r.type.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
+										content: Column(
+											mainAxisSize: MainAxisSize.min,
+											crossAxisAlignment: CrossAxisAlignment.start,
+											children: [
+												FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+													future: _db.collection('users').doc(r.riderId).get(),
+													builder: (context, u) {
+														final data = u.data?.data() ?? const {};
+														final name = (data['name'] ?? 'Customer').toString();
+														final photo = (data['photoUrl'] ?? '').toString();
+														return ListTile(
+															contentPadding: EdgeInsets.zero,
+															leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
+															title: Text(name),
+															subtitle: FutureBuilder<AggregateQuerySnapshot>(
+																future: _db.collection('rides').where('riderId', isEqualTo: r.riderId).count().get(),
+																builder: (context, c) => Text('Rides: ${c.data?.count ?? 0}'),
+															),
+														);
+													},
+												),
+												const SizedBox(height: 8),
+												Text('${r.type.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
+											],
+										),
 										actions: [
-											TextButton(onPressed: () { Navigator.pop(context); _updateRide(r.id, RideStatus.accepted); }, child: const Text('Accept')),
+											TextButton(onPressed: () { Navigator.pop(context); _updateRide(r.id, RideStatus.accepted); context.push('/driver/ride?rideId=${r.id}'); }, child: const Text('Accept')),
 											TextButton(onPressed: () { Navigator.pop(context); _db.collection('rides').doc(r.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)); }, child: const Text('Decline')),
 										],
 									),
