@@ -38,15 +38,44 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		_unbind();
 		if (uid == null) return;
 		final db = FirebaseFirestore.instance;
+		
+		// Listen for ride requests assigned to this driver OR unassigned rides for available drivers
 		_ridesSub = db.collection('rides')
-			.where('driverId', isEqualTo: uid)
 			.where('status', isEqualTo: 'requested')
 			.snapshots()
-			.listen((snap) {
+			.listen((snap) async {
+				// Check if user has active transport provider profile AND is online
+				bool isActiveTransportProvider = false;
+				try {
+					final providerSnap = await db.collection('provider_profiles')
+						.where('userId', isEqualTo: uid)
+						.where('service', isEqualTo: 'transport')
+						.where('status', isEqualTo: 'active')
+						.limit(1)
+						.get();
+					if (providerSnap.docs.isNotEmpty) {
+						final providerData = providerSnap.docs.first.data();
+						// Only show requests if provider is online/available
+						isActiveTransportProvider = providerData['availabilityOnline'] == true;
+					}
+				} catch (_) {}
+				
 				for (final d in snap.docs) {
-					if (_shown.contains('ride:${d.id}')) continue;
-					_shown.add('ride:${d.id}');
-					_showRideDialog(d.id, d.data());
+					final data = d.data();
+					final assignedDriverId = data['driverId']?.toString();
+					
+					// Show if: assigned to this driver OR (no driver assigned AND user is active provider)
+					bool shouldShow = false;
+					if (assignedDriverId == uid) {
+						shouldShow = true; // Directly assigned
+					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && isActiveTransportProvider) {
+						shouldShow = true; // Available for active providers
+					}
+					
+					if (shouldShow && !_shown.contains('ride:${d.id}')) {
+						_shown.add('ride:${d.id}');
+						_showRideDialog(d.id, data);
+					}
 				}
 			});
 		_ordersSub = db.collection('orders')
@@ -108,15 +137,45 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		try {
 			final riderId = (m['riderId'] ?? '').toString();
 			if (riderId.isNotEmpty) {
-				final pub = await FirebaseFirestore.instance.collection('public_profiles').doc(riderId).get();
-				final pu = pub.data() ?? const {};
-				riderName = (pu['name'] ?? '').toString().trim().isNotEmpty ? pu['name'].toString() : riderName;
-				riderPhoto = (pu['photoUrl'] ?? '').toString();
-				if (riderName == 'Customer') {
-					final userDoc = await FirebaseFirestore.instance.collection('users').doc(riderId).get();
-					final u = userDoc.data() ?? const {};
-					riderName = (u['name'] ?? riderName).toString();
-					riderPhoto = riderPhoto.isNotEmpty ? riderPhoto : (u['photoUrl'] ?? '').toString();
+				// Fetch both profiles simultaneously for better performance
+				final results = await Future.wait([
+					FirebaseFirestore.instance.collection('public_profiles').doc(riderId).get(),
+					FirebaseFirestore.instance.collection('users').doc(riderId).get(),
+				]);
+				
+				final pu = results[0].data() ?? const {};
+				final u = results[1].data() ?? const {};
+				
+				// Better name resolution with multiple fallbacks
+				if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
+					riderName = pu['name'].toString().trim();
+				} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
+					riderName = u['name'].toString().trim();
+				} else if (u['displayName'] != null && u['displayName'].toString().trim().isNotEmpty) {
+					riderName = u['displayName'].toString().trim();
+				} else if (u['firstName'] != null || u['lastName'] != null) {
+					final firstName = (u['firstName'] ?? '').toString().trim();
+					final lastName = (u['lastName'] ?? '').toString().trim();
+					if (firstName.isNotEmpty || lastName.isNotEmpty) {
+						riderName = '$firstName $lastName'.trim();
+					}
+				} else if (u['email'] != null) {
+					// Extract name from email as last resort
+					final email = u['email'].toString();
+					final atIndex = email.indexOf('@');
+					if (atIndex > 0) {
+						riderName = email.substring(0, atIndex).replaceAll('.', ' ').replaceAll('_', ' ');
+						riderName = riderName.split(' ').map((word) => word.isNotEmpty ? word[0].toUpperCase() + word.substring(1).toLowerCase() : '').join(' ');
+					}
+				}
+				
+				// Better photo resolution
+				if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
+					riderPhoto = pu['photoUrl'].toString().trim();
+				} else if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
+					riderPhoto = u['photoUrl'].toString().trim();
+				} else if (u['profilePicture'] != null && u['profilePicture'].toString().trim().isNotEmpty) {
+					riderPhoto = u['profilePicture'].toString().trim();
 				}
 				try {
 					final agg = await FirebaseFirestore.instance
@@ -128,9 +187,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
-		try { await SoundService.instance.playChirp(); } catch (_) {}
+		try { await SoundService.instance.playCall(); } catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
-			title: const Text('New ride request'),
+			title: const Text('🚗 New Ride Request'),
 			content: Column(
 				mainAxisSize: MainAxisSize.min,
 				crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,9 +244,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
-		try { await SoundService.instance.playChirp(); } catch (_) {}
+		try { await SoundService.instance.playCall(); } catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
-			title: const Text('New job request'),
+			title: const Text('💼 New Job Request'),
 			content: Column(
 				mainAxisSize: MainAxisSize.min,
 				crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,8 +271,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	Future<void> _showDeliveryDialog(String id, Map<String, dynamic> m) async {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
+		try { await SoundService.instance.playChirp(); } catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
-			title: const Text('New delivery assigned'),
+			title: const Text('🚚 New Delivery Assigned'),
 			content: Text('Order ${id.substring(0,6)} • ${(m['category'] ?? '').toString()}'),
 			actions: [
 				TextButton(onPressed: () { Navigator.pop(ctx); }, child: const Text('Later')),
@@ -225,8 +285,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	Future<void> _showMovingDialog(String id, Map<String, dynamic> m) async {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
+		try { await SoundService.instance.playCall(); } catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
-			title: const Text('New moving request'),
+			title: const Text('📦 New Moving Request'),
 			content: Text('${(m['subcategory'] ?? 'moving').toString().toUpperCase()}\nFrom: ${(m['pickupAddress'] ?? '').toString()}'),
 			actions: [
 				TextButton(onPressed: () { Navigator.pop(ctx); _updateMoving(id, 'cancelled'); }, child: const Text('Decline')),

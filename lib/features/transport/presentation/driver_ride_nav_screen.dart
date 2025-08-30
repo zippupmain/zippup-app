@@ -12,6 +12,7 @@ import 'package:zippup/common/models/ride.dart';
 import 'package:zippup/features/transport/providers/ride_service.dart';
 import 'package:zippup/services/location/distance_service.dart';
 import 'package:zippup/services/location/location_service.dart';
+import 'package:zippup/services/notifications/sound_service.dart';
 
 class DriverRideNavScreen extends StatefulWidget {
 	const DriverRideNavScreen({super.key, required this.rideId});
@@ -29,6 +30,7 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 	Timer? _locTimer;
 	Timer? _simTimer;
 	Set<Polyline> _polylines = {};
+	bool _shownDriverSummary = false;
 
 	@override
 	void initState() {
@@ -53,7 +55,7 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 				if (pos == null) return;
 				await _rideService.updateDriverLocation(widget.rideId, lat: pos.latitude, lng: pos.longitude);
 			} catch (_) {
-				// On web or permissions denied, simulate slight movement along route to keep UI alive
+				// On web or permissions denied, simulate realistic movement along route
 				try {
 					final doc = await _db.collection('rides').doc(widget.rideId).get();
 					final data = doc.data() ?? const {};
@@ -61,12 +63,43 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 					final pickupLng = (data['pickupLng'] as num?)?.toDouble();
 					final destLat = (data['destLat'] as num?)?.toDouble();
 					final destLng = (data['destLng'] as num?)?.toDouble();
+					final status = data['status']?.toString() ?? 'requested';
+					
 					if (pickupLat != null && pickupLng != null && destLat != null && destLng != null) {
-						_simTimer ??= Timer.periodic(const Duration(seconds: 3), (t) async {
-							final f = (t.tick % 10) / 10.0;
-							final lat = pickupLat + (destLat - pickupLat) * f;
-							final lng = pickupLng + (destLng - pickupLng) * f;
-							try { await _rideService.updateDriverLocation(widget.rideId, lat: lat, lng: lng); } catch (_) {}
+						_simTimer ??= Timer.periodic(const Duration(seconds: 2), (t) async {
+							double lat, lng;
+							
+							switch (status) {
+								case 'accepted':
+								case 'arriving':
+									// Move towards pickup location
+									final progress = ((t.tick % 15) / 15.0).clamp(0.0, 1.0);
+									// Start from a point between pickup and destination
+									final startLat = pickupLat + (destLat - pickupLat) * 0.4;
+									final startLng = pickupLng + (destLng - pickupLng) * 0.4;
+									lat = startLat + (pickupLat - startLat) * progress;
+									lng = startLng + (pickupLng - startLng) * progress;
+									break;
+								case 'arrived':
+									// Stay at pickup location
+									lat = pickupLat;
+									lng = pickupLng;
+									break;
+								case 'enroute':
+									// Move from pickup to destination
+									final progress = ((t.tick % 20) / 20.0).clamp(0.0, 1.0);
+									lat = pickupLat + (destLat - pickupLat) * progress;
+									lng = pickupLng + (destLng - pickupLng) * progress;
+									break;
+								default:
+									// Default to pickup location
+									lat = pickupLat;
+									lng = pickupLng;
+							}
+							
+							try { 
+								await _rideService.updateDriverLocation(widget.rideId, lat: lat, lng: lng); 
+							} catch (_) {}
 						});
 					}
 				} catch (_) {}
@@ -160,6 +193,119 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 					final destLng = (data['destLng'] as num?)?.toDouble();
 					final driverLat = (data['driverLat'] as num?)?.toDouble();
 					final driverLng = (data['driverLng'] as num?)?.toDouble();
+
+					// Show driver completion summary
+					if (ride.status == RideStatus.completed && !_shownDriverSummary) {
+						_shownDriverSummary = true;
+						WidgetsBinding.instance.addPostFrameCallback((_) async {
+							// Play completion sound
+							try {
+								await SoundService.instance.playTrill();
+							} catch (_) {}
+							
+							// Fetch customer info for summary
+							String customerName = 'Customer';
+							String customerPhoto = '';
+							try {
+								if (ride.riderId != null) {
+									final results = await Future.wait([
+										FirebaseFirestore.instance.collection('public_profiles').doc(ride.riderId!).get(),
+										FirebaseFirestore.instance.collection('users').doc(ride.riderId!).get(),
+									]);
+									final pu = results[0].data() ?? const {};
+									final u = results[1].data() ?? const {};
+									
+									if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
+										customerName = pu['name'].toString().trim();
+									} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
+										customerName = u['name'].toString().trim();
+									}
+									
+									if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
+										customerPhoto = pu['photoUrl'].toString().trim();
+									} else if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
+										customerPhoto = u['photoUrl'].toString().trim();
+									}
+								}
+							} catch (_) {}
+							
+							await showDialog(context: context, builder: (_) {
+								final fare = ride.fareEstimate;
+								final currency = data['currency'] ?? 'NGN';
+								
+								return AlertDialog(
+									title: const Text('🎉 Ride Completed!'),
+									content: SingleChildScrollView(
+										child: Column(
+											mainAxisSize: MainAxisSize.min,
+											crossAxisAlignment: CrossAxisAlignment.start,
+											children: [
+												// Customer info
+												Card(
+													child: ListTile(
+														leading: CircleAvatar(
+															backgroundImage: customerPhoto.isNotEmpty ? NetworkImage(customerPhoto) : null,
+															child: customerPhoto.isEmpty ? const Icon(Icons.person) : null,
+														),
+														title: Text(customerName),
+														subtitle: const Text('Your customer'),
+													),
+												),
+												const SizedBox(height: 16),
+												
+												// Trip details
+												Card(
+													child: Padding(
+														padding: const EdgeInsets.all(16),
+														child: Column(
+															crossAxisAlignment: CrossAxisAlignment.start,
+															children: [
+																const Text('Trip Details', style: TextStyle(fontWeight: FontWeight.bold)),
+																const SizedBox(height: 8),
+																Text('From: ${data['pickupAddress'] ?? 'Unknown'}'),
+																Text('To: ${data['destinationAddresses'] is List && (data['destinationAddresses'] as List).isNotEmpty ? (data['destinationAddresses'] as List).first.toString() : 'Unknown'}'),
+																if (data['distance'] != null) Text('Distance: ${(data['distance'] as num).toStringAsFixed(1)} km'),
+																if (data['duration'] != null) Text('Duration: ${((data['duration'] as num) / 60).toStringAsFixed(0)} min'),
+															],
+														),
+													),
+												),
+												const SizedBox(height: 16),
+												
+												// Earnings section
+												Card(
+													color: Colors.green.shade50,
+													child: Padding(
+														padding: const EdgeInsets.all(16),
+														child: Column(
+															crossAxisAlignment: CrossAxisAlignment.start,
+															children: [
+																const Text('💰 Earnings', style: TextStyle(fontWeight: FontWeight.bold)),
+																const SizedBox(height: 8),
+																Text('Customer pays: $currency ${fare.toStringAsFixed(2)}', 
+																	style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+																const SizedBox(height: 4),
+																Text('Your earnings: $currency ${(fare * 0.85).toStringAsFixed(2)}', 
+																	style: const TextStyle(fontSize: 16, color: Colors.green)),
+																const SizedBox(height: 4),
+																const Text('Payment will be processed automatically', style: TextStyle(color: Colors.grey)),
+															],
+														),
+													),
+												),
+											],
+										),
+									),
+									actions: [
+										FilledButton(
+											onPressed: () => Navigator.pop(context),
+											child: const Text('Done'),
+										),
+									],
+								);
+							});
+						});
+					}
 
 					LatLng? center;
 					final markers = <Marker>{};

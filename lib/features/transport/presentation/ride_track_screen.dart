@@ -9,6 +9,7 @@ import 'package:zippup/common/models/ride.dart';
 import 'package:zippup/features/orders/widgets/status_timeline.dart';
 import 'package:zippup/features/transport/providers/ride_service.dart';
 import 'package:zippup/services/location/distance_service.dart';
+import 'package:zippup/services/notifications/sound_service.dart';
 import 'package:go_router/go_router.dart';
 
 class RideTrackScreen extends StatefulWidget {
@@ -30,6 +31,13 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	Timer? _riderSimTimer;
 	LatLng? _simulatedDriver;
 	bool _shownSummary = false;
+
+	@override
+	void dispose() {
+		_riderSimTimer?.cancel();
+		_riderSimTimer = null;
+		super.dispose();
+	}
 
 	List<String> _stepsFor(RideType type) => const ['Accepted', 'Arriving', 'Arrived', 'Enroute', 'Completed'];
 
@@ -159,35 +167,162 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 					final destLat = (data['destLat'] as num?)?.toDouble();
 					final destLng = (data['destLng'] as num?)?.toDouble();
 
-					// On completion, show summary once with amount and rating
+					// On completion, show comprehensive summary with payment and rating
 					if (ride.status == RideStatus.completed && !_shownSummary) {
 						_shownSummary = true;
 						WidgetsBinding.instance.addPostFrameCallback((_) async {
+							// Play completion sound
+							try {
+								await SoundService.instance.playTrill();
+							} catch (_) {}
+							
+							// Fetch driver info for summary
+							String driverName = 'Driver';
+							String driverPhoto = '';
+							try {
+								if (ride.driverId != null) {
+									final results = await Future.wait([
+										FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).get(),
+										FirebaseFirestore.instance.collection('users').doc(ride.driverId!).get(),
+									]);
+									final pu = results[0].data() ?? const {};
+									final u = results[1].data() ?? const {};
+									
+									if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
+										driverName = pu['name'].toString().trim();
+									} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
+										driverName = u['name'].toString().trim();
+									}
+									
+									if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
+										driverPhoto = pu['photoUrl'].toString().trim();
+									} else if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
+										driverPhoto = u['photoUrl'].toString().trim();
+									}
+								}
+							} catch (_) {}
+							
 							await showDialog(context: context, builder: (_) {
 								final fare = ride.fareEstimate;
+								final currency = data['currency'] ?? 'NGN';
 								int? stars;
 								final ctl = TextEditingController();
-								return AlertDialog(
-									title: const Text('Ride summary'),
-									content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-										Text('Amount to pay: ${fare.toStringAsFixed(2)}'),
-										const SizedBox(height: 8),
-										const Text('Rate your driver (optional):'),
-										Row(children: List.generate(5, (i) => IconButton(onPressed: () { stars = i + 1; (context as Element).markNeedsBuild(); }, icon: Icon(stars != null && stars! > i ? Icons.star : Icons.star_border)) )),
-										TextField(controller: ctl, decoration: const InputDecoration(labelText: 'Feedback (optional)')),
-									]),
-									actions: [
-										TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
-										FilledButton(onPressed: () async {
-											try {
-												if (stars != null) {
-													await FirebaseFirestore.instance.collection('rides').doc(widget.rideId).collection('ratings').add({'stars': stars, 'text': ctl.text.trim(), 'createdAt': DateTime.now().toIso8601String()});
-												}
-											} catch (_) {}
-											if (context.mounted) Navigator.pop(context);
-										}, child: const Text('Done')),
-									],
-								);
+								
+								return StatefulBuilder(builder: (context, setState) {
+									return AlertDialog(
+										title: const Text('🎉 Ride Completed!'),
+										content: SingleChildScrollView(
+											child: Column(
+												mainAxisSize: MainAxisSize.min,
+												crossAxisAlignment: CrossAxisAlignment.start,
+												children: [
+													// Driver info
+													if (ride.driverId != null) Card(
+														child: ListTile(
+															leading: CircleAvatar(
+																backgroundImage: driverPhoto.isNotEmpty ? NetworkImage(driverPhoto) : null,
+																child: driverPhoto.isEmpty ? const Icon(Icons.person) : null,
+															),
+															title: Text(driverName),
+															subtitle: Text('Your driver'),
+														),
+													),
+													const SizedBox(height: 16),
+													
+													// Trip details
+													Card(
+														child: Padding(
+															padding: const EdgeInsets.all(16),
+															child: Column(
+																crossAxisAlignment: CrossAxisAlignment.start,
+																children: [
+																	const Text('Trip Details', style: TextStyle(fontWeight: FontWeight.bold)),
+																	const SizedBox(height: 8),
+																	Text('From: ${data['pickupAddress'] ?? 'Unknown'}'),
+																	Text('To: ${data['destinationAddresses'] is List && (data['destinationAddresses'] as List).isNotEmpty ? (data['destinationAddresses'] as List).first.toString() : 'Unknown'}'),
+																	if (data['distance'] != null) Text('Distance: ${(data['distance'] as num).toStringAsFixed(1)} km'),
+																	if (data['duration'] != null) Text('Duration: ${((data['duration'] as num) / 60).toStringAsFixed(0)} min'),
+																],
+															),
+														),
+														),
+													const SizedBox(height: 16),
+													
+													// Payment section
+													Card(
+														color: Colors.green.shade50,
+														child: Padding(
+															padding: const EdgeInsets.all(16),
+															child: Column(
+																crossAxisAlignment: CrossAxisAlignment.start,
+																children: [
+																	const Text('💳 Payment', style: TextStyle(fontWeight: FontWeight.bold)),
+																	const SizedBox(height: 8),
+																	Text('Amount to pay: $currency ${fare.toStringAsFixed(2)}', 
+																		style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+																	const SizedBox(height: 4),
+																	const Text('Payment will be processed automatically', style: TextStyle(color: Colors.grey)),
+																],
+															),
+														),
+													),
+													const SizedBox(height: 16),
+													
+													// Rating section
+													const Text('Rate your driver (optional):', style: TextStyle(fontWeight: FontWeight.bold)),
+													const SizedBox(height: 8),
+													Row(
+														mainAxisAlignment: MainAxisAlignment.center,
+														children: List.generate(5, (i) => IconButton(
+															onPressed: () => setState(() => stars = i + 1),
+															icon: Icon(
+																stars != null && stars! > i ? Icons.star : Icons.star_border,
+																color: Colors.amber,
+																size: 32,
+															),
+														)),
+													),
+													const SizedBox(height: 8),
+													TextField(
+														controller: ctl,
+														decoration: const InputDecoration(
+															labelText: 'Feedback (optional)',
+															border: OutlineInputBorder(),
+														),
+														maxLines: 3,
+													),
+												],
+											),
+										),
+										actions: [
+											TextButton(
+												onPressed: () => Navigator.pop(context),
+												child: const Text('Skip Rating'),
+											),
+											FilledButton(
+												onPressed: () async {
+													try {
+														if (stars != null) {
+															await FirebaseFirestore.instance
+																.collection('rides')
+																.doc(widget.rideId)
+																.collection('ratings')
+																.add({
+																	'stars': stars,
+																	'text': ctl.text.trim(),
+																	'createdAt': DateTime.now().toIso8601String(),
+																	'riderId': FirebaseAuth.instance.currentUser?.uid,
+																	'driverId': ride.driverId,
+																});
+														}
+													} catch (_) {}
+													if (context.mounted) Navigator.pop(context);
+												},
+												child: const Text('Submit'),
+											),
+										],
+									);
+								});
 							});
 						});
 					}
@@ -246,19 +381,60 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 						_riderSimTimer = null;
 						_simulatedDriver = null;
 					} else {
-						// Fallback: show a placeholder driver marker between pickup and destination
+						// Enhanced simulation: show realistic driver movement
 						if (pickupLat != null && pickupLng != null && destLat != null && destLng != null) {
-							_riderSimTimer ??= Timer.periodic(const Duration(seconds: 2), (t) {
-								final f = ((t.tick % 30) / 30.0).clamp(0.0, 1.0);
-								final lat = pickupLat + (destLat - pickupLat) * f;
-								final lng = pickupLng + (destLng - pickupLng) * f;
-								setState(() { _simulatedDriver = LatLng(lat, lng); });
+							_riderSimTimer ??= Timer.periodic(const Duration(seconds: 3), (t) {
+								// More realistic movement simulation
+								double progress;
+								switch (ride.status) {
+									case RideStatus.accepted:
+									case RideStatus.arriving:
+										// Driver moving towards pickup (0% to 100% of route to pickup)
+										progress = ((t.tick % 20) / 20.0).clamp(0.0, 1.0);
+										break;
+									case RideStatus.arrived:
+										// Driver at pickup location
+										progress = 1.0;
+										break;
+									case RideStatus.enroute:
+										// Driver moving from pickup to destination (0% to 100% of main route)
+										progress = ((t.tick % 30) / 30.0).clamp(0.0, 1.0);
+										final lat = pickupLat + (destLat - pickupLat) * progress;
+										final lng = pickupLng + (destLng - pickupLng) * progress;
+										setState(() { _simulatedDriver = LatLng(lat, lng); });
+										return;
+									default:
+										progress = 0.0;
+								}
+								
+								// For arriving/accepted status, move towards pickup
+								if (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving) {
+									// Start driver at a reasonable distance from pickup
+									final startLat = pickupLat + (destLat - pickupLat) * 0.3; // 30% towards destination as starting point
+									final startLng = pickupLng + (destLng - pickupLng) * 0.3;
+									final lat = startLat + (pickupLat - startLat) * progress;
+									final lng = startLng + (pickupLng - startLng) * progress;
+									setState(() { _simulatedDriver = LatLng(lat, lng); });
+								} else if (ride.status == RideStatus.arrived) {
+									// Keep driver at pickup location
+									setState(() { _simulatedDriver = LatLng(pickupLat, pickupLng); });
+								}
 							});
+							
+							// Initialize driver position if not set
+							_simulatedDriver ??= LatLng(
+								pickupLat + (destLat - pickupLat) * 0.3,
+								pickupLng + (destLng - pickupLng) * 0.3,
+							);
+							
 							if (_simulatedDriver != null) {
 								markers.add(Marker(
 									markerId: const MarkerId('driver'),
 									position: _simulatedDriver!,
-									infoWindow: const InfoWindow(title: 'Driver'),
+									infoWindow: InfoWindow(
+										title: 'Driver',
+										snippet: ride.status == RideStatus.arrived ? 'Arrived at pickup' : 'En route',
+									),
 									icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
 								));
 								center = _simulatedDriver;
@@ -326,10 +502,43 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 													FirebaseFirestore.instance.collection('applications').doc(ride.driverId!).get(),
 												]),
 												builder: (context, s) {
+													if (s.connectionState == ConnectionState.waiting) {
+														return const ListTile(
+															leading: CircularProgressIndicator(),
+															title: Text('Loading driver info...'),
+														);
+													}
+													
 													final u = (s.data?[0] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {};
 													final pu = (s.data?[1] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {};
-													String name = (pu['name'] ?? u['name'] ?? 'Driver').toString();
-													String photo = (pu['photoUrl'] ?? u['photoUrl'] ?? '').toString();
+													
+													// Better name resolution with fallbacks
+													String name = 'Driver';
+													if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
+														name = pu['name'].toString().trim();
+													} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
+														name = u['name'].toString().trim();
+													} else if (u['displayName'] != null && u['displayName'].toString().trim().isNotEmpty) {
+														name = u['displayName'].toString().trim();
+													} else if (u['email'] != null) {
+														// Extract name from email as last resort
+														final email = u['email'].toString();
+														final atIndex = email.indexOf('@');
+														if (atIndex > 0) {
+															name = email.substring(0, atIndex).replaceAll('.', ' ').replaceAll('_', ' ');
+															name = name.split(' ').map((word) => word.isNotEmpty ? word[0].toUpperCase() + word.substring(1).toLowerCase() : '').join(' ');
+														}
+													}
+													
+													// Better photo resolution
+													String photo = '';
+													if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
+														photo = pu['photoUrl'].toString().trim();
+													} else if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
+														photo = u['photoUrl'].toString().trim();
+													} else if (u['profilePicture'] != null && u['profilePicture'].toString().trim().isNotEmpty) {
+														photo = u['profilePicture'].toString().trim();
+													}
 													String plate = '';
 													String car = '';
 													try {
