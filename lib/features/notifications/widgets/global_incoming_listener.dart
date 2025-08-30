@@ -227,7 +227,8 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	}
 
 	Future<void> _acceptRide(String id) async {
-		await FirebaseFirestore.instance.collection('rides').doc(id).set({'status': 'accepted'}, SetOptions(merge: true));
+		final uid = FirebaseAuth.instance.currentUser?.uid;
+		await FirebaseFirestore.instance.collection('rides').doc(id).set({'status': 'accepted', if (uid != null) 'driverId': uid}, SetOptions(merge: true));
 	}
 	Future<void> _declineRide(String id) async {
 		await FirebaseFirestore.instance.collection('rides').doc(id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));

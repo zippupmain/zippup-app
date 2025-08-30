@@ -204,6 +204,19 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 						} else if (destLat != null && destLng != null) {
 							_updateEta(originLat: driverLat, originLng: driverLng, destLat: destLat, destLng: destLng);
 						}
+					} else {
+						// Fallback: show a placeholder driver marker between pickup and destination
+						if (pickupLat != null && pickupLng != null && destLat != null && destLng != null) {
+							final simLat = pickupLat + (destLat - pickupLat) * 0.1;
+							final simLng = pickupLng + (destLng - pickupLng) * 0.1;
+							markers.add(Marker(
+								markerId: const MarkerId('driver'),
+								position: LatLng(simLat, simLng),
+								infoWindow: const InfoWindow(title: 'Driver'),
+								icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+							));
+							center = LatLng(simLat, simLng);
+						}
 					}
 
 					return Column(
