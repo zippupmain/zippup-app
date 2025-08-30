@@ -56,12 +56,45 @@ class _PositionedDraggablePanicState extends State<_PositionedDraggablePanic> {
 		);
 	}
 
-	Widget _panicFab() => FloatingActionButton.extended(
-		backgroundColor: Colors.red,
-		foregroundColor: Colors.white,
-		onPressed: () => context.push('/panic'),
-		label: const Text('Panic'),
-		icon: const Icon(Icons.emergency_share),
+	Widget _panicFab() => Container(
+		decoration: BoxDecoration(
+			gradient: const LinearGradient(
+				colors: [Color(0xFFFF1744), Color(0xFFD32F2F)],
+				begin: Alignment.topLeft,
+				end: Alignment.bottomRight,
+			),
+			borderRadius: BorderRadius.circular(25),
+			boxShadow: [
+				BoxShadow(
+					color: Colors.red.shade300,
+					blurRadius: 12,
+					offset: const Offset(0, 6),
+					spreadRadius: 2,
+				),
+			],
+		),
+		child: FloatingActionButton.extended(
+			backgroundColor: Colors.transparent,
+			foregroundColor: Colors.white,
+			elevation: 0,
+			onPressed: () => context.push('/panic'),
+			label: const Row(
+				mainAxisSize: MainAxisSize.min,
+				children: [
+					Text('🆘', style: TextStyle(fontSize: 18)),
+					SizedBox(width: 6),
+					Text(
+						'PANIC', 
+						style: TextStyle(
+							fontWeight: FontWeight.bold, 
+							fontSize: 14,
+							letterSpacing: 1.2,
+						),
+					),
+				],
+			),
+			icon: const Icon(Icons.emergency_share, size: 20),
+		),
 	);
 }
 
@@ -166,7 +199,24 @@ class _HomeScreenState extends State<HomeScreen> {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(
-				title: const Text('ZippUp'),
+				title: const Text(
+					'ZippUp',
+					style: TextStyle(
+						fontWeight: FontWeight.bold,
+						fontSize: 22,
+					),
+				),
+				backgroundColor: Colors.transparent,
+				flexibleSpace: Container(
+					decoration: const BoxDecoration(
+						gradient: LinearGradient(
+							colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+							begin: Alignment.topLeft,
+							end: Alignment.bottomRight,
+						),
+					),
+				),
+				foregroundColor: Colors.white,
 				actions: [
 					IconButton(onPressed: () => context.push('/cart'), icon: const Icon(Icons.shopping_cart_outlined)),
 					StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -201,8 +251,16 @@ class _HomeScreenState extends State<HomeScreen> {
 					),
 				],
 			),
-			body: Stack(children:[
-				CustomScrollView(
+			body: Container(
+				decoration: const BoxDecoration(
+					gradient: LinearGradient(
+						begin: Alignment.topCenter,
+						end: Alignment.bottomCenter,
+						colors: [Color(0xFFF8F9FA), Color(0xFFE9ECEF)],
+					),
+				),
+				child: Stack(children:[
+					CustomScrollView(
 				slivers: [
 					SliverAppBar(
 						pinned: true,
@@ -268,6 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
 				// Draggable panic button overlay
 				_PositionedDraggablePanic(),
 			]),
+			),
 			bottomNavigationBar: NavigationBar(
 				selectedIndex: _tab,
 				onDestinationSelected: (i) {
@@ -287,17 +346,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _QuickActions extends StatelessWidget {
 	final List<_QuickAction> actions = const [
-		_QuickAction('Ride', Icons.directions_car_filled, 'transport', Color(0xFFFFE5E5), Colors.black),
-		_QuickAction('Food', Icons.local_fire_department, 'food', Color(0xFFE8F5E9), Colors.black),
-		_QuickAction('Hire', Icons.handyman, 'hire', Color(0xFFFFF7E0), Colors.black),
-		_QuickAction('Moving', Icons.local_shipping, 'moving', Color(0xFFE3F2FD), Colors.black),
-		_QuickAction('TopUp', Icons.phone_iphone, 'digital', Color(0xFFE8F5E9), Colors.black),
-		_QuickAction('Emergency', Icons.emergency_share, 'emergency', Color(0xFFFFE5E5), Colors.black),
-		_QuickAction('Others', Icons.category, 'others', Color(0xFFFFE5E5), Colors.black),
-		_QuickAction('Personal', Icons.face_3, 'personal', Color(0xFFFFFFFF), Colors.black),
-		_QuickAction('Market(P)', Icons.shopping_bag, 'marketplace', Color(0xFFFCE7F3), Colors.black),
-		_QuickAction('Rentals', Icons.key, 'rentals', Color(0xFFFFF3E0), Colors.black),
-		_QuickAction('Grocery', Icons.local_grocery_store, 'foodVendors', Color(0xFFE8F5E9), Colors.black),
+		_QuickAction('Ride', Icons.directions_car_filled, 'transport', 
+			const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF21CBF3)]), 
+			Colors.white, '🚗'),
+		_QuickAction('Food', Icons.restaurant, 'food', 
+			const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFFFB74D)]), 
+			Colors.white, '🍽️'),
+		_QuickAction('Hire', Icons.handyman, 'hire', 
+			const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)]), 
+			Colors.white, '🔧'),
+		_QuickAction('Moving', Icons.local_shipping, 'moving', 
+			const LinearGradient(colors: [Color(0xFF3F51B5), Color(0xFF7986CB)]), 
+			Colors.white, '📦'),
+		_QuickAction('TopUp', Icons.phone_iphone, 'digital', 
+			const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]), 
+			Colors.white, '📱'),
+		_QuickAction('Emergency', Icons.emergency_share, 'emergency', 
+			const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]), 
+			Colors.white, '🚨'),
+		_QuickAction('Others', Icons.category, 'others', 
+			const LinearGradient(colors: [Color(0xFF607D8B), Color(0xFF90A4AE)]), 
+			Colors.white, '📋'),
+		_QuickAction('Personal', Icons.spa, 'personal', 
+			const LinearGradient(colors: [Color(0xFF673AB7), Color(0xFF9575CD)]), 
+			Colors.white, '💆'),
+		_QuickAction('Market(P)', Icons.shopping_bag, 'marketplace', 
+			const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF06292)]), 
+			Colors.white, '🛒'),
+		_QuickAction('Rentals', Icons.key, 'rentals', 
+			const LinearGradient(colors: [Color(0xFFFF5722), Color(0xFFFF8A65)]), 
+			Colors.white, '🏠'),
+		_QuickAction('Grocery', Icons.local_grocery_store, 'foodVendors', 
+			const LinearGradient(colors: [Color(0xFF8BC34A), Color(0xFFAED581)]), 
+			Colors.white, '🥬'),
 	];
 
 	@override
@@ -306,21 +387,44 @@ class _QuickActions extends StatelessWidget {
 			padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 			child: Container(
 				decoration: BoxDecoration(
-					color: Colors.white,
-					borderRadius: BorderRadius.circular(12),
-					boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,2))],
-				),
-				padding: const EdgeInsets.all(8),
-				child: GridView.builder(
-					itemCount: actions.length,
-					shrinkWrap: true,
-					physics: const NeverScrollableScrollPhysics(),
-					gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-						crossAxisCount: 4,
-						childAspectRatio: .9,
-						mainAxisSpacing: 10,
-						crossAxisSpacing: 10,
+					gradient: const LinearGradient(
+						begin: Alignment.topLeft,
+						end: Alignment.bottomRight,
+						colors: [Color(0xFFFAFAFA), Color(0xFFFFFFFF)],
 					),
+					borderRadius: BorderRadius.circular(20),
+					boxShadow: const [
+						BoxShadow(
+							color: Colors.black08,
+							blurRadius: 12,
+							offset: Offset(0, 4),
+							spreadRadius: 2,
+						),
+					],
+				),
+				padding: const EdgeInsets.all(16),
+				child: Column(
+					crossAxisAlignment: CrossAxisAlignment.start,
+					children: [
+						const Text(
+							'🌟 Services',
+							style: TextStyle(
+								fontSize: 18,
+								fontWeight: FontWeight.bold,
+								color: Colors.black87,
+							),
+						),
+						const SizedBox(height: 16),
+						GridView.builder(
+							itemCount: actions.length,
+							shrinkWrap: true,
+							physics: const NeverScrollableScrollPhysics(),
+							gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+								crossAxisCount: 4,
+								childAspectRatio: 0.85,
+								mainAxisSpacing: 16,
+								crossAxisSpacing: 12,
+							),
 					itemBuilder: (context, i) {
 						final a = actions[i];
 						return InkWell(
@@ -334,16 +438,50 @@ class _QuickActions extends StatelessWidget {
 							child: Column(
 								children: [
 									Container(
-										decoration: BoxDecoration(color: a.bg, shape: BoxShape.circle),
-										padding: const EdgeInsets.all(12),
-										child: Icon(a.icon, color: a.iconColor),
+										width: 56,
+										height: 56,
+										decoration: BoxDecoration(
+											gradient: a.gradient,
+											shape: BoxShape.circle,
+											boxShadow: [
+												BoxShadow(
+													color: a.gradient.colors.first.withOpacity(0.3),
+													blurRadius: 8,
+													offset: const Offset(0, 4),
+												),
+											],
+										),
+										child: Stack(
+											alignment: Alignment.center,
+											children: [
+												Icon(a.icon, color: a.iconColor, size: 24),
+												Positioned(
+													top: 6,
+													right: 6,
+													child: Text(
+														a.emoji,
+														style: const TextStyle(fontSize: 16),
+													),
+												),
+											],
+										),
 									),
-									const SizedBox(height: 6),
-									Text(a.title, style: const TextStyle(fontSize: 12, color: Colors.black)),
-							],
-						),
+									const SizedBox(height: 8),
+									Text(
+										a.title, 
+										style: const TextStyle(
+											fontSize: 11, 
+											color: Colors.black87,
+											fontWeight: FontWeight.w600,
+										),
+										textAlign: TextAlign.center,
+									),
+								],
+							),
 					);
 					},
+						),
+					],
 				),
 			),
 		);
@@ -354,10 +492,11 @@ class _QuickAction {
 	final String title;
 	final IconData icon;
 	final String routeName;
-	final Color bg;
+	final LinearGradient gradient;
 	final Color iconColor;
+	final String emoji;
 
-	const _QuickAction(this.title, this.icon, this.routeName, this.bg, this.iconColor);
+	const _QuickAction(this.title, this.icon, this.routeName, this.gradient, this.iconColor, this.emoji);
 }
 
 class _HomeSearchBarWidget extends StatefulWidget {
@@ -405,30 +544,77 @@ class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
 	Widget build(BuildContext context) {
 		return Container(
 			decoration: BoxDecoration(
-				color: Colors.white,
-				borderRadius: BorderRadius.circular(12),
-				boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0,2))],
+				gradient: const LinearGradient(
+					colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+					begin: Alignment.topLeft,
+					end: Alignment.bottomRight,
+				),
+				borderRadius: BorderRadius.circular(16),
+				boxShadow: const [
+					BoxShadow(
+						color: Colors.blue,
+						blurRadius: 12,
+						offset: Offset(0, 4),
+						spreadRadius: -2,
+					),
+				],
 			),
-			padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+			padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
 			child: Row(children: [
-				const Icon(Icons.search, color: Colors.black54),
-				const SizedBox(width: 8),
+				Container(
+					padding: const EdgeInsets.all(8),
+					decoration: BoxDecoration(
+						color: Colors.white.withOpacity(0.9),
+						shape: BoxShape.circle,
+					),
+					child: const Icon(Icons.search, color: Colors.blue, size: 20),
+				),
+				const SizedBox(width: 12),
 				Expanded(
 					child: TextField(
 						controller: _controller,
-						decoration: const InputDecoration(border: InputBorder.none, hintText: 'Search services, food, vendors, listings...'),
+						decoration: const InputDecoration(
+							border: InputBorder.none, 
+							hintText: '🔍 Search services, food, vendors, listings...',
+							hintStyle: TextStyle(color: Colors.blue),
+						),
+						style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w500),
 						textInputAction: TextInputAction.search,
 						onSubmitted: (_) => _submit(),
 					),
 				),
-				IconButton(
-					tooltip: _listening ? 'Stop' : 'Voice search',
-					onPressed: kIsWeb ? null : _toggleListen,
-					icon: Icon(_listening ? Icons.stop : Icons.mic_none_rounded),
+				if (!kIsWeb) Container(
+					margin: const EdgeInsets.only(left: 8),
+					decoration: BoxDecoration(
+						gradient: LinearGradient(
+							colors: _listening 
+								? [Colors.red.shade400, Colors.red.shade600]
+								: [Colors.green.shade400, Colors.green.shade600],
+						),
+						shape: BoxShape.circle,
+					),
+					child: IconButton(
+						tooltip: _listening ? 'Stop' : 'Voice search',
+						onPressed: _toggleListen,
+						icon: Icon(
+							_listening ? Icons.stop : Icons.mic,
+							color: Colors.white,
+							size: 20,
+						),
+					),
 				),
-				IconButton(
-					onPressed: _submit,
-					icon: const Icon(Icons.arrow_forward, color: Colors.black54),
+				Container(
+					margin: const EdgeInsets.only(left: 8),
+					decoration: BoxDecoration(
+						gradient: const LinearGradient(
+							colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+						),
+						shape: BoxShape.circle,
+					),
+					child: IconButton(
+						onPressed: _submit,
+						icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+					),
 				),
 			]),
 		);
