@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/location/location_service.dart';
+import 'package:zippup/common/widgets/address_field.dart';
 
 class EmergencyBookingScreen extends StatefulWidget {
 	const EmergencyBookingScreen({super.key});
@@ -190,14 +191,10 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 									children: [
 										const Text('Emergency Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
 										const SizedBox(height: 12),
-										TextField(
+										AddressField(
 											controller: _addressController,
-											decoration: const InputDecoration(
-												labelText: 'Where is the emergency?',
-												border: OutlineInputBorder(),
-												prefixIcon: Icon(Icons.location_on, color: Colors.red),
-											),
-											maxLines: 2,
+											label: 'Where is the emergency?',
+											hint: 'Enter the exact emergency location',
 										),
 									],
 								),

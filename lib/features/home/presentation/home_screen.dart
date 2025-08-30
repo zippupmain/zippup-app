@@ -583,7 +583,7 @@ class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
 						onSubmitted: (_) => _submit(),
 					),
 				),
-				if (!kIsWeb) Container(
+				Container(
 					margin: const EdgeInsets.only(left: 8),
 					decoration: BoxDecoration(
 						gradient: LinearGradient(
@@ -595,10 +595,10 @@ class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
 					),
 					child: IconButton(
 						tooltip: _listening ? 'Stop' : 'Voice search',
-						onPressed: _toggleListen,
+						onPressed: kIsWeb ? null : _toggleListen,
 						icon: Icon(
 							_listening ? Icons.stop : Icons.mic,
-							color: Colors.white,
+							color: kIsWeb ? Colors.grey : Colors.white,
 							size: 20,
 						),
 					),

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/location/location_service.dart';
+import 'package:zippup/common/widgets/address_field.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 
 class HireBookingScreen extends StatefulWidget {
@@ -205,14 +206,10 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 									children: [
 										const Text('Service Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
 										const SizedBox(height: 12),
-										TextField(
+										AddressField(
 											controller: _addressController,
-											decoration: const InputDecoration(
-												labelText: 'Where do you need the service?',
-												border: OutlineInputBorder(),
-												prefixIcon: Icon(Icons.location_on),
-											),
-											maxLines: 2,
+											label: 'Where do you need the service?',
+											hint: 'Enter your address for service location',
 										),
 									],
 								),

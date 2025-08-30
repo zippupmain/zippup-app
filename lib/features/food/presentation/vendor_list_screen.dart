@@ -171,6 +171,7 @@ class _VendorListScreenState extends State<VendorListScreen> {
 								final dist = _dist(v);
 								final rating = (v['rating'] as num?)?.toDouble() ?? 0.0;
 								final branchName = v['branchName'] ?? v['branch'] ?? '';
+								final branchAddress = v['branchAddress'] ?? v['address'] ?? '';
 								final openTime = v['openTime'] ?? '8:00 AM';
 								final closeTime = v['closeTime'] ?? '10:00 PM';
 								final deliveryTime = v['deliveryTime'] ?? '30-45 min';
@@ -241,16 +242,29 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																		color: Colors.black87,
 																	),
 																),
-																if (branchName.isNotEmpty) ...[
+																if (branchName.isNotEmpty || branchAddress.isNotEmpty) ...[
 																	const SizedBox(height: 2),
-																	Text(
-																		'📍 $branchName Branch',
-																		style: TextStyle(
-																			fontSize: 13,
-																			color: Colors.grey.shade600,
-																			fontWeight: FontWeight.w500,
+																	if (branchName.isNotEmpty)
+																		Text(
+																			'🏪 $branchName Branch',
+																			style: TextStyle(
+																				fontSize: 13,
+																				color: Colors.grey.shade600,
+																				fontWeight: FontWeight.w500,
+																			),
 																		),
-																	),
+																	if (branchAddress.isNotEmpty) ...[
+																		const SizedBox(height: 1),
+																		Text(
+																			'📍 $branchAddress',
+																			style: TextStyle(
+																				fontSize: 12,
+																				color: Colors.grey.shade500,
+																			),
+																			maxLines: 1,
+																			overflow: TextOverflow.ellipsis,
+																		),
+																	],
 																],
 																const SizedBox(height: 8),
 																
@@ -309,7 +323,7 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																		Text(deliveryTime, style: TextStyle(color: Colors.orange.shade600, fontSize: 12)),
 																		const SizedBox(width: 8),
 																		Icon(Icons.attach_money, size: 14, color: Colors.green.shade600),
-																		Text('₦$deliveryFee fee', style: TextStyle(color: Colors.green.shade600, fontSize: 12)),
+																		Text('₦$deliveryFee delivery', style: TextStyle(color: Colors.green.shade600, fontSize: 12)),
 																	],
 																),
 																const SizedBox(height: 4),
