@@ -395,7 +395,7 @@ class _QuickActions extends StatelessWidget {
 					borderRadius: BorderRadius.circular(20),
 					boxShadow: const [
 						BoxShadow(
-							color: Colors.black08,
+							color: Color(0x14000000),
 							blurRadius: 12,
 							offset: Offset(0, 4),
 							spreadRadius: 2,
