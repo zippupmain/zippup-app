@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
+import 'package:zippup/services/notifications/sound_service.dart';
 import 'package:flutter/services.dart';
 
 class GlobalIncomingListener extends StatefulWidget {
@@ -127,7 +128,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
-		try { await SystemSound.play(SystemSoundType.alert); } catch (_) {}
+		try { await SoundService.instance.playChirp(); } catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('New ride request'),
 			content: Column(
@@ -184,7 +185,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
-		try { await SystemSound.play(SystemSoundType.alert); } catch (_) {}
+		try { await SoundService.instance.playChirp(); } catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('New job request'),
 			content: Column(
