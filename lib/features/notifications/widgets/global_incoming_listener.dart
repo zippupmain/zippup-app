@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 
 class GlobalIncomingListener extends StatefulWidget {
 	final Widget child;
@@ -155,10 +156,16 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		try {
 			final buyerId = (m['buyerId'] ?? '').toString();
 			if (buyerId.isNotEmpty) {
-				final userDoc = await FirebaseFirestore.instance.collection('users').doc(buyerId).get();
-				final u = userDoc.data() ?? const {};
-				buyerName = (u['name'] ?? '').toString().trim().isNotEmpty ? u['name'].toString() : buyerName;
-				buyerPhoto = (u['photoUrl'] ?? '').toString();
+				final pub = await FirebaseFirestore.instance.collection('public_profiles').doc(buyerId).get();
+				final pu = pub.data() ?? const {};
+				buyerName = (pu['name'] ?? '').toString().trim().isNotEmpty ? pu['name'].toString() : buyerName;
+				buyerPhoto = (pu['photoUrl'] ?? '').toString();
+				if (buyerName == 'Customer') {
+					final userDoc = await FirebaseFirestore.instance.collection('users').doc(buyerId).get();
+					final u = userDoc.data() ?? const {};
+					buyerName = (u['name'] ?? buyerName).toString();
+					buyerPhoto = buyerPhoto.isNotEmpty ? buyerPhoto : (u['photoUrl'] ?? '').toString();
+				}
 				try {
 					final agg = await FirebaseFirestore.instance
 						.collection('orders')
@@ -169,6 +176,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
+		try { await SystemSound.play(SystemSoundType.alert); } catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('New job request'),
 			content: Column(
@@ -177,10 +185,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				children: [
 					ListTile(
 						contentPadding: EdgeInsets.zero,
-						leading: CircleAvatar(
-							backgroundImage: buyerPhoto.isNotEmpty ? NetworkImage(buyerPhoto) : null,
-							child: buyerPhoto.isEmpty ? const Icon(Icons.person) : null,
-						),
+						leading: CircleAvatar(backgroundImage: buyerPhoto.isNotEmpty ? NetworkImage(buyerPhoto) : null, child: buyerPhoto.isEmpty ? const Icon(Icons.person) : null),
 						title: Text(buyerName),
 						subtitle: Text('Orders: $buyerOrders'),
 					),
