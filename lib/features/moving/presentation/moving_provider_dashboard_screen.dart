@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:zippup/common/models/moving_booking.dart';
 import 'package:zippup/features/providers/widgets/provider_header.dart';
 
 class MovingProviderDashboardScreen extends StatefulWidget {
@@ -14,8 +15,8 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
 	bool _online = false;
-	String? _filter; // requested, accepted, assigned, enroute, completed, cancelled
-	Stream<QuerySnapshot<Map<String, dynamic>>>? _incomingStream;
+	MovingStatus? _filter;
+	Stream<List<MovingBooking>>? _incomingStream;
 
 	@override
 	void initState() {
@@ -32,15 +33,16 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 			if (mounted) setState(() {});
 		}
 		_incomingStream = _db
-			.collection('moving_requests')
-			.where('assignedProviderId', isEqualTo: uid)
-			.where('status', isEqualTo: 'requested')
-			.snapshots();
+			.collection('moving_bookings')
+			.where('providerId', isEqualTo: uid)
+			.where('status', isEqualTo: MovingStatus.requested.name)
+			.snapshots()
+			.map((s) => s.docs.map((d) => MovingBooking.fromJson(d.id, d.data())).toList());
 	}
 
-	Stream<QuerySnapshot<Map<String, dynamic>>> _requestsStream(String uid) {
-		Query<Map<String, dynamic>> q = _db.collection('moving_requests').where('assignedProviderId', isEqualTo: uid);
-		return q.orderBy('createdAt', descending: true).snapshots();
+	Stream<List<MovingBooking>> _bookingsStream(String uid) {
+		Query<Map<String, dynamic>> q = _db.collection('moving_bookings').where('providerId', isEqualTo: uid);
+		return q.orderBy('createdAt', descending: true).snapshots().map((s) => s.docs.map((d) => MovingBooking.fromJson(d.id, d.data())).toList());
 	}
 
 	Future<void> _setOnline(bool v) async {
