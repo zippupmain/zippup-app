@@ -1,0 +1,74 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // TEST MODE: Allow all operations for development
+    // TODO: Implement proper security rules before production
+    
+    match /{document=**} {
+      allow read, write: if true;
+    }
+    
+    // When ready for production, replace with proper rules like:
+    /*
+    // Users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Public profiles are readable by all, writable by owner
+    match /public_profiles/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Rides - clients can create, drivers can update status
+    match /rides/{rideId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == resource.data.riderId;
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.riderId || 
+         request.auth.uid == resource.data.driverId);
+    }
+    
+    // Similar rules for other booking types
+    match /hire_bookings/{bookingId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == resource.data.clientId;
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.clientId || 
+         request.auth.uid == resource.data.providerId);
+    }
+    
+    match /emergency_bookings/{bookingId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == resource.data.clientId;
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.clientId || 
+         request.auth.uid == resource.data.providerId);
+    }
+    
+    match /moving_bookings/{bookingId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == resource.data.clientId;
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.clientId || 
+         request.auth.uid == resource.data.providerId);
+    }
+    
+    match /personal_bookings/{bookingId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == resource.data.clientId;
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.clientId || 
+         request.auth.uid == resource.data.providerId);
+    }
+    
+    // Provider profiles - readable by all, writable by owner
+    match /provider_profiles/{profileId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    */
+  }
+}

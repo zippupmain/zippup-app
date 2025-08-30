@@ -8,6 +8,9 @@ import 'package:zippup/features/marketplace/presentation/add_listing_screen.dart
 import 'package:zippup/features/transport/presentation/transport_screen.dart';
 import 'package:zippup/features/food/presentation/food_screen.dart';
 import 'package:zippup/features/hire/presentation/hire_screen.dart';
+import 'package:zippup/features/hire/presentation/hire_booking_screen.dart';
+import 'package:zippup/features/emergency/presentation/emergency_booking_screen.dart';
+import 'package:zippup/features/personal/presentation/personal_booking_screen.dart';
 import 'package:zippup/features/digital/presentation/digital_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_list_screen.dart';
 import 'package:zippup/features/auth/presentation/auth_gate.dart';
@@ -106,7 +109,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				GoRoute(
 					path: '/hire',
 					name: 'hire',
-					builder: (context, state) => const HireScreen(),
+					builder: (context, state) => const HireBookingScreen(),
 				),
 				GoRoute(
 					path: '/marketplace',
@@ -231,7 +234,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				GoRoute(
 					path: '/emergency',
 					name: 'emergency',
-					builder: (context, state) => const EmergencyScreen(),
+					builder: (context, state) => const EmergencyBookingScreen(),
 				),
 				GoRoute(
 					path: '/others',
@@ -271,7 +274,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/personal',
         name: 'personal',
-        builder: (context, state) => const PersonalScreen(),
+        builder: (context, state) => const PersonalBookingScreen(),
       ),
       GoRoute(
         path: '/emergency/roadside',

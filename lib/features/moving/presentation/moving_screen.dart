@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'package:zippup/common/widgets/address_field.dart';
 import 'package:zippup/services/location/location_service.dart';
 import 'package:geolocator/geolocator.dart' as geo;
@@ -107,17 +108,21 @@ class _MovingScreenState extends State<MovingScreen> {
 		setState(() => _submitting = true);
 		try {
 			final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
-			final doc = await FirebaseFirestore.instance.collection('moving_requests').add({
-				'userId': uid,
-				'subcategory': _subcategory,
-				'class': chosenClass,
-				'priceEstimate': price,
+			final doc = await FirebaseFirestore.instance.collection('moving_bookings').add({
+				'clientId': uid,
+				'type': _subcategory,
+				'description': _notes.text.trim().isEmpty ? chosenClass : _notes.text.trim(),
 				'pickupAddress': pickup,
-				'dropoffAddress': dropoff,
-				'notes': _notes.text.trim(),
+				'destinationAddress': dropoff,
+				'createdAt': DateTime.now().toIso8601String(),
 				'isScheduled': _scheduled,
 				'scheduledAt': _scheduledAt?.toIso8601String(),
-				'createdAt': DateTime.now().toIso8601String(),
+				'feeEstimate': price,
+				'etaMinutes': 30,
+				'status': 'requested',
+				'currency': 'NGN',
+				'serviceClass': chosenClass,
+				'paymentMethod': 'card',
 				'status': 'requested',
 			});
 
@@ -149,50 +154,14 @@ class _MovingScreenState extends State<MovingScreen> {
 					final chosen = candidates[Math.Random().nextInt(candidates.length)];
 					final providerId = (chosen['userId'] ?? '').toString();
 					if (providerId.isNotEmpty) {
-						await db.collection('moving_requests').doc(doc.id).set({'assignedProviderId': providerId}, SetOptions(merge: true));
+						await db.collection('moving_bookings').doc(doc.id).set({'providerId': providerId}, SetOptions(merge: true));
 					}
 				}
 			} catch (_) {/* ignore assignment failures */}
-			if (!mounted) return;
-			if (_scheduled) {
-				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Moving request scheduled')));
-			} else {
-				// Show finding providers with cancel, then watch for acceptance
-				final navigator = Navigator.of(context);
-				bool routed = false;
-				late final StreamSubscription sub;
-				showDialog(
-					context: context,
-					barrierDismissible: false,
-					builder: (ctx) => AlertDialog(
-						title: const Text('Finding providers…'),
-						content: const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
-						actions: [
-							TextButton(onPressed: () async {
-								try { await FirebaseFirestore.instance.collection('moving_requests').doc(doc.id).set({'status': 'cancelled', 'cancelledAt': DateTime.now().toIso8601String(), 'cancelledBy': uid}, SetOptions(merge: true)); } catch (_) {}
-								try { sub.cancel(); } catch (_) {}
-								Navigator.of(ctx).pop();
-							}, child: const Text('Cancel')),
-						],
-					),
-				);
-				sub = FirebaseFirestore.instance.collection('moving_requests').doc(doc.id).snapshots().listen((snap) {
-					final data = snap.data() ?? const {};
-					final status = (data['status'] ?? '').toString();
-					if (!routed && (status == 'accepted' || status == 'assigned' || status == 'enroute')) {
-						if (navigator.canPop()) navigator.pop();
-						routed = true;
-						sub.cancel();
-						Navigator.of(context).pushNamed('/live');
-					}
-				});
-				Future.delayed(const Duration(seconds: 60), () {
-					try { sub.cancel(); } catch (_) {}
-					if (!routed && navigator.canPop()) navigator.pop();
-					if (!routed && mounted) {
-						ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No provider available right now. Please try again.')));
-					}
-				});
+			
+			// Navigate directly to tracking screen like transport
+			if (mounted) {
+				context.push('/track/moving?bookingId=${doc.id}');
 			}
 		} catch (e) {
 			if (mounted) {
