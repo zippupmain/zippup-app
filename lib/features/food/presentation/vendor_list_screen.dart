@@ -136,58 +136,190 @@ class _VendorListScreenState extends State<VendorListScreen> {
 							center ??= LatLng(lat, lng);
 						}
 					}
-					return Column(children: [
-						SizedBox(
-							height: 220,
-							child: Builder(builder: (context) {
-								if (center == null) return const Center(child: Text('Map: no location yet'));
-								try {
-									if (kIsWeb) {
-										final fmMarkers = markers.map<lm.Marker>((m) => lm.Marker(
-											point: ll.LatLng(m.position.latitude, m.position.longitude),
-											width: 40,
-											height: 40,
-											child: const Icon(Icons.location_on, color: Colors.redAccent),
-										)).toList();
-										return lm.FlutterMap(
-											options: lm.MapOptions(initialCenter: ll.LatLng(center!.latitude, center!.longitude), initialZoom: 12),
-											children: [
-												lm.TileLayer(
-													urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-													userAgentPackageName: 'com.zippup.app',
-													maxZoom: 19,
-												),
-												lm.MarkerLayer(markers: fmMarkers),
-											],
-										);
-									}
-									return GoogleMap(initialCameraPosition: CameraPosition(target: center!, zoom: 12), markers: markers, myLocationEnabled: false, compassEnabled: false);
-								} catch (_) {
-									return const Center(child: Text('Map failed to load'));
-								}
-							}),
-						),
-						const Divider(height: 1),
-						Expanded(
-							child: ListView.separated(
-								itemCount: docs.length,
-								separatorBuilder: (_, __) => const Divider(height: 1),
-								itemBuilder: (context, i) {
-									final v = docs[i].data();
-									final vid = docs[i].id;
-									final dist = _dist(v);
-									return ListTile(
-										title: Text(v['name'] ?? 'Vendor'),
-										subtitle: Text([ (v['rating'] ?? 0).toString(), if (dist.isNotEmpty) dist ].join(' • ')),
-										trailing: Wrap(spacing: 8, children: [
-											IconButton(onPressed: () => context.pushNamed('chat', pathParameters: {'threadId': 'vendor_$vid'}, queryParameters: {'title': v['name'] ?? 'Chat'}), icon: const Icon(Icons.chat_bubble_outline)),
-											TextButton(onPressed: () => context.push('/vendor?vendorId=$vid'), child: const Text('View')),
-										]),
-									);
-								},
+					if (docs.isEmpty) {
+						return Center(
+							child: Column(
+								mainAxisAlignment: MainAxisAlignment.center,
+								children: [
+									Text(emoji, style: const TextStyle(fontSize: 64)),
+									const SizedBox(height: 16),
+									Text('No ${widget.category.replaceAll('_', ' ')} vendors found', 
+										style: const TextStyle(fontSize: 18, color: Colors.grey)),
+									const Text('Try adjusting your search', style: TextStyle(color: Colors.grey)),
+								],
+							),
+						);
+					}
+
+					return Container(
+						decoration: BoxDecoration(
+							gradient: LinearGradient(
+								begin: Alignment.topCenter,
+								end: Alignment.bottomCenter,
+								colors: [
+									gradient.colors.first.withOpacity(0.1),
+									gradient.colors.last.withOpacity(0.05),
+								],
 							),
 						),
-					]);
+						child: ListView.builder(
+							padding: const EdgeInsets.all(16),
+							itemCount: docs.length,
+							itemBuilder: (context, i) {
+								final v = docs[i].data();
+								final vid = docs[i].id;
+								final dist = _dist(v);
+								final rating = (v['rating'] as num?)?.toDouble() ?? 0.0;
+								final isOpen = v['isOpen'] ?? true;
+								final deliveryTime = v['deliveryTime'] ?? '30-45 min';
+								
+								return Container(
+									margin: const EdgeInsets.only(bottom: 16),
+									decoration: BoxDecoration(
+										gradient: const LinearGradient(
+											colors: [Color(0xFFFFFFFF), Color(0xFFF8F9FA)],
+										),
+										borderRadius: BorderRadius.circular(16),
+										boxShadow: [
+											BoxShadow(
+												color: Colors.black.withOpacity(0.1),
+												blurRadius: 8,
+												offset: const Offset(0, 4),
+											),
+										],
+									),
+									child: InkWell(
+										onTap: () => context.push('/food/vendor?vendorId=$vid'),
+										borderRadius: BorderRadius.circular(16),
+										child: Padding(
+											padding: const EdgeInsets.all(16),
+											child: Row(
+												children: [
+													// Vendor image/emoji
+													Container(
+														width: 80,
+														height: 80,
+														decoration: BoxDecoration(
+															gradient: gradient,
+															borderRadius: BorderRadius.circular(12),
+														),
+														child: Center(
+															child: Text(
+																emoji,
+																style: const TextStyle(fontSize: 32),
+															),
+														),
+													),
+													const SizedBox(width: 16),
+													
+													// Vendor details
+													Expanded(
+														child: Column(
+															crossAxisAlignment: CrossAxisAlignment.start,
+															children: [
+																Text(
+																	v['name'] ?? 'Vendor',
+																	style: const TextStyle(
+																		fontWeight: FontWeight.bold,
+																		fontSize: 16,
+																	),
+																),
+																const SizedBox(height: 6),
+																
+																// Status and rating row
+																Row(
+																	children: [
+																		Container(
+																			padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+																			decoration: BoxDecoration(
+																				color: isOpen ? Colors.green.shade100 : Colors.red.shade100,
+																				borderRadius: BorderRadius.circular(12),
+																			),
+																			child: Text(
+																				isOpen ? 'OPEN' : 'CLOSED',
+																				style: TextStyle(
+																					color: isOpen ? Colors.green.shade700 : Colors.red.shade700,
+																					fontWeight: FontWeight.bold,
+																					fontSize: 10,
+																				),
+																			),
+																		),
+																		const SizedBox(width: 8),
+																		Row(
+																			children: List.generate(5, (index) {
+																				return Icon(
+																					index < rating ? Icons.star : Icons.star_border,
+																					color: Colors.amber,
+																					size: 14,
+																				);
+																			}),
+																		),
+																		const SizedBox(width: 4),
+																		Text('(${rating.toStringAsFixed(1)})', style: const TextStyle(fontSize: 12)),
+																	],
+																),
+																const SizedBox(height: 4),
+																
+																// Delivery info
+																Row(
+																	children: [
+																		Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),
+																		const SizedBox(width: 4),
+																		Text(deliveryTime, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+																		if (dist.isNotEmpty) ...[
+																			const SizedBox(width: 8),
+																			Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
+																			const SizedBox(width: 4),
+																			Text(dist, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+																		],
+																	],
+																),
+															],
+														),
+													),
+													
+													// Action buttons
+													Column(
+														children: [
+															Container(
+																padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+																decoration: BoxDecoration(
+																	gradient: gradient,
+																	borderRadius: BorderRadius.circular(20),
+																),
+																child: const Text(
+																	'VIEW MENU',
+																	style: TextStyle(
+																		color: Colors.white,
+																		fontWeight: FontWeight.bold,
+																		fontSize: 11,
+																	),
+																),
+															),
+															const SizedBox(height: 8),
+															InkWell(
+																onTap: () => context.pushNamed('chat', 
+																	pathParameters: {'threadId': 'vendor_$vid'}, 
+																	queryParameters: {'title': v['name'] ?? 'Chat'}),
+																child: Container(
+																	padding: const EdgeInsets.all(8),
+																	decoration: BoxDecoration(
+																		color: Colors.grey.shade100,
+																		shape: BoxShape.circle,
+																	),
+																	child: const Icon(Icons.chat_bubble_outline, size: 16),
+																),
+															),
+														],
+													),
+												],
+											),
+										),
+									),
+								);
+							},
+						),
+					);
 				},
 			),
 			bottomNavigationBar: SafeArea(

@@ -64,34 +64,106 @@ class _MovingScreenState extends State<MovingScreen> {
 			: (_subcategory == 'truck'
 				? ['assets/images/truck_small.png','assets/images/truck_medium.png','assets/images/truck_large.png']
 				: ['assets/images/pickup_small.png','assets/images/pickup_large.png']);
+		final classEmojis = _subcategory == 'courier'
+			? ['🚴‍♂️', '🏍️', '✈️']
+			: (_subcategory == 'truck' ? ['🚚', '🚛', '🚜'] : ['🛻', '🚐']);
+		
 		await showModalBottomSheet(context: context, isScrollControlled: true, builder: (ctx) {
-			return Padding(
-				padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 16),
-				child: ListView.separated(
-					shrinkWrap: true,
-					itemCount: titles.length,
-					separatorBuilder: (_, __) => const Divider(height: 1),
-					itemBuilder: (ctx, i) {
-						final title = titles[i];
-						final img = images[i];
-						final base = _subcategory == 'courier' ? (i == 0 ? 1500.0 : i == 1 ? 3500.0 : 8000.0) : (_subcategory == 'truck' ? [5000.0, 7500.0, 10000.0][i] : [3000.0, 4500.0][i]);
-						final km = 8.0;
-						final eta = 20 + i * 5;
-						final price = base + km * (_subcategory == 'courier' ? (i==0?100: i==1?150: 250) : (_subcategory=='truck'? (i==0?250: i==1?300:350): (i==0?180:220)));
-						return ListTile(
-							leading: Image.asset(img, width: 56, height: 36, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.local_shipping)),
-							title: Text(title),
-							subtitle: Text('ETA ${eta} min • ${km.toStringAsFixed(1)} km'),
-							trailing: FutureBuilder<String>(
-								future: CountryConfigService.instance.getCurrencySymbol(),
-								builder: (context, snap) => Text('${snap.data ?? '₦'}${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+			return Container(
+				decoration: const BoxDecoration(
+					gradient: LinearGradient(
+						colors: [Color(0xFFFAFAFA), Color(0xFFFFFFFF)],
+						begin: Alignment.topCenter,
+						end: Alignment.bottomCenter,
+					),
+					borderRadius: BorderRadius.only(
+						topLeft: Radius.circular(20),
+						topRight: Radius.circular(20),
+					),
+				),
+				child: Padding(
+					padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+					child: Column(
+						mainAxisSize: MainAxisSize.min,
+						crossAxisAlignment: CrossAxisAlignment.start,
+						children: [
+							Text(
+								'📦 Choose ${_subcategory.toUpperCase()} Size',
+								style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
 							),
-							onTap: () {
-								Navigator.pop(ctx);
-								_submit(chosenClass: title, price: price);
-							},
-						);
-					},
+							const SizedBox(height: 20),
+							ListView.separated(
+								shrinkWrap: true,
+								physics: const NeverScrollableScrollPhysics(),
+								itemCount: titles.length,
+								separatorBuilder: (_, __) => const SizedBox(height: 12),
+								itemBuilder: (ctx, i) {
+									final title = titles[i];
+									final emoji = classEmojis[i];
+									final base = _subcategory == 'courier' ? (i == 0 ? 1500.0 : i == 1 ? 3500.0 : 8000.0) : (_subcategory == 'truck' ? [5000.0, 7500.0, 10000.0][i] : [3000.0, 4500.0][i]);
+									final km = 8.0;
+									final eta = 20 + i * 5;
+									final price = base + km * (_subcategory == 'courier' ? (i==0?100: i==1?150: 250) : (_subcategory=='truck'? (i==0?250: i==1?300:350): (i==0?180:220)));
+									
+									return Container(
+										decoration: BoxDecoration(
+											gradient: const LinearGradient(
+												colors: [Color(0xFFE8EAF6), Color(0xFFC5CAE9)],
+											),
+											borderRadius: BorderRadius.circular(16),
+											border: Border.all(color: Colors.indigo.shade200),
+										),
+										child: ListTile(
+											contentPadding: const EdgeInsets.all(16),
+											leading: Container(
+												padding: const EdgeInsets.all(12),
+												decoration: BoxDecoration(
+													color: Colors.white,
+													borderRadius: BorderRadius.circular(12),
+												),
+												child: Text(emoji, style: const TextStyle(fontSize: 28)),
+											),
+											title: Text(
+												title,
+												style: const TextStyle(
+													fontWeight: FontWeight.bold,
+													color: Colors.indigo,
+												),
+											),
+											subtitle: Text(
+												'ETA ${eta} min • ${km.toStringAsFixed(1)} km',
+												style: const TextStyle(color: Colors.indigo),
+											),
+											trailing: Container(
+												padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+												decoration: BoxDecoration(
+													gradient: const LinearGradient(
+														colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+													),
+													borderRadius: BorderRadius.circular(20),
+												),
+												child: FutureBuilder<String>(
+													future: CountryConfigService.instance.getCurrencySymbol(),
+													builder: (context, snap) => Text(
+														'${snap.data ?? '₦'}${price.toStringAsFixed(0)}',
+														style: const TextStyle(
+															fontWeight: FontWeight.bold,
+															color: Colors.white,
+														),
+													),
+												),
+											),
+											onTap: () {
+												Navigator.pop(ctx);
+												_submit(chosenClass: title, price: price);
+											},
+										),
+									);
+								},
+							),
+							const SizedBox(height: 20),
+						],
+					),
 				),
 			);
 		});

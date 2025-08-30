@@ -218,6 +218,7 @@ class _TransportScreenState extends State<TransportScreen> {
 						];
 					} else {
 						classes = [
+							{'capacity': 2, 'label': 'Tricycle', 'emoji': '🛺', 'price': 0.0},
 							{'capacity': 3, 'label': 'Compact Car', 'emoji': '🚗', 'price': 0.0},
 							{'capacity': 4, 'label': 'Standard Car', 'emoji': '🚙', 'price': 0.0},
 							{'capacity': 6, 'label': 'SUV/Van', 'emoji': '🚐', 'price': 0.0},
