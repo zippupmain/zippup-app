@@ -149,9 +149,45 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
 		final category = (m['category'] ?? '').toString();
+		String buyerName = 'Customer';
+		String buyerPhoto = '';
+		int buyerOrders = 0;
+		try {
+			final buyerId = (m['buyerId'] ?? '').toString();
+			if (buyerId.isNotEmpty) {
+				final userDoc = await FirebaseFirestore.instance.collection('users').doc(buyerId).get();
+				final u = userDoc.data() ?? const {};
+				buyerName = (u['name'] ?? '').toString().trim().isNotEmpty ? u['name'].toString() : buyerName;
+				buyerPhoto = (u['photoUrl'] ?? '').toString();
+				try {
+					final agg = await FirebaseFirestore.instance
+						.collection('orders')
+						.where('buyerId', isEqualTo: buyerId)
+						.count()
+						.get();
+					buyerOrders = agg.count;
+				} catch (_) {}
+			}
+		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('New job request'),
-			content: Text('Order ${id.substring(0,6)} • ${category.isEmpty ? 'order' : category}'),
+			content: Column(
+				mainAxisSize: MainAxisSize.min,
+				crossAxisAlignment: CrossAxisAlignment.start,
+				children: [
+					ListTile(
+						contentPadding: EdgeInsets.zero,
+						leading: CircleAvatar(
+							backgroundImage: buyerPhoto.isNotEmpty ? NetworkImage(buyerPhoto) : null,
+							child: buyerPhoto.isEmpty ? const Icon(Icons.person) : null,
+						),
+						title: Text(buyerName),
+						subtitle: Text('Orders: $buyerOrders'),
+					),
+					const SizedBox(height: 8),
+					Text('Order ${id.substring(0,6)} • ${category.isEmpty ? 'order' : category}')
+				],
+			),
 			actions: [
 				TextButton(onPressed: () { Navigator.pop(ctx); _declineOrder(id, category); }, child: const Text('Decline')),
 				FilledButton(onPressed: () { Navigator.pop(ctx); _acceptOrder(id, category); _go(_routeForCategory(category)); }, child: const Text('Accept')),

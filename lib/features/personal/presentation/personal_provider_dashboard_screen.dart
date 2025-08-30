@@ -133,14 +133,23 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 									separatorBuilder: (_, __) => const Divider(height: 1),
 									itemBuilder: (context, i) {
 										final o = list[i];
-										return ListTile(
-											title: Text('REQUEST • ${o.category.name.toUpperCase()}'),
-											subtitle: Text('Order ${o.id.substring(0,6)} • ${o.status.name}'),
-											isThreeLine: false,
-											trailing: Wrap(spacing: 6, children: [
-												FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.accepted), child: const Text('Accept')),
-												TextButton(onPressed: () => _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_provider', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
-											]),
+										return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+											future: _db.collection('users').doc(o.buyerId).get(),
+											builder: (context, u) {
+												final data = u.data?.data() ?? const {};
+												final name = (data['name'] ?? 'Customer').toString();
+												final photo = (data['photoUrl'] ?? '').toString();
+												return ListTile(
+													leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
+													title: Text('REQUEST • ${o.category.name.toUpperCase()}'),
+													subtitle: Text('$name\nOrder ${o.id.substring(0,6)} • ${o.status.name}'),
+													isThreeLine: true,
+													trailing: Wrap(spacing: 6, children: [
+														FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.accepted), child: const Text('Accept')),
+														TextButton(onPressed: () => _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_provider', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
+													]),
+												);
+											},
 										);
 									},
 								);
