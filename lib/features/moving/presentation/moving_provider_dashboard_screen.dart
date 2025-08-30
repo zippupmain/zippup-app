@@ -15,7 +15,7 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
 	bool _online = false;
-	MovingStatus? _filter;
+	String? _filter;
 	Stream<List<MovingBooking>>? _incomingStream;
 
 	@override
@@ -35,7 +35,7 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 		_incomingStream = _db
 			.collection('moving_bookings')
 			.where('providerId', isEqualTo: uid)
-			.where('status', isEqualTo: MovingStatus.requested.name)
+			.where('status', isEqualTo: 'requested')
 			.snapshots()
 			.map((s) => s.docs.map((d) => MovingBooking.fromJson(d.id, d.data())).toList());
 	}
@@ -54,8 +54,67 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 		}
 	}
 
-	Future<void> _updateRequest(String id, String status) async {
-		await _db.collection('moving_requests').doc(id).set({'status': status}, SetOptions(merge: true));
+	Future<void> _updateBooking(String id, String status) async {
+		await _db.collection('moving_bookings').doc(id).set({'status': status}, SetOptions(merge: true));
+	}
+
+	Widget _actionsForBooking(MovingBooking booking) {
+		switch (booking.status.name) {
+			case 'requested':
+				return FilledButton.icon(
+					onPressed: () {
+						_updateBooking(booking.id, 'accepted');
+						context.push('/track/moving?bookingId=${booking.id}');
+					},
+					icon: const Icon(Icons.check, size: 16),
+					label: const Text('Accept'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(70, 32)),
+				);
+			case 'accepted':
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, 'arriving'),
+					icon: const Icon(Icons.directions_car, size: 16),
+					label: const Text('Arriving'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.blue, minimumSize: const Size(70, 32)),
+				);
+			case 'arriving':
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, 'arrived'),
+					icon: const Icon(Icons.location_on, size: 16),
+					label: const Text('Arrived'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.orange, minimumSize: const Size(70, 32)),
+				);
+			case 'arrived':
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, 'loading'),
+					icon: const Icon(Icons.inbox, size: 16),
+					label: const Text('Loading'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.indigo, minimumSize: const Size(70, 32)),
+				);
+			case 'loading':
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, 'inTransit'),
+					icon: const Icon(Icons.local_shipping, size: 16),
+					label: const Text('In Transit'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.purple, minimumSize: const Size(70, 32)),
+				);
+			case 'inTransit':
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, 'unloading'),
+					icon: const Icon(Icons.unarchive, size: 16),
+					label: const Text('Unloading'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.teal, minimumSize: const Size(70, 32)),
+				);
+			case 'unloading':
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, 'completed'),
+					icon: const Icon(Icons.check_circle, size: 16),
+					label: const Text('Complete'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(70, 32)),
+				);
+			default:
+				return const SizedBox.shrink();
+		}
 	}
 
 	@override
@@ -64,122 +123,122 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 		return DefaultTabController(
 			length: 2,
 			child: Scaffold(
-				appBar: AppBar(title: const Text('Moving Provider'), actions: [
-					IconButton(icon: const Icon(Icons.home_outlined), onPressed: () => context.go('/')),
-					IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
-				], bottom: const TabBar(tabs: [
-					Tab(icon: Icon(Icons.notifications_active), text: 'Incoming'),
-					Tab(icon: Icon(Icons.local_shipping), text: 'Requests'),
-				])),
+				appBar: AppBar(
+					title: const Text(
+						'📦 Moving Provider',
+						style: TextStyle(fontWeight: FontWeight.bold),
+					),
+					backgroundColor: Colors.transparent,
+					flexibleSpace: Container(
+						decoration: const BoxDecoration(
+							gradient: LinearGradient(
+								colors: [Color(0xFF3F51B5), Color(0xFF7986CB)],
+								begin: Alignment.topLeft,
+								end: Alignment.bottomRight,
+							),
+						),
+					),
+					foregroundColor: Colors.white,
+					actions: [
+						IconButton(icon: const Icon(Icons.home_outlined), onPressed: () => context.go('/')),
+						IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
+					], 
+					bottom: PreferredSize(
+						preferredSize: const Size.fromHeight(48),
+						child: StreamBuilder<List<MovingBooking>>(
+							stream: _incomingStream,
+							builder: (context, s) {
+								final count = (s.data?.length ?? 0);
+								return TabBar(
+									labelColor: Colors.white,
+									unselectedLabelColor: Colors.white70,
+									tabs: [
+										Tab(text: count > 0 ? 'Requests ($count)' : 'Requests'),
+										const Tab(text: 'History'),
+									],
+								);
+							},
+						),
+					),
+				),
 				body: Column(children: [
 					const ProviderHeader(service: 'moving'),
 					Padding(
 						padding: const EdgeInsets.all(12),
-						child: Row(children: [
-							Expanded(child: SwitchListTile(title: const Text('Go Online'), value: _online, onChanged: _setOnline)),
-							const SizedBox(width: 8),
-							OutlinedButton.icon(onPressed: () => context.push('/hub/orders'), icon: const Icon(Icons.list_alt), label: const Text('All orders')),
-						]),
-					),
-					SingleChildScrollView(
-						scrollDirection: Axis.horizontal,
-						child: Row(children: [
-							FilterChip(label: const Text('All'), selected: _filter == null, onSelected: (_) => setState(() => _filter = null)),
-							...['requested','accepted','assigned','enroute','arrived','delivered','cancelled'].map((s) => Padding(
-								padding: const EdgeInsets.symmetric(horizontal: 4),
-								child: FilterChip(label: Text(s), selected: _filter == s, onSelected: (_) => setState(() => _filter = s)),
-							)),
-						]),
+						child: SwitchListTile(
+							title: const Text('Moving Services Online'),
+							subtitle: Text(_online ? 'Available for moving requests' : 'Offline'),
+							value: _online,
+							onChanged: _setOnline,
+							activeColor: Colors.indigo,
+						),
 					),
 					Expanded(child: TabBarView(children: [
-						StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+						// Incoming requests
+						StreamBuilder<List<MovingBooking>>(
 							stream: _incomingStream,
 							builder: (context, s) {
-								final list = (s.data?.docs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[]);
-								if (list.isEmpty) return const Center(child: Text('No incoming requests'));
-								return ListView.separated(
+								final list = s.data ?? const <MovingBooking>[];
+								if (list.isEmpty) return const Center(child: Text('No incoming moving requests'));
+								return ListView.builder(
+									padding: const EdgeInsets.all(12),
 									itemCount: list.length,
-									separatorBuilder: (_, __) => const Divider(height: 1),
 									itemBuilder: (context, i) {
-										final d = list[i];
-										final data = d.data();
-										return ListTile(
-											title: Text('REQUEST • ${(data['subcategory'] ?? 'moving').toString()}'),
-											subtitle: Text('From: ${data['pickupAddress'] ?? ''}\nTo: ${data['dropoffAddress'] ?? ''}'),
-											isThreeLine: true,
-											trailing: Wrap(spacing: 6, children: [
-												FilledButton(onPressed: () => _updateRequest(d.id, 'accepted'), child: const Text('Accept')),
-												TextButton(onPressed: () => _updateRequest(d.id, 'cancelled'), child: const Text('Decline')),
-											]),
+										final booking = list[i];
+										return Container(
+											margin: const EdgeInsets.only(bottom: 12),
+											decoration: BoxDecoration(
+												gradient: const LinearGradient(
+													colors: [Color(0xFFE8EAF6), Color(0xFFC5CAE9)],
+												),
+												borderRadius: BorderRadius.circular(12),
+												border: Border.all(color: Colors.indigo.shade200),
+											),
+											child: ListTile(
+												title: Text('📦 ${booking.type.toUpperCase()} MOVING'),
+												subtitle: Text('${booking.pickupAddress} → ${booking.destinationAddress}\n💰 ₦${booking.feeEstimate.toStringAsFixed(0)}'),
+												isThreeLine: true,
+												trailing: _actionsForBooking(booking),
+											),
 										);
 									},
 								);
 							},
 						),
-						StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-							stream: _requestsStream(uid),
+						// History
+						StreamBuilder<List<MovingBooking>>(
+							stream: _bookingsStream(uid),
 							builder: (context, snap) {
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-								var docs = snap.data!.docs;
-								if (_filter != null) docs = docs.where((r) => (r.data()['status'] ?? '') == _filter).toList();
-								if (docs.isEmpty) return const Center(child: Text('No requests'));
-								return ListView.separated(
-									itemCount: docs.length,
-									separatorBuilder: (_, __) => const Divider(height: 1),
+								var bookings = snap.data!;
+								if (_filter != null) bookings = bookings.where((r) => r.status.name == _filter).toList();
+								if (bookings.isEmpty) return const Center(child: Text('No moving bookings'));
+								return ListView.builder(
+									padding: const EdgeInsets.all(12),
+									itemCount: bookings.length,
 									itemBuilder: (context, i) {
-										final d = docs[i];
-										final data = d.data();
-										return ListTile(
-											title: Text('${(data['subcategory'] ?? 'moving').toString().toUpperCase()} • ${(data['status'] ?? '').toString()}'),
-											subtitle: Text('From: ${data['pickupAddress'] ?? ''}\nTo: ${data['dropoffAddress'] ?? ''}'),
-											isThreeLine: true,
-											trailing: Wrap(spacing: 6, children: _actionsFor(d.id, (data['status'] ?? '').toString())),
+										final booking = bookings[i];
+										return Container(
+											margin: const EdgeInsets.only(bottom: 12),
+											decoration: BoxDecoration(
+												color: Colors.white,
+												borderRadius: BorderRadius.circular(12),
+												border: Border.all(color: Colors.grey.shade200),
+											),
+											child: ListTile(
+												title: Text('📦 ${booking.type.toUpperCase()} • ${booking.status.name.toUpperCase()}'),
+												subtitle: Text('${booking.pickupAddress} → ${booking.destinationAddress}'),
+												trailing: _actionsForBooking(booking),
+												onTap: () => context.push('/track/moving?bookingId=${booking.id}'),
+											),
 										);
 									},
 								);
 							},
 						),
 					])),
-					StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-						stream: _incomingStream,
-						builder: (context, s) {
-							if (!s.hasData || s.data!.docs.isEmpty) return const SizedBox.shrink();
-							final d = s.data!.docs.first;
-							final data = d.data();
-							WidgetsBinding.instance.addPostFrameCallback((_) {
-								showDialog(
-									context: context,
-									builder: (_) => AlertDialog(
-										title: const Text('New moving request'),
-										content: Text('${(data['subcategory'] ?? 'moving').toString().toUpperCase()}\nFrom: ${data['pickupAddress'] ?? ''}\nTo: ${data['dropoffAddress'] ?? ''}'),
-										actions: [
-											TextButton(onPressed: () { Navigator.pop(context); _updateRequest(d.id, 'accepted'); }, child: const Text('Accept')),
-											TextButton(onPressed: () { Navigator.pop(context); _updateRequest(d.id, 'cancelled'); }, child: const Text('Decline')),
-										],
-									),
-								);
-							});
-							return const SizedBox.shrink();
-						},
-					),
 				]),
 			),
 		);
 	}
-
-	List<Widget> _actionsFor(String id, String status) {
-		switch (status) {
-			case 'accepted':
-				return [TextButton(onPressed: () => _updateRequest(id, 'assigned'), child: const Text('Assign'))];
-			case 'assigned':
-				return [TextButton(onPressed: () => _updateRequest(id, 'enroute'), child: const Text('Enroute'))];
-			case 'enroute':
-				return [TextButton(onPressed: () => _updateRequest(id, 'arrived'), child: const Text('Arrived'))];
-			case 'arrived':
-				return [FilledButton(onPressed: () => _updateRequest(id, 'completed'), child: const Text('Complete'))];
-			default:
-				return const [];
-		}
-	}
 }
-
