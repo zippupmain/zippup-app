@@ -151,7 +151,7 @@ class _HireTrackScreenState extends State<HireTrackScreen> {
 																	const SizedBox(height: 8),
 																	Text('Service: ${booking.description}'),
 																	Text('Location: ${booking.serviceAddress}'),
-																	if (booking.durationMinutes != null) Text('Duration: ${booking.durationMinutes} minutes'),
+																	Text('Category: ${booking.serviceCategory}'),
 																],
 															),
 														),
