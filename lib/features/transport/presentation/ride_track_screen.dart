@@ -266,11 +266,19 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 								child: Column(
 									children: [
 										if (ride.driverId != null) Card(
-											child: ListTile(
-												leading: const CircleAvatar(child: Icon(Icons.person)),
-												title: const Text('Your driver'),
-												subtitle: Text('ID: ${ride.driverId!.substring(0, 6)} • ${ride.type.name.toUpperCase()}'),
-												trailing: const Icon(Icons.star_border),
+											child: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+												future: FirebaseFirestore.instance.collection('users').doc(ride.driverId!).get(),
+												builder: (context, snap) {
+													final u = snap.data?.data() ?? const {};
+													final name = (u['name'] ?? 'Driver').toString();
+													final photo = (u['photoUrl'] ?? '').toString();
+													return ListTile(
+														leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
+														title: Text(name),
+														subtitle: Text('ID: ${ride.driverId!.substring(0, 6)} • ${ride.type.name.toUpperCase()}'),
+														trailing: const Icon(Icons.star_border),
+													);
+												},
 											),
 										),
 										StatusTimeline(steps: steps, currentIndex: idx),
