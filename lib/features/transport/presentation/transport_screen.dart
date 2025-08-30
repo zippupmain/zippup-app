@@ -377,7 +377,7 @@ class _TransportScreenState extends State<TransportScreen> {
 										value: scheduled,
 										onChanged: (v) => setModalState(() => scheduled = v),
 									),
-									if (scheduled)
+									...scheduled ? [
 										ListTile(
 											title: const Text('Scheduled time'),
 											subtitle: Text(scheduledAt?.toString() ?? 'Pick time'),
@@ -390,6 +390,7 @@ class _TransportScreenState extends State<TransportScreen> {
 												setModalState(() => scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
 											},
 										),
+									] : [],
 									const SizedBox(height: 8),
 								],
 							),
