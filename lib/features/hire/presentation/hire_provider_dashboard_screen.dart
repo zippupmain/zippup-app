@@ -278,11 +278,11 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 								showDialog(
 									context: context,
 									builder: (_) => AlertDialog(
-										title: const Text('New order request'),
-										content: Text('Order ${o.id.substring(0,6)} • ${o.category.name}'),
+										title: const Text('New hire request'),
+										content: Text('Booking ${booking.id.substring(0,6)} • ${booking.serviceCategory}'),
 										actions: [
-											TextButton(onPressed: () { Navigator.pop(context); _updateOrder(o.id, OrderStatus.accepted); }, child: const Text('Accept')),
-											TextButton(onPressed: () { Navigator.pop(context); _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_provider', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)); }, child: const Text('Decline')),
+											TextButton(onPressed: () { Navigator.pop(context); _updateBooking(booking.id, HireStatus.accepted); }, child: const Text('Accept')),
+											TextButton(onPressed: () { Navigator.pop(context); _updateBooking(booking.id, HireStatus.cancelled); }, child: const Text('Decline')),
 										],
 									),
 								);
@@ -295,22 +295,6 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 		);
 	}
 
-	List<Widget> _actionsFor(Order o) {
-		switch (o.status) {
-			case OrderStatus.pending:
-				return [
-					FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.accepted), child: const Text('Accept')),
-					TextButton(onPressed: () => _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_provider', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Reject')),
-				];
-			case OrderStatus.accepted:
-				return [TextButton(onPressed: () => _updateOrder(o.id, OrderStatus.enroute), child: const Text('Enroute'))];
-			case OrderStatus.enroute:
-				return [TextButton(onPressed: () => _updateOrder(o.id, OrderStatus.arrived), child: const Text('Arrived'))];
-			case OrderStatus.arrived:
-				return [FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.completed), child: const Text('Complete'))];
-			default:
-				return const [];
-		}
-	}
+
 }
 
