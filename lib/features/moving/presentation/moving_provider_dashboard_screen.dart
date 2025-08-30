@@ -195,7 +195,7 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 												border: Border.all(color: Colors.indigo.shade200),
 											),
 											child: ListTile(
-												title: Text('📦 ${booking.type.toUpperCase()} MOVING'),
+												title: Text('📦 ${booking.type.name.toUpperCase()} MOVING'),
 												subtitle: Text('${booking.pickupAddress} → ${booking.destinationAddress}\n💰 ₦${booking.feeEstimate.toStringAsFixed(0)}'),
 												isThreeLine: true,
 												trailing: _actionsForBooking(booking),
@@ -226,7 +226,7 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 												border: Border.all(color: Colors.grey.shade200),
 											),
 											child: ListTile(
-												title: Text('📦 ${booking.type.toUpperCase()} • ${booking.status.name.toUpperCase()}'),
+												title: Text('📦 ${booking.type.name.toUpperCase()} • ${booking.status.name.toUpperCase()}'),
 												subtitle: Text('${booking.pickupAddress} → ${booking.destinationAddress}'),
 												trailing: _actionsForBooking(booking),
 												onTap: () => context.push('/track/moving?bookingId=${booking.id}'),
