@@ -210,7 +210,8 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 								int? stars;
 								final ctl = TextEditingController();
 								
-								return StatefulBuilder(builder: (context, setState) {
+								return StatefulBuilder(builder: (context, setDialogState) {
+									String paymentMethod = 'card';
 									return AlertDialog(
 										title: const Text('🎉 Ride Completed!'),
 										content: SingleChildScrollView(
@@ -262,8 +263,50 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 																	const SizedBox(height: 8),
 																	Text('Amount to pay: $currency ${fare.toStringAsFixed(2)}', 
 																		style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-																	const SizedBox(height: 4),
-																	const Text('Payment will be processed automatically', style: TextStyle(color: Colors.grey)),
+																	const SizedBox(height: 12),
+																	
+																	// Payment method selection
+																	const Text('Payment Method:', style: TextStyle(fontWeight: FontWeight.w600)),
+																	const SizedBox(height: 8),
+																	Row(
+																		children: [
+																			Expanded(
+																				child: Card(
+																					child: RadioListTile<String>(
+																						value: 'card',
+																						groupValue: paymentMethod,
+																						onChanged: (value) => setDialogState(() => paymentMethod = value!),
+																						title: const Text('💳 Card'),
+																						subtitle: const Text('Auto-processed'),
+																						dense: true,
+																					),
+																				),
+																			),
+																			Expanded(
+																				child: Card(
+																					child: RadioListTile<String>(
+																						value: 'cash',
+																						groupValue: paymentMethod,
+																						onChanged: (value) => setDialogState(() => paymentMethod = value!),
+																						title: const Text('💵 Cash'),
+																						subtitle: const Text('Pay driver'),
+																						dense: true,
+																					),
+																				),
+																			),
+																		],
+																	),
+																	const SizedBox(height: 8),
+																	Text(
+																		paymentMethod == 'card' 
+																			? 'Card payments are processed automatically.' 
+																			: 'Please pay the driver $currency ${fare.toStringAsFixed(2)} in cash.',
+																		style: TextStyle(
+																			color: paymentMethod == 'cash' ? Colors.orange[700] : Colors.grey[600], 
+																			fontSize: 12,
+																			fontWeight: paymentMethod == 'cash' ? FontWeight.w600 : FontWeight.normal,
+																		),
+																	),
 																],
 															),
 														),
@@ -304,6 +347,17 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 											FilledButton(
 												onPressed: () async {
 													try {
+														// Save payment method to ride
+														await FirebaseFirestore.instance
+															.collection('rides')
+															.doc(widget.rideId)
+															.set({
+																'paymentMethod': paymentMethod,
+																'paymentStatus': paymentMethod == 'cash' ? 'pending_cash' : 'processed',
+																'completedAt': DateTime.now().toIso8601String(),
+															}, SetOptions(merge: true));
+														
+														// Save rating if provided
 														if (stars != null) {
 															await FirebaseFirestore.instance
 																.collection('rides')
@@ -514,12 +568,35 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 													final u = (s.data?[0] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {};
 													final pu = (s.data?[1] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {};
 													
+													// Debug: Print profile data
+													print('🔍 Driver Profile Debug:');
+													print('User profile exists: ${(s.data?[0] as DocumentSnapshot?)?.exists ?? false}');
+													print('Public profile exists: ${(s.data?[1] as DocumentSnapshot?)?.exists ?? false}');
+													print('User profile data: $u');
+													print('Public profile data: $pu');
+													
+													// Create public profile if missing but user profile exists
+													if (!(s.data?[1] as DocumentSnapshot?)!.exists && (s.data?[0] as DocumentSnapshot?)!.exists && u['name'] != null) {
+														try {
+															await FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).set({
+																'name': u['name'],
+																'photoUrl': u['photoUrl'] ?? '',
+																'createdAt': DateTime.now().toIso8601String(),
+															});
+															print('✅ Created missing public profile for driver: ${u['name']}');
+														} catch (e) {
+															print('❌ Failed to create driver public profile: $e');
+														}
+													}
+													
 													// Better name resolution with fallbacks
 													String name = 'Driver';
 													if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
 														name = pu['name'].toString().trim();
+														print('✅ Found driver name in public profile: $name');
 													} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
 														name = u['name'].toString().trim();
+														print('✅ Found driver name in user profile: $name');
 													} else if (u['displayName'] != null && u['displayName'].toString().trim().isNotEmpty) {
 														name = u['displayName'].toString().trim();
 													} else if (u['email'] != null) {

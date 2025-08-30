@@ -287,8 +287,36 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 																const SizedBox(height: 4),
 																Text('Your earnings: $currency ${(fare * 0.85).toStringAsFixed(2)}', 
 																	style: const TextStyle(fontSize: 16, color: Colors.green)),
-																const SizedBox(height: 4),
-																const Text('Payment will be processed automatically', style: TextStyle(color: Colors.grey)),
+																const SizedBox(height: 8),
+																
+																// Payment method info
+																Container(
+																	padding: const EdgeInsets.all(12),
+																	decoration: BoxDecoration(
+																		color: (data['paymentMethod'] == 'cash') ? Colors.orange.shade100 : Colors.blue.shade100,
+																		borderRadius: BorderRadius.circular(8),
+																	),
+																	child: Row(
+																		children: [
+																			Icon(
+																				(data['paymentMethod'] == 'cash') ? Icons.payments : Icons.credit_card,
+																				color: (data['paymentMethod'] == 'cash') ? Colors.orange.shade700 : Colors.blue.shade700,
+																			),
+																			const SizedBox(width: 8),
+																			Expanded(
+																				child: Text(
+																					(data['paymentMethod'] == 'cash') 
+																						? 'Customer will pay you $currency ${fare.toStringAsFixed(2)} in cash'
+																						: 'Payment processed automatically via card',
+																					style: TextStyle(
+																						color: (data['paymentMethod'] == 'cash') ? Colors.orange.shade700 : Colors.blue.shade700,
+																						fontWeight: FontWeight.w600,
+																					),
+																				),
+																			),
+																		],
+																	),
+																),
 															],
 														),
 													),

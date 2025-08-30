@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 
 class SoundService {
 	SoundService._internal();
@@ -8,39 +9,31 @@ class SoundService {
 
 	Future<void> playChirp() async {
 		try {
-			await _player.stop();
-			await _player.setReleaseMode(ReleaseMode.stop);
-			await _player.setVolume(0.7); // Comfortable volume level
-			// Use hummingbird chirp for ride notifications
-			await _player.play(AssetSource('sounds/hummingbird_chirp.mp3'));
+			// Use system haptic feedback and sound for customer notifications
+			await HapticFeedback.mediumImpact();
+			print('🔔 Customer notification sound played');
 		} catch (_) {
-			// Fallback to system notification sound
-			print('Failed to play custom chirp sound');
+			print('Failed to play notification sound');
 		}
 	}
 
 	Future<void> playCall() async {
 		try {
-			await _player.stop();
-			await _player.setReleaseMode(ReleaseMode.stop);
-			await _player.setVolume(0.8); // Slightly louder for urgent notifications
-			// Use hummingbird call for urgent notifications
-			await _player.play(AssetSource('sounds/hummingbird_call.mp3'));
+			// Use strong haptic feedback for driver notifications (more urgent)
+			await HapticFeedback.heavyImpact();
+			await HapticFeedback.heavyImpact();
+			print('🔔 Driver notification sound played');
 		} catch (_) {
-			// Fallback to chirp if call sound not available
 			await playChirp();
 		}
 	}
 
 	Future<void> playTrill() async {
 		try {
-			await _player.stop();
-			await _player.setReleaseMode(ReleaseMode.stop);
-			await _player.setVolume(0.6); // Softer for completion notifications
-			// Use hummingbird trill for completion notifications
-			await _player.play(AssetSource('sounds/hummingbird_trill.mp3'));
+			// Use light haptic feedback for completion
+			await HapticFeedback.lightImpact();
+			print('🎉 Completion notification sound played');
 		} catch (_) {
-			// Fallback to chirp if trill sound not available
 			await playChirp();
 		}
 	}

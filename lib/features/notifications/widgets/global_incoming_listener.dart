@@ -26,6 +26,11 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	void initState() {
 		super.initState();
 		_bind();
+		// Listen for auth state changes to re-bind listeners
+		FirebaseAuth.instance.authStateChanges().listen((user) {
+			print('🔄 Auth state changed, rebinding listeners for user: ${user?.uid}');
+			_bind();
+		});
 	}
 
 	@override
@@ -35,9 +40,14 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 
 	void _bind() {
 		final uid = FirebaseAuth.instance.currentUser?.uid;
+		print('🔗 Binding notification listeners for user: $uid');
 		_unbind();
-		if (uid == null) return;
+		if (uid == null) {
+			print('❌ No user authenticated, skipping notification binding');
+			return;
+		}
 		final db = FirebaseFirestore.instance;
+		print('✅ Setting up ride notification listener for user: $uid');
 		
 		// Listen for ride requests assigned to this driver OR unassigned rides for available drivers
 		_ridesSub = db.collection('rides')
@@ -47,18 +57,24 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				// Check if user has active transport provider profile AND is online
 				bool isActiveTransportProvider = false;
 				try {
+					print('🔍 Checking provider profile for user: $uid');
 					final providerSnap = await db.collection('provider_profiles')
 						.where('userId', isEqualTo: uid)
 						.where('service', isEqualTo: 'transport')
 						.where('status', isEqualTo: 'active')
 						.limit(1)
 						.get();
+					print('📋 Found ${providerSnap.docs.length} transport provider profiles');
 					if (providerSnap.docs.isNotEmpty) {
 						final providerData = providerSnap.docs.first.data();
+						final isOnline = providerData['availabilityOnline'] == true;
+						print('🟢 Provider online status: $isOnline');
 						// Only show requests if provider is online/available
-						isActiveTransportProvider = providerData['availabilityOnline'] == true;
+						isActiveTransportProvider = isOnline;
 					}
-				} catch (_) {}
+				} catch (e) {
+					print('❌ Error checking provider profile: $e');
+				}
 				
 				for (final d in snap.docs) {
 					final data = d.data();
@@ -73,8 +89,11 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					}
 					
 					if (shouldShow && !_shown.contains('ride:${d.id}')) {
+						print('🚨 Showing ride notification for ride: ${d.id}');
 						_shown.add('ride:${d.id}');
 						_showRideDialog(d.id, data);
+					} else if (!shouldShow) {
+						print('🚫 Not showing ride ${d.id} - shouldShow: $shouldShow, assignedDriverId: $assignedDriverId, isActiveProvider: $isActiveTransportProvider');
 					}
 				}
 			});
@@ -146,11 +165,34 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				final pu = results[0].data() ?? const {};
 				final u = results[1].data() ?? const {};
 				
+				// Debug: Print profile data
+				print('🔍 Customer Profile Debug:');
+				print('Public profile exists: ${results[0].exists}');
+				print('User profile exists: ${results[1].exists}');
+				print('Public profile data: $pu');
+				print('User profile data: $u');
+				
+				// Create public profile if missing but user profile exists
+				if (!results[0].exists && results[1].exists && u['name'] != null) {
+					try {
+						await FirebaseFirestore.instance.collection('public_profiles').doc(riderId).set({
+							'name': u['name'],
+							'photoUrl': u['photoUrl'] ?? '',
+							'createdAt': DateTime.now().toIso8601String(),
+						});
+						print('✅ Created missing public profile for customer: ${u['name']}');
+					} catch (e) {
+						print('❌ Failed to create public profile: $e');
+					}
+				}
+				
 				// Better name resolution with multiple fallbacks
 				if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
 					riderName = pu['name'].toString().trim();
+					print('✅ Found name in public profile: $riderName');
 				} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
 					riderName = u['name'].toString().trim();
+					print('✅ Found name in user profile: $riderName');
 				} else if (u['displayName'] != null && u['displayName'].toString().trim().isNotEmpty) {
 					riderName = u['displayName'].toString().trim();
 				} else if (u['firstName'] != null || u['lastName'] != null) {
