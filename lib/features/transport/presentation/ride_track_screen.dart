@@ -26,6 +26,10 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	int? _etaMinutes;
 	DateTime? _waitingSince;
 	bool _mockStarted = false;
+	// Rider-side simulation when no live driver location
+	Timer? _riderSimTimer;
+	LatLng? _simulatedDriver;
+	bool _shownSummary = false;
 
 	List<String> _stepsFor(RideType type) => const ['Accepted', 'Arriving', 'Arrived', 'Enroute', 'Completed'];
 
@@ -155,6 +159,39 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 					final destLat = (data['destLat'] as num?)?.toDouble();
 					final destLng = (data['destLng'] as num?)?.toDouble();
 
+					// On completion, show summary once with amount and rating
+					if (ride.status == RideStatus.completed && !_shownSummary) {
+						_shownSummary = true;
+						WidgetsBinding.instance.addPostFrameCallback((_) async {
+							await showDialog(context: context, builder: (_) {
+								final fare = ride.fareEstimate;
+								int? stars;
+								final ctl = TextEditingController();
+								return AlertDialog(
+									title: const Text('Ride summary'),
+									content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+										Text('Amount to pay: ${fare.toStringAsFixed(2)}'),
+										const SizedBox(height: 8),
+										const Text('Rate your driver (optional):'),
+										Row(children: List.generate(5, (i) => IconButton(onPressed: () { stars = i + 1; (context as Element).markNeedsBuild(); }, icon: Icon(stars != null && stars! > i ? Icons.star : Icons.star_border)) )),
+										TextField(controller: ctl, decoration: const InputDecoration(labelText: 'Feedback (optional)')),
+									]),
+									actions: [
+										TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+										FilledButton(onPressed: () async {
+											try {
+												if (stars != null) {
+													await FirebaseFirestore.instance.collection('rides').doc(widget.rideId).collection('ratings').add({'stars': stars, 'text': ctl.text.trim(), 'createdAt': DateTime.now().toIso8601String()});
+												}
+											} catch (_) {}
+											if (context.mounted) Navigator.pop(context);
+										}, child: const Text('Done')),
+									],
+								);
+							});
+						});
+					}
+
 					if (ride.status == RideStatus.requested) {
 						_waitingSince ??= DateTime.now();
 						// prompt every 70 seconds
@@ -204,18 +241,28 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 						} else if (destLat != null && destLng != null) {
 							_updateEta(originLat: driverLat, originLng: driverLng, destLat: destLat, destLng: destLng);
 						}
+						// Stop rider-side simulation when real driver appears
+						_riderSimTimer?.cancel();
+						_riderSimTimer = null;
+						_simulatedDriver = null;
 					} else {
 						// Fallback: show a placeholder driver marker between pickup and destination
 						if (pickupLat != null && pickupLng != null && destLat != null && destLng != null) {
-							final simLat = pickupLat + (destLat - pickupLat) * 0.1;
-							final simLng = pickupLng + (destLng - pickupLng) * 0.1;
-							markers.add(Marker(
-								markerId: const MarkerId('driver'),
-								position: LatLng(simLat, simLng),
-								infoWindow: const InfoWindow(title: 'Driver'),
-								icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-							));
-							center = LatLng(simLat, simLng);
+							_riderSimTimer ??= Timer.periodic(const Duration(seconds: 2), (t) {
+								final f = ((t.tick % 30) / 30.0).clamp(0.0, 1.0);
+								final lat = pickupLat + (destLat - pickupLat) * f;
+								final lng = pickupLng + (destLng - pickupLng) * f;
+								setState(() { _simulatedDriver = LatLng(lat, lng); });
+							});
+							if (_simulatedDriver != null) {
+								markers.add(Marker(
+									markerId: const MarkerId('driver'),
+									position: _simulatedDriver!,
+									infoWindow: const InfoWindow(title: 'Driver'),
+									icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+								));
+								center = _simulatedDriver;
+							}
 						}
 					}
 
