@@ -144,4 +144,3 @@ class _OtherServiceCard extends StatelessWidget {
 		);
 	}
 }
-}

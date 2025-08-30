@@ -147,5 +147,3 @@ class _RentalCategoryCard extends StatelessWidget {
 		);
 	}
 }
-}
-

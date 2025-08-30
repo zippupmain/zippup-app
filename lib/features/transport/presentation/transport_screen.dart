@@ -349,25 +349,27 @@ class _TransportScreenState extends State<TransportScreen> {
 														),
 													),
 													onTap: () async {
-													Navigator.of(ctx).pop();
-													await _createRideAndSearch(
-														origin: origin,
-														dests: dests,
-														oLat: oLat,
-														oLng: oLng,
-														dLat: dLat,
-														dLng: dLng,
-														km: km,
-														mins: mins,
-														capacity: cap,
-														classLabel: label,
-														fare: price,
-														scheduled: scheduled,
-														scheduledAt: scheduledAt,
-													);
-												},
+														Navigator.of(ctx).pop();
+														await _createRideAndSearch(
+															origin: origin,
+															dests: dests,
+															oLat: oLat,
+															oLng: oLng,
+															dLat: dLat,
+															dLng: dLng,
+															km: km,
+															mins: mins,
+															capacity: cap,
+															classLabel: label,
+															fare: price,
+															scheduled: scheduled,
+															scheduledAt: scheduledAt,
+														);
+													},
+												),
 											);
 										},
+									),
 									),
 									const SizedBox(height: 8),
 									SwitchListTile(
