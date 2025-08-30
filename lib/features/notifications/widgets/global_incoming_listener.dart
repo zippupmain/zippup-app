@@ -98,9 +98,46 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	Future<void> _showRideDialog(String id, Map<String, dynamic> m) async {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
+		// Fetch rider profile and total rides count for richer context
+		String riderName = 'Customer';
+		String riderPhoto = '';
+		int riderRides = 0;
+		try {
+			final riderId = (m['riderId'] ?? '').toString();
+			if (riderId.isNotEmpty) {
+				final userDoc = await FirebaseFirestore.instance.collection('users').doc(riderId).get();
+				final u = userDoc.data() ?? const {};
+				riderName = (u['name'] ?? '').toString().trim().isNotEmpty ? u['name'].toString() : riderName;
+				riderPhoto = (u['photoUrl'] ?? '').toString();
+				try {
+					final agg = await FirebaseFirestore.instance
+						.collection('rides')
+						.where('riderId', isEqualTo: riderId)
+						.count()
+						.get();
+					riderRides = agg.count;
+				} catch (_) {}
+			}
+		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('New ride request'),
-			content: Text('${(m['type'] ?? 'ride').toString().toUpperCase()}\nFrom: ${(m['pickupAddress'] ?? '').toString()}'),
+			content: Column(
+				mainAxisSize: MainAxisSize.min,
+				crossAxisAlignment: CrossAxisAlignment.start,
+				children: [
+					ListTile(
+						contentPadding: EdgeInsets.zero,
+						leading: CircleAvatar(
+							backgroundImage: riderPhoto.isNotEmpty ? NetworkImage(riderPhoto) : null,
+							child: riderPhoto.isEmpty ? const Icon(Icons.person) : null,
+						),
+						title: Text(riderName),
+						subtitle: Text('Rides: $riderRides'),
+					),
+					const SizedBox(height: 8),
+					Text('${(m['type'] ?? 'ride').toString().toUpperCase()}\nFrom: ${(m['pickupAddress'] ?? '').toString()}\nTo: ${(m['destinationAddresses'] is List && (m['destinationAddresses'] as List).isNotEmpty) ? (m['destinationAddresses'] as List).first.toString() : ''}'),
+				],
+			),
 			actions: [
 				TextButton(onPressed: () { Navigator.pop(ctx); _declineRide(id); }, child: const Text('Decline')),
 				FilledButton(onPressed: () { Navigator.pop(ctx); _acceptRide(id); _go('/driver/ride?rideId=' + id); }, child: const Text('Accept')),

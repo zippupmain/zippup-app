@@ -129,14 +129,23 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 									separatorBuilder: (_, __) => const Divider(height: 1),
 									itemBuilder: (context, i) {
 										final r = list[i];
-										return ListTile(
-											title: Text('REQUEST • ${r.type.name.toUpperCase()}'),
-											subtitle: Text('From: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
-											isThreeLine: true,
-											trailing: Wrap(spacing: 6, children: [
-												FilledButton(onPressed: () => _updateRide(r.id, RideStatus.accepted), child: const Text('Accept')),
-												TextButton(onPressed: () => _db.collection('rides').doc(r.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
-											]),
+										return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+											future: _db.collection('users').doc(r.riderId).get(),
+											builder: (context, userSnap) {
+												final u = userSnap.data?.data() ?? const {};
+												final name = (u['name'] ?? 'Customer').toString();
+												final photo = (u['photoUrl'] ?? '').toString();
+												return ListTile(
+													leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
+													title: Text('REQUEST • ${r.type.name.toUpperCase()}'),
+													subtitle: Text('$name\nFrom: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
+													isThreeLine: true,
+													trailing: Wrap(spacing: 6, children: [
+														FilledButton(onPressed: () => _updateRide(r.id, RideStatus.accepted), child: const Text('Accept')),
+														TextButton(onPressed: () => _db.collection('rides').doc(r.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
+													]),
+												);
+											},
 										);
 									},
 								);
