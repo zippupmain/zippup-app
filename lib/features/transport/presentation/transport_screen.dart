@@ -262,137 +262,122 @@ class _TransportScreenState extends State<TransportScreen> {
 											),
 										]),
 										const SizedBox(height: 20),
-									ListView.separated(
-										shrinkWrap: true,
-										physics: const NeverScrollableScrollPhysics(),
-										itemCount: classes.length,
-										separatorBuilder: (_, __) => const SizedBox(height: 12),
-										itemBuilder: (ctx, i) {
-											final classData = classes[i];
-											final cap = classData['capacity'] as int;
-											final label = classData['label'] as String;
-											final emoji = classData['emoji'] as String;
-											final basePrice = classData['price'] as double;
-											
-											final price = _type == 'bike' 
-												? basePrice + (km * 50) + (mins * 5)
-												: (_type == 'bus' || _isCharter)
-													? (_charterPrice(seats: cap, km: km, mins: mins))
-													: _priceForClass(capacity: cap, km: km, mins: mins);
-											final asset = _isCharter
-												? (cap == 8
-													? 'assets/images/bus_8.png'
-													: cap == 12
-														? 'assets/images/bus_12.png'
-														: cap == 16
-															? 'assets/images/bus_16.png'
-															: 'assets/images/bus_30.png')
-												: (cap == 2
-													? 'assets/images/vehicle_tricycle.png'
-													: cap == 3
-														? 'assets/images/vehicle_compact.png'
-														: cap == 4
-															? 'assets/images/vehicle_standard.png'
-															: 'assets/images/vehicle_xl.png');
-											return Container(
-												margin: const EdgeInsets.only(bottom: 8),
-												decoration: BoxDecoration(
-													gradient: const LinearGradient(
-														colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-													),
-													borderRadius: BorderRadius.circular(16),
-													border: Border.all(color: Colors.blue.shade200),
-												),
-												child: ListTile(
-													contentPadding: const EdgeInsets.all(16),
-													leading: Container(
-														padding: const EdgeInsets.all(8),
-														decoration: BoxDecoration(
-															color: Colors.white,
-															borderRadius: BorderRadius.circular(12),
+										ListView.separated(
+											shrinkWrap: true,
+											physics: const NeverScrollableScrollPhysics(),
+											itemCount: classes.length,
+											separatorBuilder: (_, __) => const SizedBox(height: 12),
+											itemBuilder: (ctx, i) {
+												final classData = classes[i];
+												final cap = classData['capacity'] as int;
+												final label = classData['label'] as String;
+												final emoji = classData['emoji'] as String;
+												final basePrice = classData['price'] as double;
+												
+												final price = _type == 'bike' 
+													? basePrice + (km * 50) + (mins * 5)
+													: (_type == 'bus' || _isCharter)
+														? (_charterPrice(seats: cap, km: km, mins: mins))
+														: _priceForClass(capacity: cap, km: km, mins: mins);
+												
+												return Container(
+													margin: const EdgeInsets.only(bottom: 8),
+													decoration: BoxDecoration(
+														gradient: const LinearGradient(
+															colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
 														),
-														child: Text(emoji, style: const TextStyle(fontSize: 24)),
+														borderRadius: BorderRadius.circular(16),
+														border: Border.all(color: Colors.blue.shade200),
 													),
-													title: Text(
-														label,
-														style: const TextStyle(
-															fontWeight: FontWeight.bold,
-															color: Colors.blue,
-														),
-													),
-													subtitle: Text(
-														_type == 'bike' 
-															? 'ETA ${mins} min • ${km.toStringAsFixed(1)} km'
-															: '$cap passengers • ETA ${mins} min • ${km.toStringAsFixed(1)} km',
-														style: const TextStyle(color: Colors.blue),
-													),
-													trailing: Container(
-														padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-														decoration: BoxDecoration(
-															gradient: const LinearGradient(
-																colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+													child: ListTile(
+														contentPadding: const EdgeInsets.all(16),
+														leading: Container(
+															padding: const EdgeInsets.all(8),
+															decoration: BoxDecoration(
+																color: Colors.white,
+																borderRadius: BorderRadius.circular(12),
 															),
-															borderRadius: BorderRadius.circular(20),
+															child: Text(emoji, style: const TextStyle(fontSize: 24)),
 														),
-														child: FutureBuilder<String>(
-															future: CountryConfigService.instance.getCurrencySymbol(),
-															builder: (context, snap) {
-																final symbol = snap.data ?? '₦';
-																return Text(
-																	'${symbol}${price.toStringAsFixed(0)}',
-																	style: const TextStyle(
-																		fontWeight: FontWeight.bold,
-																		color: Colors.white,
-																	),
-																);
-															},
+														title: Text(
+															label,
+															style: const TextStyle(
+																fontWeight: FontWeight.bold,
+																color: Colors.blue,
+															),
 														),
+														subtitle: Text(
+															_type == 'bike' 
+																? 'ETA ${mins} min • ${km.toStringAsFixed(1)} km'
+																: '$cap passengers • ETA ${mins} min • ${km.toStringAsFixed(1)} km',
+															style: const TextStyle(color: Colors.blue),
+														),
+														trailing: Container(
+															padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+															decoration: BoxDecoration(
+																gradient: const LinearGradient(
+																	colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+																),
+																borderRadius: BorderRadius.circular(20),
+															),
+															child: FutureBuilder<String>(
+																future: CountryConfigService.instance.getCurrencySymbol(),
+																builder: (context, snap) {
+																	final symbol = snap.data ?? '₦';
+																	return Text(
+																		'${symbol}${price.toStringAsFixed(0)}',
+																		style: const TextStyle(
+																			fontWeight: FontWeight.bold,
+																			color: Colors.white,
+																		),
+																	);
+																},
+															),
+														),
+														onTap: () async {
+															Navigator.of(ctx).pop();
+															await _createRideAndSearch(
+																origin: origin,
+																dests: dests,
+																oLat: oLat,
+																oLng: oLng,
+																dLat: dLat,
+																dLng: dLng,
+																km: km,
+																mins: mins,
+																capacity: cap,
+																classLabel: label,
+																fare: price,
+																scheduled: scheduled,
+																scheduledAt: scheduledAt,
+															);
+														},
 													),
-													onTap: () async {
-														Navigator.of(ctx).pop();
-														await _createRideAndSearch(
-															origin: origin,
-															dests: dests,
-															oLat: oLat,
-															oLng: oLng,
-															dLat: dLat,
-															dLng: dLng,
-															km: km,
-															mins: mins,
-															capacity: cap,
-															classLabel: label,
-															fare: price,
-															scheduled: scheduled,
-															scheduledAt: scheduledAt,
-														);
-													},
-												),
-											);
-										},
-									),
-									),
-									const SizedBox(height: 8),
-									SwitchListTile(
-										title: const Text('Schedule booking'),
-										value: scheduled,
-										onChanged: (v) => setModalState(() => scheduled = v),
-									),
-									...scheduled ? [
-										ListTile(
-											title: const Text('Scheduled time'),
-											subtitle: Text(scheduledAt?.toString() ?? 'Pick time'),
-											onTap: () async {
-												final now = DateTime.now();
-												final date = await showDatePicker(context: ctx, firstDate: now, lastDate: now.add(const Duration(days: 30)), initialDate: now);
-												if (date == null) return;
-												final time = await showTimePicker(context: ctx, initialTime: TimeOfDay.now());
-												if (time == null) return;
-												setModalState(() => scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
+												);
 											},
 										),
-									] : [],
-									const SizedBox(height: 8),
-								],
+										const SizedBox(height: 8),
+										SwitchListTile(
+											title: const Text('Schedule booking'),
+											value: scheduled,
+											onChanged: (v) => setModalState(() => scheduled = v),
+										),
+										if (scheduled)
+											ListTile(
+												title: const Text('Scheduled time'),
+												subtitle: Text(scheduledAt?.toString() ?? 'Pick time'),
+												onTap: () async {
+													final now = DateTime.now();
+													final date = await showDatePicker(context: ctx, firstDate: now, lastDate: now.add(const Duration(days: 30)), initialDate: now);
+													if (date == null) return;
+													final time = await showTimePicker(context: ctx, initialTime: TimeOfDay.now());
+													if (time == null) return;
+													setModalState(() => scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
+												},
+											),
+										const SizedBox(height: 8),
+									],
+								),
 							),
 						),
 					);
