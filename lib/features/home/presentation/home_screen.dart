@@ -57,13 +57,15 @@ class _PositionedDraggablePanicState extends State<_PositionedDraggablePanic> {
 	}
 
 	Widget _panicFab() => Container(
+		width: 64,
+		height: 64,
 		decoration: BoxDecoration(
 			gradient: const LinearGradient(
 				colors: [Color(0xFFFF1744), Color(0xFFD32F2F)],
 				begin: Alignment.topLeft,
 				end: Alignment.bottomRight,
 			),
-			borderRadius: BorderRadius.circular(25),
+			shape: BoxShape.circle,
 			boxShadow: [
 				BoxShadow(
 					color: Colors.red.shade300,
@@ -73,27 +75,25 @@ class _PositionedDraggablePanicState extends State<_PositionedDraggablePanic> {
 				),
 			],
 		),
-		child: FloatingActionButton.extended(
+		child: FloatingActionButton(
 			backgroundColor: Colors.transparent,
 			foregroundColor: Colors.white,
 			elevation: 0,
 			onPressed: () => context.push('/panic'),
-			label: const Row(
-				mainAxisSize: MainAxisSize.min,
+			child: const Column(
+				mainAxisAlignment: MainAxisAlignment.center,
 				children: [
-					Text('🆘', style: TextStyle(fontSize: 18)),
-					SizedBox(width: 6),
+					Text('🆘', style: TextStyle(fontSize: 20)),
 					Text(
-						'PANIC', 
+						'SOS', 
 						style: TextStyle(
 							fontWeight: FontWeight.bold, 
-							fontSize: 14,
-							letterSpacing: 1.2,
+							fontSize: 10,
+							letterSpacing: 1.0,
 						),
 					),
 				],
 			),
-			icon: const Icon(Icons.emergency_share, size: 20),
 		),
 	);
 }
