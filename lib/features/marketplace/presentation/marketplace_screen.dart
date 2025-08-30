@@ -42,7 +42,24 @@ class MarketplaceScreen extends StatelessWidget {
 		}
 		return Scaffold(
 			appBar: AppBar(
-				title: const Text('Marketplace'),
+				title: const Text(
+					'🛒 Marketplace',
+					style: TextStyle(
+						fontWeight: FontWeight.bold,
+						fontSize: 20,
+					),
+				),
+				backgroundColor: Colors.transparent,
+				flexibleSpace: Container(
+					decoration: const BoxDecoration(
+						gradient: LinearGradient(
+							colors: [Color(0xFFE91E63), Color(0xFFF06292)],
+							begin: Alignment.topLeft,
+							end: Alignment.bottomRight,
+						),
+					),
+				),
+				foregroundColor: Colors.white,
 				bottom: PreferredSize(
 					preferredSize: const Size.fromHeight(110),
 					child: Column(
@@ -77,9 +94,17 @@ class MarketplaceScreen extends StatelessWidget {
 					),
 				),
 			),
-			body: StreamBuilder<List<Product>>(
-				stream: _streamProducts(),
-				builder: (context, snapshot) {
+			body: Container(
+				decoration: const BoxDecoration(
+					gradient: LinearGradient(
+						begin: Alignment.topCenter,
+						end: Alignment.bottomCenter,
+						colors: [Color(0xFFFCE4EC), Color(0xFFF8BBD9)],
+					),
+				),
+				child: StreamBuilder<List<Product>>(
+					stream: _streamProducts(),
+					builder: (context, snapshot) {
 					if (snapshot.connectionState == ConnectionState.waiting) {
 						return const Center(child: CircularProgressIndicator());
 					}
@@ -117,6 +142,7 @@ class MarketplaceScreen extends StatelessWidget {
 					},
 					);
 				},
+				),
 			),
 		);
 	}

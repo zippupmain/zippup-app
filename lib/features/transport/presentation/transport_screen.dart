@@ -500,37 +500,234 @@ class _TransportScreenState extends State<TransportScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Transport')),
-			body: ListView(
-				padding: const EdgeInsets.all(16),
-				children: [
-					const SizedBox(height: 4),
-					AddressField(controller: _pickup, label: 'Pickup address'),
-					const SizedBox(height: 8),
-					const Text('Stops (max 5):'),
-					for (int i = 0; i < _stops.length; i++)
-						Row(children: [
-							Expanded(child: AddressField(controller: _stops[i], label: 'Stop ${i + 1} (destination)')),
-							IconButton(onPressed: () => _removeStop(i), icon: const Icon(Icons.remove_circle_outline)),
-						]),
-					TextButton.icon(onPressed: _addStop, icon: const Icon(Icons.add), label: const Text('Add stop')),
-					const SizedBox(height: 8),
-					Row(
-						children: [
-							Expanded(child: OutlinedButton(onPressed: _estimate, child: const Text('Estimate fare'))),
-							const SizedBox(width: 8),
-							Expanded(child: FilledButton(onPressed: _submitting ? null : _requestRide, child: Text(_submitting ? 'Requesting...' : 'Request ride'))),
-						],
+			appBar: AppBar(
+				title: const Text(
+					'🚗 Transport',
+					style: TextStyle(
+						fontWeight: FontWeight.bold,
+						fontSize: 20,
 					),
-					const SizedBox(height: 12),
-					FutureBuilder<String>(
-						future: CountryConfigService.instance.getCurrencySymbol(),
-						builder: (context, snap) => Text('Fare estimate: ${(snap.data ?? '₦')}${_fare.toStringAsFixed(2)}'),
+				),
+				backgroundColor: Colors.transparent,
+				flexibleSpace: Container(
+					decoration: const BoxDecoration(
+						gradient: LinearGradient(
+							colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+							begin: Alignment.topLeft,
+							end: Alignment.bottomRight,
+						),
 					),
-					Text('Driver ETA: ${_eta} min'),
-					const SizedBox(height: 12),
-					Text('Status: $_status'),
-				],
+				),
+				foregroundColor: Colors.white,
+			),
+			body: Container(
+				decoration: const BoxDecoration(
+					gradient: LinearGradient(
+						begin: Alignment.topCenter,
+						end: Alignment.bottomCenter,
+						colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+					),
+				),
+				child: ListView(
+					padding: const EdgeInsets.all(16),
+					children: [
+						// Vehicle type selection
+						Card(
+							elevation: 8,
+							shadowColor: Colors.blue.withOpacity(0.3),
+							shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+							child: Container(
+								decoration: BoxDecoration(
+									gradient: const LinearGradient(
+										colors: [Color(0xFFFAFAFA), Color(0xFFFFFFFF)],
+									),
+									borderRadius: BorderRadius.circular(16),
+								),
+								padding: const EdgeInsets.all(16),
+								child: Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										const Text(
+											'🚙 Select Vehicle Type',
+											style: TextStyle(
+												fontSize: 16,
+												fontWeight: FontWeight.bold,
+												color: Colors.black87,
+											),
+										),
+										const SizedBox(height: 12),
+										Row(
+											children: [
+												Expanded(
+													child: _VehicleTypeCard(
+														type: 'taxi',
+														label: 'Taxi',
+														emoji: '🚕',
+														isSelected: _type == 'taxi',
+														onTap: () => setState(() => _type = 'taxi'),
+													),
+												),
+												const SizedBox(width: 8),
+												Expanded(
+													child: _VehicleTypeCard(
+														type: 'bike',
+														label: 'Bike',
+														emoji: '🏍️',
+														isSelected: _type == 'bike',
+														onTap: () => setState(() => _type = 'bike'),
+													),
+												),
+												const SizedBox(width: 8),
+												Expanded(
+													child: _VehicleTypeCard(
+														type: 'tricycle',
+														label: 'Tricycle',
+														emoji: '🛺',
+														isSelected: _type == 'tricycle',
+														onTap: () => setState(() => _type = 'tricycle'),
+													),
+												),
+											],
+										),
+									],
+								),
+							),
+						),
+						
+						const SizedBox(height: 16),
+						AddressField(controller: _pickup, label: 'Pickup address'),
+						const SizedBox(height: 8),
+						const Text('Stops (max 5):', style: TextStyle(fontWeight: FontWeight.w600)),
+						for (int i = 0; i < _stops.length; i++)
+							Row(children: [
+								Expanded(child: AddressField(controller: _stops[i], label: 'Stop ${i + 1} (destination)')),
+								IconButton(onPressed: () => _removeStop(i), icon: const Icon(Icons.remove_circle_outline)),
+							]),
+						TextButton.icon(onPressed: _addStop, icon: const Icon(Icons.add), label: const Text('Add stop')),
+						const SizedBox(height: 16),
+						
+						// Action buttons
+						Row(
+							children: [
+								Expanded(
+									child: OutlinedButton.icon(
+										onPressed: _estimate,
+										icon: const Icon(Icons.calculate),
+										label: const Text('Estimate fare'),
+										style: OutlinedButton.styleFrom(
+											padding: const EdgeInsets.symmetric(vertical: 16),
+											side: const BorderSide(color: Colors.blue),
+											foregroundColor: Colors.blue,
+										),
+									),
+								),
+								const SizedBox(width: 12),
+								Expanded(
+									child: FilledButton.icon(
+										onPressed: _submitting ? null : _requestRide,
+										icon: _submitting 
+											? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+											: const Icon(Icons.directions_car),
+										label: Text(_submitting ? 'Requesting...' : 'Request ride'),
+										style: FilledButton.styleFrom(
+											padding: const EdgeInsets.symmetric(vertical: 16),
+											backgroundColor: Colors.blue.shade600,
+										),
+									),
+								),
+							],
+						),
+						
+						const SizedBox(height: 16),
+						
+						// Fare info card
+						if (_fare > 0) Card(
+							color: Colors.green.shade50,
+							child: Padding(
+								padding: const EdgeInsets.all(16),
+								child: Column(
+									children: [
+										FutureBuilder<String>(
+											future: CountryConfigService.instance.getCurrencySymbol(),
+											builder: (context, snap) => Text(
+												'Fare estimate: ${(snap.data ?? '₦')}${_fare.toStringAsFixed(2)}',
+												style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+											),
+										),
+										Text('Driver ETA: ${_eta} min', style: const TextStyle(color: Colors.green)),
+										Text('Distance: ${_distanceKm.toStringAsFixed(1)} km', style: const TextStyle(color: Colors.green)),
+									],
+								),
+							),
+						),
+						
+						// Status indicator
+						if (_status != 'idle') Card(
+							color: Colors.blue.shade50,
+							child: Padding(
+								padding: const EdgeInsets.all(16),
+								child: Row(
+									children: [
+										const CircularProgressIndicator(),
+										const SizedBox(width: 16),
+										Text('Status: $_status', style: const TextStyle(fontWeight: FontWeight.w600)),
+									],
+								),
+							),
+						),
+					],
+				),
+			),
+		);
+	}
+}
+
+class _VehicleTypeCard extends StatelessWidget {
+	const _VehicleTypeCard({
+		required this.type,
+		required this.label,
+		required this.emoji,
+		required this.isSelected,
+		required this.onTap,
+	});
+	
+	final String type;
+	final String label;
+	final String emoji;
+	final bool isSelected;
+	final VoidCallback onTap;
+	
+	@override
+	Widget build(BuildContext context) {
+		return InkWell(
+			onTap: onTap,
+			borderRadius: BorderRadius.circular(12),
+			child: Container(
+				padding: const EdgeInsets.symmetric(vertical: 12),
+				decoration: BoxDecoration(
+					gradient: isSelected 
+						? const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF64B5F6)])
+						: const LinearGradient(colors: [Color(0xFFF5F5F5), Color(0xFFEEEEEE)]),
+					borderRadius: BorderRadius.circular(12),
+					border: Border.all(
+						color: isSelected ? Colors.blue : Colors.grey.shade300,
+						width: isSelected ? 2 : 1,
+					),
+				),
+				child: Column(
+					children: [
+						Text(emoji, style: const TextStyle(fontSize: 24)),
+						const SizedBox(height: 4),
+						Text(
+							label,
+							style: TextStyle(
+								color: isSelected ? Colors.white : Colors.black87,
+								fontWeight: FontWeight.w600,
+								fontSize: 12,
+							),
+						),
+					],
+				),
 			),
 		);
 	}
