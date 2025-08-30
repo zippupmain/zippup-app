@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:zippup/common/models/order.dart';
+import 'package:zippup/common/models/hire_booking.dart';
 import 'package:zippup/features/providers/widgets/provider_header.dart';
 
 class HireProviderDashboardScreen extends StatefulWidget {
@@ -15,8 +15,8 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
 	bool _online = false;
-	OrderStatus? _filter;
-	Stream<List<Order>>? _incomingStream;
+	HireStatus? _filter;
+	Stream<List<HireBooking>>? _incomingStream;
 
 	@override
 	void initState() {
@@ -33,16 +33,16 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 			if (mounted) setState(() {});
 		}
 		_incomingStream = _db
-			.collection('orders')
+			.collection('hire_bookings')
 			.where('providerId', isEqualTo: uid)
-			.where('status', isEqualTo: OrderStatus.pending.name)
+			.where('status', isEqualTo: HireStatus.requested.name)
 			.snapshots()
-			.map((s) => s.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+			.map((s) => s.docs.map((d) => HireBooking.fromJson(d.id, d.data())).toList());
 	}
 
-	Stream<List<Order>> _ordersStream(String uid) {
-		Query<Map<String, dynamic>> q = _db.collection('orders').where('providerId', isEqualTo: uid);
-		return q.orderBy('createdAt', descending: true).snapshots().map((s) => s.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+	Stream<List<HireBooking>> _bookingsStream(String uid) {
+		Query<Map<String, dynamic>> q = _db.collection('hire_bookings').where('providerId', isEqualTo: uid);
+		return q.orderBy('createdAt', descending: true).snapshots().map((s) => s.docs.map((d) => HireBooking.fromJson(d.id, d.data())).toList());
 	}
 
 	Future<void> _setOnline(bool v) async {
@@ -54,8 +54,55 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 		}
 	}
 
-	Future<void> _updateOrder(String id, OrderStatus status) async {
-		await _db.collection('orders').doc(id).set({'status': status.name}, SetOptions(merge: true));
+	Future<void> _updateBooking(String id, HireStatus status) async {
+		await _db.collection('hire_bookings').doc(id).set({'status': status.name}, SetOptions(merge: true));
+	}
+
+	Widget _actionsForBooking(HireBooking booking) {
+		switch (booking.status) {
+			case HireStatus.requested:
+				return Row(
+					mainAxisSize: MainAxisSize.min,
+					children: [
+						FilledButton.icon(
+							onPressed: () => _updateBooking(booking.id, HireStatus.accepted),
+							icon: const Icon(Icons.check, size: 16),
+							label: const Text('Accept'),
+							style: FilledButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(70, 32)),
+						),
+					],
+				);
+			case HireStatus.accepted:
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, HireStatus.arriving),
+					icon: const Icon(Icons.directions_car, size: 16),
+					label: const Text('Arriving'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.blue, minimumSize: const Size(70, 32)),
+				);
+			case HireStatus.arriving:
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, HireStatus.arrived),
+					icon: const Icon(Icons.location_on, size: 16),
+					label: const Text('Arrived'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.orange, minimumSize: const Size(70, 32)),
+				);
+			case HireStatus.arrived:
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, HireStatus.inProgress),
+					icon: const Icon(Icons.build, size: 16),
+					label: const Text('Start Work'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.purple, minimumSize: const Size(70, 32)),
+				);
+			case HireStatus.inProgress:
+				return FilledButton.icon(
+					onPressed: () => _updateBooking(booking.id, HireStatus.completed),
+					icon: const Icon(Icons.check_circle, size: 16),
+					label: const Text('Complete'),
+					style: FilledButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(70, 32)),
+				);
+			default:
+				return const SizedBox.shrink();
+		}
 	}
 
 	@override
@@ -69,7 +116,7 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 					IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
 				], bottom: PreferredSize(
 					preferredSize: const Size.fromHeight(48),
-					child: StreamBuilder<List<Order>>(
+					child: StreamBuilder<List<HireBooking>>(
 						stream: _incomingStream,
 						builder: (context, s) {
 							final count = (s.data?.length ?? 0);
@@ -110,12 +157,13 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 						child: Row(children: [
 							FilterChip(label: const Text('All'), selected: _filter == null, onSelected: (_) => setState(() => _filter = null)),
 							...[
-								OrderStatus.pending,
-								OrderStatus.accepted,
-								OrderStatus.enroute,
-								OrderStatus.arrived,
-								OrderStatus.delivered,
-								OrderStatus.cancelled,
+								HireStatus.requested,
+								HireStatus.accepted,
+								HireStatus.arriving,
+								HireStatus.arrived,
+								HireStatus.inProgress,
+								HireStatus.completed,
+								HireStatus.cancelled,
 							].map((s) => Padding(
 								padding: const EdgeInsets.symmetric(horizontal: 4),
 								child: FilterChip(label: Text(s.name), selected: _filter == s, onSelected: (_) => setState(() => _filter = s)),
@@ -124,31 +172,62 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 					),
 					Expanded(child: TabBarView(children: [
 						// Incoming tab
-						StreamBuilder<List<Order>>(
+						StreamBuilder<List<HireBooking>>(
 							stream: _incomingStream,
 							builder: (context, s) {
-								final list = s.data ?? const <Order>[];
-								if (list.isEmpty) return const Center(child: Text('No incoming requests'));
+								final list = s.data ?? const <HireBooking>[];
+								if (list.isEmpty) return const Center(child: Text('No incoming hire requests'));
 								return ListView.separated(
 									itemCount: list.length,
 									separatorBuilder: (_, __) => const Divider(height: 1),
 									itemBuilder: (context, i) {
-										final o = list[i];
+										final booking = list[i];
 										return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-											future: _db.collection('users').doc(o.buyerId).get(),
+											future: _db.collection('users').doc(booking.clientId).get(),
 											builder: (context, u) {
 												final data = u.data?.data() ?? const {};
 												final name = (data['name'] ?? 'Customer').toString();
 												final photo = (data['photoUrl'] ?? '').toString();
-												return ListTile(
-													leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
-													title: Text('REQUEST • ${o.category.name.toUpperCase()}'),
-													subtitle: Text('$name\nOrder ${o.id.substring(0,6)} • ${o.status.name}'),
-													isThreeLine: true,
-													trailing: Wrap(spacing: 6, children: [
-														FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.accepted), child: const Text('Accept')),
-														TextButton(onPressed: () => _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_provider', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
-													]),
+												return Container(
+													margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+													decoration: BoxDecoration(
+														gradient: const LinearGradient(
+															colors: [Color(0xFFF3E5F5), Color(0xFFE1BEE7)],
+														),
+														borderRadius: BorderRadius.circular(12),
+														border: Border.all(color: Colors.purple.shade200),
+													),
+													child: ListTile(
+														leading: CircleAvatar(
+															backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, 
+															child: photo.isEmpty ? const Icon(Icons.person) : null
+														),
+														title: Text('🔧 ${booking.serviceCategory.toUpperCase()} REQUEST'),
+														subtitle: Text('$name\n📍 ${booking.serviceAddress}\n💰 ₦${booking.feeEstimate.toStringAsFixed(0)}'),
+														isThreeLine: true,
+														trailing: Column(
+															mainAxisSize: MainAxisSize.min,
+															children: [
+																FilledButton.icon(
+																	onPressed: () {
+																		_updateBooking(booking.id, HireStatus.accepted);
+																		context.push('/track/hire?bookingId=${booking.id}');
+																	},
+																	icon: const Icon(Icons.check, size: 16),
+																	label: const Text('Accept'),
+																	style: FilledButton.styleFrom(
+																		backgroundColor: Colors.green,
+																		minimumSize: const Size(80, 32),
+																	),
+																),
+																const SizedBox(height: 4),
+																TextButton(
+																	onPressed: () => _updateBooking(booking.id, HireStatus.cancelled),
+																	child: const Text('Decline', style: TextStyle(fontSize: 12)),
+																),
+															],
+														),
+													),
 												);
 											},
 										);
@@ -156,24 +235,33 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 								);
 							},
 						),
-						// Orders tab
-						StreamBuilder<List<Order>>(
-							stream: _ordersStream(uid),
+						// Bookings tab
+						StreamBuilder<List<HireBooking>>(
+							stream: _bookingsStream(uid),
 							builder: (context, snap) {
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-								var orders = snap.data!;
-								if (_filter != null) orders = orders.where((r) => r.status == _filter).toList();
-								if (orders.isEmpty) return const Center(child: Text('No orders'));
+								var bookings = snap.data!;
+								if (_filter != null) bookings = bookings.where((r) => r.status == _filter).toList();
+								if (bookings.isEmpty) return const Center(child: Text('No hire bookings'));
 								return ListView.separated(
-									itemCount: orders.length,
+									itemCount: bookings.length,
 									separatorBuilder: (_, __) => const Divider(height: 1),
 									itemBuilder: (context, i) {
-										final o = orders[i];
-										return ListTile(
-											title: Text('${o.category.name.toUpperCase()} • ${o.status.name}'),
-											subtitle: Text('Order ${o.id.substring(0,6)}'),
-											isThreeLine: false,
-											trailing: Wrap(spacing: 6, children: _actionsFor(o)),
+										final booking = bookings[i];
+										return Container(
+											margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+											decoration: BoxDecoration(
+												color: Colors.white,
+												borderRadius: BorderRadius.circular(12),
+												border: Border.all(color: Colors.grey.shade200),
+											),
+											child: ListTile(
+												title: Text('🔧 ${booking.serviceCategory.toUpperCase()} • ${booking.status.name.toUpperCase()}'),
+												subtitle: Text('Booking ${booking.id.substring(0,6)}\n📍 ${booking.serviceAddress}\n💰 ₦${booking.feeEstimate.toStringAsFixed(0)}'),
+												isThreeLine: true,
+												trailing: _actionsForBooking(booking),
+												onTap: () => context.push('/track/hire?bookingId=${booking.id}'),
+											),
 										);
 									},
 								);
@@ -181,11 +269,11 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 						),
 					])),
 					// Incoming overlay
-					StreamBuilder<List<Order>>(
+					StreamBuilder<List<HireBooking>>(
 						stream: _incomingStream,
 						builder: (context, s) {
 							if (!s.hasData || s.data!.isEmpty) return const SizedBox.shrink();
-							final o = s.data!.first;
+							final booking = s.data!.first;
 							WidgetsBinding.instance.addPostFrameCallback((_) {
 								showDialog(
 									context: context,

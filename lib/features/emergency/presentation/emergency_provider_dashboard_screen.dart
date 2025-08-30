@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:zippup/common/models/order.dart';
+import 'package:zippup/common/models/emergency_booking.dart';
 import 'package:zippup/features/providers/widgets/provider_header.dart';
 
 class EmergencyProviderDashboardScreen extends StatefulWidget {
@@ -15,8 +15,8 @@ class _EmergencyProviderDashboardScreenState extends State<EmergencyProviderDash
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
 	bool _online = false;
-	OrderStatus? _filter;
-	Stream<List<Order>>? _incomingStream;
+	EmergencyStatus? _filter;
+	Stream<List<EmergencyBooking>>? _incomingStream;
 
 	@override
 	void initState() {
@@ -33,11 +33,11 @@ class _EmergencyProviderDashboardScreenState extends State<EmergencyProviderDash
 			if (mounted) setState(() {});
 		}
 		_incomingStream = _db
-			.collection('orders')
+			.collection('emergency_bookings')
 			.where('providerId', isEqualTo: uid)
-			.where('status', isEqualTo: OrderStatus.pending.name)
+			.where('status', isEqualTo: EmergencyStatus.requested.name)
 			.snapshots()
-			.map((s) => s.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+			.map((s) => s.docs.map((d) => EmergencyBooking.fromJson(d.id, d.data())).toList());
 	}
 
 	Stream<List<Order>> _ordersStream(String uid) {
