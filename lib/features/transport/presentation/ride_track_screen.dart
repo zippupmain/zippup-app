@@ -266,56 +266,45 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 								child: Column(
 									children: [
 										if (ride.driverId != null) Card(
-											child: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-												future: FirebaseFirestore.instance.collection('users').doc(ride.driverId!).get(),
-												builder: (context, snap) {
-													final u = snap.data?.data() ?? const {};
-													String name = (u['name'] ?? '').toString();
-													String photo = (u['photoUrl'] ?? '').toString();
-													// Fallback to public profile if needed
-													if (name.isEmpty || photo.isEmpty) {
-														try {
-															final pub = await FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).get();
-															final pu = pub.data() ?? const {};
-															if (name.isEmpty) name = (pu['name'] ?? 'Driver').toString();
-															if (photo.isEmpty) photo = (pu['photoUrl'] ?? '').toString();
-														} catch (_) {}
-													}
-													return FutureBuilder<List<dynamic>>(
-														future: Future.wait([
-															FirebaseFirestore.instance
-																.collection('provider_profiles')
-																.where('userId', isEqualTo: ride.driverId!)
-																.where('service', isEqualTo: 'transport')
-																.limit(1)
-																.get(),
-															FirebaseFirestore.instance.collection('applications').doc(ride.driverId!).get(),
-														]),
-														builder: (context, more) {
-															String plate = '';
-															String car = '';
-															try {
-																final prof = (more.data?[0] as QuerySnapshot<Map<String, dynamic>>?);
-																final app = (more.data?[1] as DocumentSnapshot<Map<String, dynamic>>?);
-																final meta = prof != null && prof.docs.isNotEmpty ? (prof.docs.first.data()['metadata'] as Map<String, dynamic>? ?? const {}) : const {};
-																final public = (meta['publicDetails'] as Map<String, dynamic>? ?? const {});
-																plate = (public['plateNumber'] ?? '').toString();
-																final a = app?.data() ?? const {};
-																final color = (a['vehicleColor'] ?? '').toString();
-																final brand = (a['vehicleBrand'] ?? '').toString();
-																final model = (a['vehicleModel'] ?? '').toString();
-																final parts = [color, brand, model].where((e) => e.trim().isNotEmpty).toList();
-																car = parts.isEmpty ? '' : parts.join(' ');
-															} catch (_) {}
-															final vehicleLine = 'Vehicle: ' + (car.isNotEmpty ? car : 'details pending');
-															final plateLine = 'Plate: ' + (plate.isNotEmpty ? plate : '—');
-															return ListTile(
-																leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
-																title: Text(name),
-																subtitle: Text('ID: ${ride.driverId!.substring(0, 6)} • ${ride.type.name.toUpperCase()}\n$vehicleLine\n$plateLine'),
-																trailing: const Icon(Icons.star_border),
-															);
-														},
+											child: FutureBuilder<List<dynamic>>(
+												future: Future.wait([
+													FirebaseFirestore.instance.collection('users').doc(ride.driverId!).get(),
+													FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).get(),
+													FirebaseFirestore.instance
+														.collection('provider_profiles')
+														.where('userId', isEqualTo: ride.driverId!)
+														.where('service', isEqualTo: 'transport')
+														.limit(1)
+														.get(),
+													FirebaseFirestore.instance.collection('applications').doc(ride.driverId!).get(),
+												]),
+												builder: (context, s) {
+													final u = (s.data?[0] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {};
+													final pu = (s.data?[1] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {};
+													String name = (pu['name'] ?? u['name'] ?? 'Driver').toString();
+													String photo = (pu['photoUrl'] ?? u['photoUrl'] ?? '').toString();
+													String plate = '';
+													String car = '';
+													try {
+														final prof = (s.data?[2] as QuerySnapshot<Map<String, dynamic>>?);
+														final app = (s.data?[3] as DocumentSnapshot<Map<String, dynamic>>?);
+														final meta = prof != null && prof.docs.isNotEmpty ? (prof.docs.first.data()['metadata'] as Map<String, dynamic>? ?? const {}) : const {};
+														final public = (meta['publicDetails'] as Map<String, dynamic>? ?? const {});
+														plate = (public['plateNumber'] ?? '').toString();
+														final a = app?.data() ?? const {};
+														final color = (a['vehicleColor'] ?? '').toString();
+														final brand = (a['vehicleBrand'] ?? '').toString();
+														final model = (a['vehicleModel'] ?? '').toString();
+														final parts = [color, brand, model].where((e) => e.trim().isNotEmpty).toList();
+														car = parts.isEmpty ? '' : parts.join(' ');
+													} catch (_) {}
+													final vehicleLine = 'Vehicle: ' + (car.isNotEmpty ? car : 'details pending');
+													final plateLine = 'Plate: ' + (plate.isNotEmpty ? plate : '—');
+													return ListTile(
+														leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
+														title: Text(name),
+														subtitle: Text('ID: ${ride.driverId!.substring(0, 6)} • ${ride.type.name.toUpperCase()}\n$vehicleLine\n$plateLine'),
+														trailing: const Icon(Icons.star_border),
 													);
 												},
 											),
