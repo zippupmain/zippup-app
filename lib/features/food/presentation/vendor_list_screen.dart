@@ -56,9 +56,43 @@ class _VendorListScreenState extends State<VendorListScreen> {
 
 	@override
 	Widget build(BuildContext context) {
+		final categoryEmojis = {
+			'grocery': '🥬',
+			'fast_food': '🍔',
+			'local': '🍲',
+			'pizza': '🍕',
+			'chinese': '🥡',
+			'desserts': '🍰',
+			'drinks': '🥤',
+		};
+		
+		final categoryGradients = {
+			'grocery': const LinearGradient(colors: [Color(0xFF8BC34A), Color(0xFFAED581)]),
+			'fast_food': const LinearGradient(colors: [Color(0xFFFF5722), Color(0xFFFF8A65)]),
+			'local': const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]),
+			'pizza': const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF06292)]),
+			'chinese': const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]),
+			'desserts': const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)]),
+			'drinks': const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF64B5F6)]),
+		};
+		
+		final emoji = categoryEmojis[widget.category] ?? '🍽️';
+		final gradient = categoryGradients[widget.category] ?? const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFFFB74D)]);
+		
 		return Scaffold(
 			appBar: AppBar(
-				title: Text('Vendors • ${widget.category.replaceAll('_', ' ')}'),
+				title: Text(
+					'$emoji ${widget.category.replaceAll('_', ' ').toUpperCase()} Vendors',
+					style: const TextStyle(
+						fontWeight: FontWeight.bold,
+						fontSize: 18,
+					),
+				),
+				backgroundColor: Colors.transparent,
+				flexibleSpace: Container(
+					decoration: BoxDecoration(gradient: gradient),
+				),
+				foregroundColor: Colors.white,
 				bottom: PreferredSize(
 					preferredSize: const Size.fromHeight(56),
 					child: Padding(

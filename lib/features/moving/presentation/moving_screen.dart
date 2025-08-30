@@ -175,19 +175,99 @@ class _MovingScreenState extends State<MovingScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Moving')),
-			body: ListView(
-				padding: const EdgeInsets.all(16),
-				children: [
-					ToggleButtons(
-						isSelected: ['truck', 'backie', 'courier'].map((e) => _subcategory == e).toList(),
-						onPressed: (i) => setState(() => _subcategory = ['truck', 'backie', 'courier'][i]),
-						children: const [
-							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Truck')),
-							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Backie/Pickup')),
-							Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Courier')),
-						],
+			appBar: AppBar(
+				title: const Text(
+					'📦 Moving Services',
+					style: TextStyle(
+						fontWeight: FontWeight.bold,
+						fontSize: 20,
 					),
+				),
+				backgroundColor: Colors.transparent,
+				flexibleSpace: Container(
+					decoration: const BoxDecoration(
+						gradient: LinearGradient(
+							colors: [Color(0xFF3F51B5), Color(0xFF7986CB)],
+							begin: Alignment.topLeft,
+							end: Alignment.bottomRight,
+						),
+					),
+				),
+				foregroundColor: Colors.white,
+			),
+			body: Container(
+				decoration: const BoxDecoration(
+					gradient: LinearGradient(
+						begin: Alignment.topCenter,
+						end: Alignment.bottomCenter,
+						colors: [Color(0xFFE8EAF6), Color(0xFFC5CAE9)],
+					),
+				),
+				child: ListView(
+					padding: const EdgeInsets.all(16),
+					children: [
+						// Moving type selection
+						Card(
+							elevation: 8,
+							shadowColor: Colors.indigo.withOpacity(0.3),
+							shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+							child: Container(
+								decoration: BoxDecoration(
+									gradient: const LinearGradient(
+										colors: [Color(0xFFFAFAFA), Color(0xFFFFFFFF)],
+									),
+									borderRadius: BorderRadius.circular(16),
+								),
+								padding: const EdgeInsets.all(16),
+								child: Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										const Text(
+											'🚚 Select Moving Type',
+											style: TextStyle(
+												fontSize: 16,
+												fontWeight: FontWeight.bold,
+												color: Colors.black87,
+											),
+										),
+										const SizedBox(height: 12),
+										Row(
+											children: [
+												Expanded(
+													child: _MovingTypeCard(
+														type: 'truck',
+														label: 'Truck',
+														emoji: '🚚',
+														isSelected: _subcategory == 'truck',
+														onTap: () => setState(() => _subcategory = 'truck'),
+													),
+												),
+												const SizedBox(width: 8),
+												Expanded(
+													child: _MovingTypeCard(
+														type: 'backie',
+														label: 'Pickup',
+														emoji: '🛻',
+														isSelected: _subcategory == 'backie',
+														onTap: () => setState(() => _subcategory = 'backie'),
+													),
+												),
+												const SizedBox(width: 8),
+												Expanded(
+													child: _MovingTypeCard(
+														type: 'courier',
+														label: 'Courier',
+														emoji: '📦',
+														isSelected: _subcategory == 'courier',
+														onTap: () => setState(() => _subcategory = 'courier'),
+													),
+												),
+											],
+										),
+									],
+								),
+							),
+						),
 					const SizedBox(height: 12),
 					SwitchListTile(
 						title: const Text('Schedule'),
@@ -225,6 +305,58 @@ class _MovingScreenState extends State<MovingScreen> {
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _submitting ? null : _openClassModal, child: Text(_submitting ? 'Submitting...' : 'Choose class')),
 				],
+				),
+			),
+		);
+	}
+}
+
+class _MovingTypeCard extends StatelessWidget {
+	const _MovingTypeCard({
+		required this.type,
+		required this.label,
+		required this.emoji,
+		required this.isSelected,
+		required this.onTap,
+	});
+	
+	final String type;
+	final String label;
+	final String emoji;
+	final bool isSelected;
+	final VoidCallback onTap;
+	
+	@override
+	Widget build(BuildContext context) {
+		return InkWell(
+			onTap: onTap,
+			borderRadius: BorderRadius.circular(12),
+			child: Container(
+				padding: const EdgeInsets.symmetric(vertical: 12),
+				decoration: BoxDecoration(
+					gradient: isSelected 
+						? const LinearGradient(colors: [Color(0xFF3F51B5), Color(0xFF7986CB)])
+						: const LinearGradient(colors: [Color(0xFFF5F5F5), Color(0xFFEEEEEE)]),
+					borderRadius: BorderRadius.circular(12),
+					border: Border.all(
+						color: isSelected ? Colors.indigo : Colors.grey.shade300,
+						width: isSelected ? 2 : 1,
+					),
+				),
+				child: Column(
+					children: [
+						Text(emoji, style: const TextStyle(fontSize: 24)),
+						const SizedBox(height: 4),
+						Text(
+							label,
+							style: TextStyle(
+								color: isSelected ? Colors.white : Colors.black87,
+								fontWeight: FontWeight.w600,
+								fontSize: 12,
+							),
+						),
+					],
+				),
 			),
 		);
 	}

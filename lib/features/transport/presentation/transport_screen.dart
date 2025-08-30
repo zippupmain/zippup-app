@@ -202,38 +202,83 @@ class _TransportScreenState extends State<TransportScreen> {
 			isScrollControlled: true,
 			builder: (ctx) {
 				return StatefulBuilder(builder: (ctx, setModalState) {
-					final classes = _isCharter ? <int>[8,12,16,30] : <int>[2,3,4,6];
-					return Padding(
-						padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 16),
-						child: SingleChildScrollView(
-							child: Column(
-								crossAxisAlignment: CrossAxisAlignment.start,
-								children: [
-									Row(children:[
-										Text(_isCharter ? 'Choose bus charter' : 'Choose ride', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-										const Spacer(),
-										Text('~${km.toStringAsFixed(1)} km • ${mins} min')
-									]),
-									const SizedBox(height: 8),
-									Row(children:[
-										FilterChip(label: const Text('Standard'), selected: !_isCharter, onSelected: (_) => setModalState(() => _isCharter = false)),
-										const SizedBox(width: 8),
-										FilterChip(label: const Text('Bus charter'), selected: _isCharter, onSelected: (_) => setModalState(() => _isCharter = true)),
-									]),
-									const SizedBox(height: 12),
+					List<Map<String, dynamic>> classes;
+					
+					if (_type == 'bike') {
+						classes = [
+							{'capacity': 1, 'label': 'Normal Bike', 'emoji': '🏍️', 'price': 400.0},
+							{'capacity': 1, 'label': 'Power Bike', 'emoji': '🏍️⚡', 'price': 600.0},
+						];
+					} else if (_type == 'bus' || _isCharter) {
+						classes = [
+							{'capacity': 8, 'label': 'Mini Bus (8-seater)', 'emoji': '🚐', 'price': 0.0},
+							{'capacity': 12, 'label': 'Standard Bus (12-seater)', 'emoji': '🚌', 'price': 0.0},
+							{'capacity': 16, 'label': 'Large Bus (16-seater)', 'emoji': '🚌', 'price': 0.0},
+							{'capacity': 30, 'label': 'Charter Bus (30-seater)', 'emoji': '🚌', 'price': 0.0},
+						];
+					} else {
+						classes = [
+							{'capacity': 3, 'label': 'Compact Car', 'emoji': '🚗', 'price': 0.0},
+							{'capacity': 4, 'label': 'Standard Car', 'emoji': '🚙', 'price': 0.0},
+							{'capacity': 6, 'label': 'SUV/Van', 'emoji': '🚐', 'price': 0.0},
+						];
+					}
+					
+					return Container(
+						decoration: const BoxDecoration(
+							gradient: LinearGradient(
+								colors: [Color(0xFFFAFAFA), Color(0xFFFFFFFF)],
+								begin: Alignment.topCenter,
+								end: Alignment.bottomCenter,
+							),
+							borderRadius: BorderRadius.only(
+								topLeft: Radius.circular(20),
+								topRight: Radius.circular(20),
+							),
+						),
+						child: Padding(
+							padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+							child: SingleChildScrollView(
+								child: Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										Row(children:[
+											Text(
+												_type == 'bike' ? '🏍️ Choose Bike Type' : 
+												(_type == 'bus' || _isCharter) ? '🚌 Choose Bus Charter' : '🚗 Choose Ride Class',
+												style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+											),
+											const Spacer(),
+											Container(
+												padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+												decoration: BoxDecoration(
+													color: Colors.blue.shade100,
+													borderRadius: BorderRadius.circular(20),
+												),
+												child: Text(
+													'~${km.toStringAsFixed(1)} km • ${mins} min',
+													style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+												),
+											),
+										]),
+										const SizedBox(height: 20),
 									ListView.separated(
 										shrinkWrap: true,
 										physics: const NeverScrollableScrollPhysics(),
 										itemCount: classes.length,
-										separatorBuilder: (_, __) => const Divider(height: 1),
+										separatorBuilder: (_, __) => const SizedBox(height: 12),
 										itemBuilder: (ctx, i) {
-											final cap = classes[i];
-											final label = _isCharter
-												? 'Bus ${cap}-seater'
-												: _vehicleClassLabel(cap);
-											final price = _isCharter
-												? (_charterPrice(seats: cap, km: km, mins: mins))
-												: _priceForClass(capacity: cap, km: km, mins: mins);
+											final classData = classes[i];
+											final cap = classData['capacity'] as int;
+											final label = classData['label'] as String;
+											final emoji = classData['emoji'] as String;
+											final basePrice = classData['price'] as double;
+											
+											final price = _type == 'bike' 
+												? basePrice + (km * 50) + (mins * 5)
+												: (_type == 'bus' || _isCharter)
+													? (_charterPrice(seats: cap, km: km, mins: mins))
+													: _priceForClass(capacity: cap, km: km, mins: mins);
 											final asset = _isCharter
 												? (cap == 8
 													? 'assets/images/bus_8.png'
@@ -249,20 +294,61 @@ class _TransportScreenState extends State<TransportScreen> {
 														: cap == 4
 															? 'assets/images/vehicle_standard.png'
 															: 'assets/images/vehicle_xl.png');
-											return ListTile(
-												leading: _vehicleImage(asset),
-												title: Text('$label • $cap passengers'),
-												subtitle: Text('ETA ${mins} min • ${km.toStringAsFixed(1)} km'),
-												trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children:[
-													FutureBuilder<String>(
-														future: CountryConfigService.instance.getCurrencySymbol(),
-														builder: (context, snap) {
-															final symbol = snap.data ?? '₦';
-															return Text('${symbol}${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600));
-														},
+											return Container(
+												margin: const EdgeInsets.only(bottom: 8),
+												decoration: BoxDecoration(
+													gradient: const LinearGradient(
+														colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
 													),
-												]),
-												onTap: () async {
+													borderRadius: BorderRadius.circular(16),
+													border: Border.all(color: Colors.blue.shade200),
+												),
+												child: ListTile(
+													contentPadding: const EdgeInsets.all(16),
+													leading: Container(
+														padding: const EdgeInsets.all(8),
+														decoration: BoxDecoration(
+															color: Colors.white,
+															borderRadius: BorderRadius.circular(12),
+														),
+														child: Text(emoji, style: const TextStyle(fontSize: 24)),
+													),
+													title: Text(
+														label,
+														style: const TextStyle(
+															fontWeight: FontWeight.bold,
+															color: Colors.blue,
+														),
+													),
+													subtitle: Text(
+														_type == 'bike' 
+															? 'ETA ${mins} min • ${km.toStringAsFixed(1)} km'
+															: '$cap passengers • ETA ${mins} min • ${km.toStringAsFixed(1)} km',
+														style: const TextStyle(color: Colors.blue),
+													),
+													trailing: Container(
+														padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+														decoration: BoxDecoration(
+															gradient: const LinearGradient(
+																colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+															),
+															borderRadius: BorderRadius.circular(20),
+														),
+														child: FutureBuilder<String>(
+															future: CountryConfigService.instance.getCurrencySymbol(),
+															builder: (context, snap) {
+																final symbol = snap.data ?? '₦';
+																return Text(
+																	'${symbol}${price.toStringAsFixed(0)}',
+																	style: const TextStyle(
+																		fontWeight: FontWeight.bold,
+																		color: Colors.white,
+																	),
+																);
+															},
+														),
+													),
+													onTap: () async {
 													Navigator.of(ctx).pop();
 													await _createRideAndSearch(
 														origin: origin,
@@ -580,11 +666,11 @@ class _TransportScreenState extends State<TransportScreen> {
 												const SizedBox(width: 8),
 												Expanded(
 													child: _VehicleTypeCard(
-														type: 'tricycle',
-														label: 'Tricycle',
-														emoji: '🛺',
-														isSelected: _type == 'tricycle',
-														onTap: () => setState(() => _type = 'tricycle'),
+														type: 'bus',
+														label: 'Bus/Charter',
+														emoji: '🚌',
+														isSelected: _type == 'bus',
+														onTap: () => setState(() => _type = 'bus'),
 													),
 												),
 											],
