@@ -99,6 +99,12 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					}
 				}
 			});
+		// Enhanced listeners for all service types
+		_setupServiceListener(db, uid, 'hire_bookings', 'hire');
+		_setupServiceListener(db, uid, 'emergency_bookings', 'emergency');
+		_setupServiceListener(db, uid, 'moving_bookings', 'moving');
+		_setupServiceListener(db, uid, 'personal_bookings', 'personal');
+		
 		_ordersSub = db.collection('orders')
 			.where('providerId', isEqualTo: uid)
 			.where('status', isEqualTo: 'pending')
@@ -346,10 +352,175 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		));
 	}
 
+	Future<void> _setupServiceListener(FirebaseFirestore db, String uid, String collection, String service) async {
+		try {
+			print('🔗 Setting up $service notification listener');
+			
+			// Check if user has active provider profile for this service
+			final providerSnap = await db.collection('provider_profiles')
+				.where('userId', isEqualTo: uid)
+				.where('service', isEqualTo: service)
+				.where('status', isEqualTo: 'active')
+				.limit(1)
+				.get();
+				
+			if (providerSnap.docs.isEmpty) {
+				print('❌ No active $service provider profile found');
+				return;
+			}
+			
+			final providerData = providerSnap.docs.first.data();
+			final isOnline = providerData['availabilityOnline'] == true;
+			print('🟢 $service provider online status: $isOnline');
+			
+			if (!isOnline) {
+				print('❌ $service provider is offline');
+				return;
+			}
+			
+			// Listen for requests
+			db.collection(collection)
+				.where('status', isEqualTo: 'requested')
+				.snapshots()
+				.listen((snap) async {
+					print('📡 Received ${snap.docs.length} $service requests');
+					for (final d in snap.docs) {
+						final data = d.data();
+						final assignedProviderId = data['providerId']?.toString();
+						
+						// Show if assigned to this provider OR unassigned
+						bool shouldShow = false;
+						if (assignedProviderId == uid) {
+							shouldShow = true;
+						} else if (assignedProviderId == null || assignedProviderId.isEmpty) {
+							shouldShow = true;
+						}
+						
+						if (shouldShow && !_shown.contains('$service:${d.id}')) {
+							_shown.add('$service:${d.id}');
+							_showServiceDialog(d.id, data, service);
+						}
+					}
+				});
+		} catch (e) {
+			print('❌ Error setting up $service listener: $e');
+		}
+	}
+
 	bool _shouldShowHere() {
 		// Show popups globally regardless of current page
 		print('🌍 _shouldShowHere() called - returning true for global notifications');
 		return true;
+	}
+
+	Future<void> _showServiceDialog(String id, Map<String, dynamic> data, String service) async {
+		final shouldShow = _shouldShowHere();
+		print('🔍 _shouldShowHere() returned: $shouldShow for $service');
+		if (!shouldShow) {
+			print('❌ Not showing $service dialog due to _shouldShowHere() = false');
+			return;
+		}
+		final ctx = context;
+		print('✅ Showing $service dialog for booking: $id');
+		
+		// Fetch client profile
+		String clientName = 'Customer';
+		String clientPhoto = '';
+		try {
+			final clientId = (data['clientId'] ?? '').toString();
+			if (clientId.isNotEmpty) {
+				final results = await Future.wait([
+					FirebaseFirestore.instance.collection('public_profiles').doc(clientId).get(),
+					FirebaseFirestore.instance.collection('users').doc(clientId).get(),
+				]);
+				
+				final pu = results[0].data() ?? const {};
+				final u = results[1].data() ?? const {};
+				
+				// Create public profile if missing
+				if (!results[0].exists && results[1].exists && u['name'] != null) {
+					FirebaseFirestore.instance.collection('public_profiles').doc(clientId).set({
+						'name': u['name'],
+						'photoUrl': u['photoUrl'] ?? '',
+						'createdAt': DateTime.now().toIso8601String(),
+					}).then((_) {
+						print('✅ Created missing public profile for $service client: ${u['name']}');
+					}).catchError((e) {
+						print('❌ Failed to create public profile: $e');
+					});
+				}
+				
+				// Get client name
+				if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
+					clientName = pu['name'].toString().trim();
+				} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
+					clientName = u['name'].toString().trim();
+				}
+				
+				// Get client photo
+				if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
+					clientPhoto = pu['photoUrl'].toString().trim();
+				} else if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
+					clientPhoto = u['photoUrl'].toString().trim();
+				}
+			}
+		} catch (_) {}
+		
+		// Play notification sound
+		try { 
+			await SoundService.instance.playCall(); 
+		} catch (_) {}
+		
+		// Show dialog based on service type
+		final serviceEmoji = {
+			'hire': '🔧',
+			'emergency': '🚨',
+			'moving': '📦',
+			'personal': '💆',
+		}[service] ?? '💼';
+		
+		await showDialog(context: ctx, builder: (_) => AlertDialog(
+			title: Text('$serviceEmoji New ${service.toUpperCase()} Request'),
+			content: Column(
+				mainAxisSize: MainAxisSize.min,
+				crossAxisAlignment: CrossAxisAlignment.start,
+				children: [
+					ListTile(
+						contentPadding: EdgeInsets.zero,
+						leading: CircleAvatar(
+							backgroundImage: clientPhoto.isNotEmpty ? NetworkImage(clientPhoto) : null,
+							child: clientPhoto.isEmpty ? const Icon(Icons.person) : null,
+						),
+						title: Text(clientName),
+						subtitle: Text('${service.toUpperCase()} request'),
+					),
+					const SizedBox(height: 8),
+					if (data['description'] != null) Text('Service: ${data['description']}'),
+					if (data['serviceAddress'] != null) Text('Location: ${data['serviceAddress']}'),
+					if (data['pickupAddress'] != null) Text('From: ${data['pickupAddress']}'),
+					if (data['destinationAddress'] != null) Text('To: ${data['destinationAddress']}'),
+					if (data['emergencyAddress'] != null) Text('Emergency at: ${data['emergencyAddress']}'),
+					if (data['feeEstimate'] != null) Text('Fee: ${data['currency'] ?? 'NGN'} ${(data['feeEstimate'] as num).toStringAsFixed(2)}'),
+				],
+			),
+			actions: [
+				TextButton(
+					onPressed: () { 
+						Navigator.pop(ctx); 
+						_declineServiceBooking(id, service);
+					}, 
+					child: const Text('Decline')
+				),
+				FilledButton(
+					onPressed: () { 
+						Navigator.pop(ctx); 
+						_acceptServiceBooking(id, service);
+						_go(_routeForService(service));
+					}, 
+					child: const Text('Accept')
+				),
+			],
+		));
 	}
 
 	Future<void> _acceptRide(String id) async {
@@ -358,6 +529,40 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	}
 	Future<void> _declineRide(String id) async {
 		await FirebaseFirestore.instance.collection('rides').doc(id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+	}
+
+	Future<void> _acceptServiceBooking(String id, String service) async {
+		final uid = FirebaseAuth.instance.currentUser?.uid;
+		final collection = '${service}_bookings';
+		await FirebaseFirestore.instance.collection(collection).doc(id).set({
+			'status': 'accepted', 
+			if (uid != null) 'providerId': uid,
+			'acceptedAt': FieldValue.serverTimestamp(),
+		}, SetOptions(merge: true));
+	}
+
+	Future<void> _declineServiceBooking(String id, String service) async {
+		final collection = '${service}_bookings';
+		await FirebaseFirestore.instance.collection(collection).doc(id).set({
+			'status': 'cancelled', 
+			'cancelReason': 'declined_by_provider', 
+			'cancelledAt': FieldValue.serverTimestamp()
+		}, SetOptions(merge: true));
+	}
+
+	String _routeForService(String service) {
+		switch (service) {
+			case 'hire':
+				return '/hub/hire';
+			case 'emergency':
+				return '/hub/emergency';
+			case 'moving':
+				return '/hub/moving';
+			case 'personal':
+				return '/hub/personal';
+			default:
+				return '/hub';
+		}
 	}
 
 	Future<void> _acceptOrder(String id, String category) async {
