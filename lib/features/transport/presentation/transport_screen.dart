@@ -360,6 +360,35 @@ class _TransportScreenState extends State<TransportScreen> {
 			'status': 'requested',
 		});
 
+		// Best-effort auto-assignment to an online transport provider
+		try {
+			final rideType = _rideTypeForCapacity(capacity);
+			final subcategory = rideType == 'bus'
+				? 'Bus'
+				: rideType == 'tricycle'
+					? 'Tricycle'
+					: rideType == 'bike'
+						? 'Bike'
+						: 'Taxi';
+			Query<Map<String, dynamic>> q = db
+				.collection('provider_profiles')
+				.where('service', isEqualTo: 'transport')
+				.where('availabilityOnline', isEqualTo: true)
+				.where('metadata.subcategory', isEqualTo: subcategory);
+			final providersSnap = await q.limit(25).get(const GetOptions(source: Source.server));
+			final candidates = providersSnap.docs
+				.map((d) => d.data())
+				.where((m) => (m['userId'] ?? '') != uid)
+				.toList();
+			if (candidates.isNotEmpty) {
+				final picked = candidates[Math.Random().nextInt(candidates.length)];
+				final driverId = (picked['userId'] ?? '').toString();
+				if (driverId.isNotEmpty) {
+					await db.collection('rides').doc(doc.id).set({'driverId': driverId}, SetOptions(merge: true));
+				}
+			}
+		} catch (_) {/* ignore assignment failures */}
+
 		if (!mounted) return;
 		setState(() => _status = 'searching');
 		final navigator = Navigator.of(context);
