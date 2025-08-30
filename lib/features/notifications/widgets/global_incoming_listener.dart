@@ -115,7 +115,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						.where('riderId', isEqualTo: riderId)
 						.count()
 						.get();
-					riderRides = agg.count;
+					riderRides = agg.count ?? 0;
 				} catch (_) {}
 			}
 		} catch (_) {}
@@ -165,7 +165,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						.where('buyerId', isEqualTo: buyerId)
 						.count()
 						.get();
-					buyerOrders = agg.count;
+					buyerOrders = agg.count ?? 0;
 				} catch (_) {}
 			}
 		} catch (_) {}
