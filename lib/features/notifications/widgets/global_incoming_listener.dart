@@ -25,6 +25,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	@override
 	void initState() {
 		super.initState();
+		print('🚀 GlobalIncomingListener initialized');
 		_bind();
 		// Listen for auth state changes to re-bind listeners
 		FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -54,6 +55,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			.where('status', isEqualTo: 'requested')
 			.snapshots()
 			.listen((snap) async {
+				print('📡 Received ${snap.docs.length} ride requests from Firestore');
 				// Check if user has active transport provider profile AND is online
 				bool isActiveTransportProvider = false;
 				try {
@@ -147,8 +149,14 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	}
 
 	Future<void> _showRideDialog(String id, Map<String, dynamic> m) async {
-		if (!_shouldShowHere()) return;
+		final shouldShow = _shouldShowHere();
+		print('🔍 _shouldShowHere() returned: $shouldShow');
+		if (!shouldShow) {
+			print('❌ Not showing ride dialog due to _shouldShowHere() = false');
+			return;
+		}
 		final ctx = context;
+		print('✅ Showing ride dialog for ride: $id');
 		// Fetch rider profile and total rides count for richer context
 		String riderName = 'Customer';
 		String riderPhoto = '';
@@ -340,6 +348,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 
 	bool _shouldShowHere() {
 		// Show popups globally regardless of current page
+		print('🌍 _shouldShowHere() called - returning true for global notifications');
 		return true;
 	}
 

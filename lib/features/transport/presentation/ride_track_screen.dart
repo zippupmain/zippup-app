@@ -227,7 +227,7 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 																child: driverPhoto.isEmpty ? const Icon(Icons.person) : null,
 															),
 															title: Text(driverName),
-															subtitle: Text('Your driver'),
+															subtitle: Text('Driver • ${ride.type.name.toUpperCase()}'),
 														),
 													),
 													const SizedBox(height: 16),

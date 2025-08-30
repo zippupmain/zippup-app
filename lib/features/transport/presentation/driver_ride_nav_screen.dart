@@ -248,7 +248,7 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 															child: customerPhoto.isEmpty ? const Icon(Icons.person) : null,
 														),
 														title: Text(customerName),
-														subtitle: const Text('Your customer'),
+														subtitle: Text('Customer • ${ride.type.name.toUpperCase()}'),
 													),
 												),
 												const SizedBox(height: 16),
