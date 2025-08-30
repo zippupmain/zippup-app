@@ -27,6 +27,7 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 	final _rideService = RideService();
 	final _distance = DistanceService();
 	Timer? _locTimer;
+	Timer? _simTimer;
 	Set<Polyline> _polylines = {};
 
 	@override
@@ -39,6 +40,8 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 	void dispose() {
 		_locTimer?.cancel();
 		_locTimer = null;
+		_simTimer?.cancel();
+		_simTimer = null;
 		super.dispose();
 	}
 
@@ -50,7 +53,23 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 				if (pos == null) return;
 				await _rideService.updateDriverLocation(widget.rideId, lat: pos.latitude, lng: pos.longitude);
 			} catch (_) {
-				// On web or permissions denied, ignore
+				// On web or permissions denied, simulate slight movement along route to keep UI alive
+				try {
+					final doc = await _db.collection('rides').doc(widget.rideId).get();
+					final data = doc.data() ?? const {};
+					final pickupLat = (data['pickupLat'] as num?)?.toDouble();
+					final pickupLng = (data['pickupLng'] as num?)?.toDouble();
+					final destLat = (data['destLat'] as num?)?.toDouble();
+					final destLng = (data['destLng'] as num?)?.toDouble();
+					if (pickupLat != null && pickupLng != null && destLat != null && destLng != null) {
+						_simTimer ??= Timer.periodic(const Duration(seconds: 3), (t) async {
+							final f = (t.tick % 10) / 10.0;
+							final lat = pickupLat + (destLat - pickupLat) * f;
+							final lng = pickupLng + (destLng - pickupLng) * f;
+							try { await _rideService.updateDriverLocation(widget.rideId, lat: lat, lng: lng); } catch (_) {}
+						});
+					}
+				} catch (_) {}
 			}
 		});
 	}

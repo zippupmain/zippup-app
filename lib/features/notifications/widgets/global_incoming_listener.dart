@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 
 class GlobalIncomingListener extends StatefulWidget {
 	final Widget child;
@@ -106,10 +107,16 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		try {
 			final riderId = (m['riderId'] ?? '').toString();
 			if (riderId.isNotEmpty) {
-				final userDoc = await FirebaseFirestore.instance.collection('users').doc(riderId).get();
-				final u = userDoc.data() ?? const {};
-				riderName = (u['name'] ?? '').toString().trim().isNotEmpty ? u['name'].toString() : riderName;
-				riderPhoto = (u['photoUrl'] ?? '').toString();
+				final pub = await FirebaseFirestore.instance.collection('public_profiles').doc(riderId).get();
+				final pu = pub.data() ?? const {};
+				riderName = (pu['name'] ?? '').toString().trim().isNotEmpty ? pu['name'].toString() : riderName;
+				riderPhoto = (pu['photoUrl'] ?? '').toString();
+				if (riderName == 'Customer') {
+					final userDoc = await FirebaseFirestore.instance.collection('users').doc(riderId).get();
+					final u = userDoc.data() ?? const {};
+					riderName = (u['name'] ?? riderName).toString();
+					riderPhoto = riderPhoto.isNotEmpty ? riderPhoto : (u['photoUrl'] ?? '').toString();
+				}
 				try {
 					final agg = await FirebaseFirestore.instance
 						.collection('rides')
@@ -120,6 +127,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
+		try { await SystemSound.play(SystemSoundType.alert); } catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('New ride request'),
 			content: Column(

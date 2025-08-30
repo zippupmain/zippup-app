@@ -270,8 +270,17 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 												future: FirebaseFirestore.instance.collection('users').doc(ride.driverId!).get(),
 												builder: (context, snap) {
 													final u = snap.data?.data() ?? const {};
-													final name = (u['name'] ?? 'Driver').toString();
-													final photo = (u['photoUrl'] ?? '').toString();
+													String name = (u['name'] ?? '').toString();
+													String photo = (u['photoUrl'] ?? '').toString();
+													// Fallback to public profile if needed
+													if (name.isEmpty || photo.isEmpty) {
+														try {
+															final pub = await FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).get();
+															final pu = pub.data() ?? const {};
+															if (name.isEmpty) name = (pu['name'] ?? 'Driver').toString();
+															if (photo.isEmpty) photo = (pu['photoUrl'] ?? '').toString();
+														} catch (_) {}
+													}
 													return FutureBuilder<List<dynamic>>(
 														future: Future.wait([
 															FirebaseFirestore.instance
