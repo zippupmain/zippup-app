@@ -141,7 +141,7 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 													subtitle: Text('$name\nFrom: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
 													isThreeLine: true,
 													trailing: Wrap(spacing: 6, children: [
-														FilledButton(onPressed: () => _updateRide(r.id, RideStatus.accepted), child: const Text('Accept')),
+														FilledButton(onPressed: () async { await _updateRide(r.id, RideStatus.accepted); if (context.mounted) context.push('/driver/ride?rideId=${r.id}'); }, child: const Text('Accept')),
 														TextButton(onPressed: () => _db.collection('rides').doc(r.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
 													]),
 												);
