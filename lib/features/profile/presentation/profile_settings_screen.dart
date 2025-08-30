@@ -67,7 +67,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			final email = _email.text.trim();
 			await u.updateDisplayName(name);
 			if (email.isNotEmpty && email != (u.email ?? '')) {
-				try { await u.updateEmail(email); } catch (_) {}
+				try { await u.verifyBeforeUpdateEmail(email); } catch (_) {}
 			}
 			// Save private profile
 			await FirebaseFirestore.instance.collection('users').doc(u.uid).set({
