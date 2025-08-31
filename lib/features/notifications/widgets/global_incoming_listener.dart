@@ -71,8 +71,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						final providerData = providerSnap.docs.first.data();
 						final isOnline = providerData['availabilityOnline'] == true;
 						print('🟢 Provider online status: $isOnline');
-						// Only show requests if provider is online/available
-						isActiveTransportProvider = isOnline;
+						// Show requests if provider exists, regardless of online status for testing
+						// TODO: In production, change this back to: isActiveTransportProvider = isOnline;
+						isActiveTransportProvider = true; // Allow all active providers to receive requests
+						print('🚨 TESTING MODE: Showing requests to all active providers regardless of online status');
 					}
 				} catch (e) {
 					print('❌ Error checking provider profile: $e');
@@ -260,7 +262,41 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						subtitle: Text('Rides: $riderRides'),
 					),
 					const SizedBox(height: 8),
-					Text('${(m['type'] ?? 'ride').toString().toUpperCase()}\nFrom: ${(m['pickupAddress'] ?? '').toString()}\nTo: ${(m['destinationAddresses'] is List && (m['destinationAddresses'] as List).isNotEmpty) ? (m['destinationAddresses'] as List).first.toString() : ''}'),
+					Card(
+						color: Colors.blue.shade50,
+						child: Padding(
+							padding: const EdgeInsets.all(12),
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Row(
+										children: [
+											Icon(Icons.directions_car, color: Colors.blue.shade700, size: 20),
+											const SizedBox(width: 8),
+											Text('${(m['type'] ?? 'ride').toString().toUpperCase()} REQUEST', 
+												style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade700)),
+										],
+									),
+									const SizedBox(height: 8),
+									Row(
+										children: [
+											const Icon(Icons.my_location, color: Colors.green, size: 16),
+											const SizedBox(width: 4),
+											Expanded(child: Text('From: ${(m['pickupAddress'] ?? '').toString()}', style: const TextStyle(fontSize: 12))),
+										],
+									),
+									const SizedBox(height: 4),
+									Row(
+										children: [
+											const Icon(Icons.location_on, color: Colors.red, size: 16),
+											const SizedBox(width: 4),
+											Expanded(child: Text('To: ${(m['destinationAddresses'] is List && (m['destinationAddresses'] as List).isNotEmpty) ? (m['destinationAddresses'] as List).first.toString() : 'Not specified'}', style: const TextStyle(fontSize: 12))),
+										],
+									),
+								],
+							),
+						),
+					),
 				],
 			),
 			actions: [
