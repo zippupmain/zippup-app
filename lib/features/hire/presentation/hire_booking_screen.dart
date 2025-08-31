@@ -23,6 +23,8 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 	String _selectedClass = 'Basic';
 	geo.Position? _currentLocation;
 	bool _isSearching = false;
+	bool _scheduled = false;
+	DateTime? _scheduledAt;
 
 	final Map<String, List<String>> _serviceExamples = const {
 		'home': ['Plumber', 'Electrician', 'Cleaner', 'Painter', 'Carpenter', 'Pest Control'],
@@ -89,7 +91,8 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 				'description': description.isEmpty ? service : description,
 				'serviceAddress': address,
 				'createdAt': DateTime.now().toIso8601String(),
-				'isScheduled': false,
+				'isScheduled': _scheduled,
+				'scheduledAt': _scheduled ? _scheduledAt?.toIso8601String() : null,
 				'feeEstimate': feeAmount,
 				'etaMinutes': 30,
 				'status': 'requested',
@@ -275,6 +278,58 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 											title: const Text('Pro • ₦5,000'),
 											subtitle: const Text('Premium service with full support'),
 										),
+									],
+								),
+							),
+						),
+
+						const SizedBox(height: 16),
+
+						// Schedule booking section (like transport and moving)
+						Card(
+							child: Padding(
+								padding: const EdgeInsets.all(16),
+								child: Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										SwitchListTile(
+											title: const Text('Schedule Booking', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+											subtitle: const Text('Book for a future date and time', style: TextStyle(color: Colors.black54)),
+											value: _scheduled,
+											onChanged: (v) => setState(() => _scheduled = v),
+											activeColor: Colors.blue,
+										),
+										if (_scheduled) ...[
+											ListTile(
+												title: const Text('Select Date & Time', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+												subtitle: Text(
+													_scheduledAt == null 
+														? 'Tap to pick date and time' 
+														: '${_scheduledAt!.toString().substring(0, 16)}',
+													style: const TextStyle(color: Colors.black54),
+												),
+												leading: const Icon(Icons.schedule, color: Colors.blue),
+												onTap: () async {
+													final date = await showDatePicker(
+														context: context,
+														initialDate: DateTime.now().add(const Duration(hours: 1)),
+														firstDate: DateTime.now(),
+														lastDate: DateTime.now().add(const Duration(days: 30)),
+													);
+													if (date != null && mounted) {
+														final time = await showTimePicker(
+															context: context,
+															initialTime: TimeOfDay.now(),
+														);
+														if (time != null && mounted) {
+															setState(() {
+																_scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+															});
+														}
+													}
+												},
+											),
+										],
 									],
 								),
 							),

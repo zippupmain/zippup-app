@@ -31,6 +31,7 @@ import 'package:zippup/features/hire/presentation/hire_track_screen.dart';
 import 'package:zippup/features/hire/presentation/hire_search_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_search_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_search_screen.dart';
+import 'package:zippup/features/personal/presentation/personal_search_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
@@ -222,6 +223,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					path: '/moving/search',
 					name: 'movingSearch',
 					builder: (context, state) => MovingSearchScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
+				),
+				GoRoute(
+					path: '/personal/search',
+					name: 'personalSearch',
+					builder: (context, state) => PersonalSearchScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
 				),
 				
 				// Tracking screens

@@ -20,6 +20,9 @@ class _PersonalBookingScreenState extends State<PersonalBookingScreen> {
 	String _selectedType = 'beauty';
 	int _selectedDuration = 60;
 	bool _isBooking = false;
+	bool _scheduled = false;
+	DateTime? _scheduledAt;
+	bool _normalBooking = false; // Option for users to meet providers
 
 	final Map<String, List<String>> _personalServices = const {
 		'beauty': ['Hair Cut', 'Hair Styling', 'Makeup', 'Facial', 'Eyebrow Threading'],
@@ -73,7 +76,9 @@ class _PersonalBookingScreenState extends State<PersonalBookingScreen> {
 				'description': description.isEmpty ? service : description,
 				'serviceAddress': address,
 				'createdAt': DateTime.now().toIso8601String(),
-				'isScheduled': false,
+				'isScheduled': _scheduled,
+				'scheduledAt': _scheduled ? _scheduledAt?.toIso8601String() : null,
+				'normalBooking': _normalBooking,
 				'feeEstimate': feeAmount,
 				'etaMinutes': 20,
 				'status': 'requested',
@@ -82,9 +87,9 @@ class _PersonalBookingScreenState extends State<PersonalBookingScreen> {
 				'durationMinutes': _selectedDuration,
 			});
 
-			// Navigate to tracking screen
+			// Navigate to transport-style search screen
 			if (mounted) {
-				context.push('/track/personal?bookingId=${bookingRef.id}');
+				context.push('/personal/search?bookingId=${bookingRef.id}');
 			}
 
 		} catch (e) {
@@ -262,6 +267,72 @@ class _PersonalBookingScreenState extends State<PersonalBookingScreen> {
 											),
 											maxLines: 3,
 										),
+									],
+								),
+							),
+						),
+
+						const SizedBox(height: 16),
+
+						// Booking options section
+						Card(
+							child: Padding(
+								padding: const EdgeInsets.all(16),
+								child: Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										const Text('Booking Options', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+										const SizedBox(height: 12),
+										
+										// Normal booking mode switch
+										SwitchListTile(
+											title: const Text('Normal Booking', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+											subtitle: const Text('Meet provider at their location/shop', style: TextStyle(color: Colors.black54)),
+											value: _normalBooking,
+											onChanged: (v) => setState(() => _normalBooking = v),
+											activeColor: Colors.purple,
+										),
+										
+										// Schedule booking switch
+										SwitchListTile(
+											title: const Text('Schedule Booking', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+											subtitle: const Text('Book for a future date and time', style: TextStyle(color: Colors.black54)),
+											value: _scheduled,
+											onChanged: (v) => setState(() => _scheduled = v),
+											activeColor: Colors.purple,
+										),
+										
+										if (_scheduled) ...[
+											ListTile(
+												title: const Text('Select Date & Time', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+												subtitle: Text(
+													_scheduledAt == null 
+														? 'Tap to pick date and time' 
+														: '${_scheduledAt!.toString().substring(0, 16)}',
+													style: const TextStyle(color: Colors.black54),
+												),
+												leading: const Icon(Icons.schedule, color: Colors.purple),
+												onTap: () async {
+													final date = await showDatePicker(
+														context: context,
+														initialDate: DateTime.now().add(const Duration(hours: 1)),
+														firstDate: DateTime.now(),
+														lastDate: DateTime.now().add(const Duration(days: 30)),
+													);
+													if (date != null && mounted) {
+														final time = await showTimePicker(
+															context: context,
+															initialTime: TimeOfDay.now(),
+														);
+														if (time != null && mounted) {
+															setState(() {
+																_scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+															});
+														}
+													}
+												},
+											),
+										],
 									],
 								),
 							),
