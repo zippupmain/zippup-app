@@ -404,10 +404,27 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																	),
 																),
 																
-																// Menu button
+																// Chat button - moved to top
+																InkWell(
+																	onTap: () => context.pushNamed('chat', 
+																		pathParameters: {'threadId': 'vendor_$vid'}, 
+																		queryParameters: {'title': v['name'] ?? 'Chat'}),
+																	child: Container(
+																		margin: const EdgeInsets.only(bottom: 8),
+																		padding: const EdgeInsets.all(8),
+																		decoration: BoxDecoration(
+																			gradient: const LinearGradient(
+																				colors: [Color(0xFF607D8B), Color(0xFF90A4AE)],
+																			),
+																			shape: BoxShape.circle,
+																		),
+																		child: const Icon(Icons.chat_bubble_outline, size: 16, color: Colors.white),
+																	),
+																),
+																
+																// Menu button - moved under chat button
 																Container(
 																	width: 80,
-																	margin: const EdgeInsets.only(bottom: 8),
 																	child: InkWell(
 																		onTap: () => context.push('/food/vendor?vendorId=$vid'),
 																		child: Container(
@@ -426,23 +443,6 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																				),
 																			),
 																		),
-																	),
-																),
-																
-																// Chat button - repositioned to bottom
-																InkWell(
-																	onTap: () => context.pushNamed('chat', 
-																		pathParameters: {'threadId': 'vendor_$vid'}, 
-																		queryParameters: {'title': v['name'] ?? 'Chat'}),
-																	child: Container(
-																		padding: const EdgeInsets.all(8),
-																		decoration: BoxDecoration(
-																			gradient: const LinearGradient(
-																				colors: [Color(0xFF607D8B), Color(0xFF90A4AE)],
-																			),
-																			shape: BoxShape.circle,
-																		),
-																		child: const Icon(Icons.chat_bubble_outline, size: 16, color: Colors.white),
 																	),
 																),
 															],

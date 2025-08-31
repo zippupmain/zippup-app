@@ -63,10 +63,27 @@ class _AddressFieldState extends State<AddressField> {
 			children: [
 				TextField(
 					controller: widget.controller,
+					style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
 					decoration: InputDecoration(
 						labelText: widget.label,
+						labelStyle: const TextStyle(color: Colors.black87),
 						hintText: widget.hint,
+						hintStyle: const TextStyle(color: Colors.black54),
 						contentPadding: widget.contentPadding,
+						filled: true,
+						fillColor: Colors.white,
+						border: OutlineInputBorder(
+							borderRadius: BorderRadius.circular(12),
+							borderSide: const BorderSide(color: Colors.black26),
+						),
+						enabledBorder: OutlineInputBorder(
+							borderRadius: BorderRadius.circular(12),
+							borderSide: const BorderSide(color: Colors.black26),
+						),
+						focusedBorder: OutlineInputBorder(
+							borderRadius: BorderRadius.circular(12),
+							borderSide: const BorderSide(color: Colors.blue, width: 2),
+						),
 						suffixIcon: _loading
 							? const SizedBox(width: 16, height: 16, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
 							: SizedBox(
@@ -113,7 +130,12 @@ class _AddressFieldState extends State<AddressField> {
 								final p = _suggestions[i];
 								return ListTile(
 									dense: true,
-									title: Text(p.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+									title: Text(
+										p.description, 
+										maxLines: 2, 
+										overflow: TextOverflow.ellipsis,
+										style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+									),
 									onTap: () {
 									widget.controller.text = p.description;
 									setState(() => _suggestions = const <PlacePrediction>[]);

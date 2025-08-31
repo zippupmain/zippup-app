@@ -68,8 +68,12 @@ class _MovingScreenState extends State<MovingScreen> {
 			? ['🚴‍♂️', '🏍️', '✈️']
 			: (_subcategory == 'truck' ? ['🚚', '🚛', '🚜'] : ['🛻', '🚐']);
 		
+		bool modalScheduled = _scheduled;
+		DateTime? modalScheduledAt = _scheduledAt;
+		
 		await showModalBottomSheet(context: context, isScrollControlled: true, builder: (ctx) {
-			return Container(
+			return StatefulBuilder(builder: (ctx, setModalState) {
+				return Container(
 				decoration: const BoxDecoration(
 					gradient: LinearGradient(
 						colors: [Color(0xFFFAFAFA), Color(0xFFFFFFFF)],
@@ -155,6 +159,11 @@ class _MovingScreenState extends State<MovingScreen> {
 											),
 											onTap: () {
 												Navigator.pop(ctx);
+												// Update main state before submit
+												setState(() {
+													_scheduled = modalScheduled;
+													_scheduledAt = modalScheduledAt;
+												});
 												_submit(chosenClass: title, price: price);
 											},
 										),
@@ -162,10 +171,53 @@ class _MovingScreenState extends State<MovingScreen> {
 								},
 							),
 							const SizedBox(height: 20),
+							
+							// Schedule booking section - like transport
+							SwitchListTile(
+								title: const Text('Schedule booking', style: TextStyle(color: Colors.black)),
+								value: modalScheduled,
+								onChanged: (v) => setModalState(() => modalScheduled = v),
+							),
+							if (modalScheduled) ...[
+								ListTile(
+									title: const Text('Select date', style: TextStyle(color: Colors.black)),
+									subtitle: Text(
+										modalScheduledAt == null ? 'Pick a date' : '${modalScheduledAt!.year}-${modalScheduledAt!.month.toString().padLeft(2,'0')}-${modalScheduledAt!.day.toString().padLeft(2,'0')}',
+										style: const TextStyle(color: Colors.black54),
+									),
+									onTap: () async {
+										final now = DateTime.now();
+										final date = await showDatePicker(context: ctx, firstDate: now, lastDate: now.add(const Duration(days: 60)), initialDate: modalScheduledAt ?? now);
+										if (date == null) return;
+										final base = modalScheduledAt ?? now;
+										setModalState(() => modalScheduledAt = DateTime(date.year, date.month, date.day, base.hour, base.minute));
+									},
+								),
+								ListTile(
+									title: const Text('Select time', style: TextStyle(color: Colors.black)),
+									subtitle: Text(
+										modalScheduledAt == null ? 'Pick a time' : '${modalScheduledAt!.hour.toString().padLeft(2,'0')}:${modalScheduledAt!.minute.toString().padLeft(2,'0')}',
+										style: const TextStyle(color: Colors.black54),
+									),
+									onTap: () async {
+										final picked = await showTimePicker(context: ctx, initialTime: TimeOfDay.fromDateTime(modalScheduledAt ?? DateTime.now()));
+										if (picked == null) return;
+										final base = modalScheduledAt ?? DateTime.now();
+										setModalState(() => modalScheduledAt = DateTime(base.year, base.month, base.day, picked.hour, picked.minute));
+									},
+								),
+							],
+							const SizedBox(height: 20),
 						],
 					),
-				),
-			);
+				);
+			});
+		}).then((_) {
+			// Update main state with modal values
+			setState(() {
+				_scheduled = modalScheduled;
+				_scheduledAt = modalScheduledAt;
+			});
 		});
 	}
 
