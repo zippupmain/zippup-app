@@ -86,8 +86,8 @@ class _MovingScreenState extends State<MovingScreen> {
 						),
 					),
 					child: Padding(
-					padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
-					child: Column(
+						padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+						child: Column(
 						mainAxisSize: MainAxisSize.min,
 						crossAxisAlignment: CrossAxisAlignment.start,
 						children: [
@@ -210,8 +210,9 @@ class _MovingScreenState extends State<MovingScreen> {
 							const SizedBox(height: 20),
 						],
 					),
-				);
-			});
+				),
+			);
+		});
 		}).then((_) {
 			// Update main state with modal values
 			setState(() {
