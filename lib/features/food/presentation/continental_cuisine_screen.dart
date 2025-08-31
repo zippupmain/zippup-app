@@ -8,18 +8,11 @@ class ContinentalCuisineScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		final cuisines = [
 			{
-				'name': 'European',
-				'emoji': '🇪🇺',
-				'description': 'Italian, French, Spanish, German cuisine',
-				'gradient': const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF64B5F6)]),
-				'route': '/food/vendors/european',
-			},
-			{
-				'name': 'Asian',
-				'emoji': '🇨🇳',
-				'description': 'Chinese, Japanese, Thai, Korean, Indian',
-				'gradient': const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]),
-				'route': '/food/vendors/asian',
+				'name': 'African',
+				'emoji': '🇳🇬',
+				'description': 'Nigerian, Moroccan, Ethiopian, South African',
+				'gradient': const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]),
+				'route': '/food/vendors/african',
 			},
 			{
 				'name': 'American',
@@ -29,18 +22,18 @@ class ContinentalCuisineScreen extends StatelessWidget {
 				'route': '/food/vendors/american',
 			},
 			{
-				'name': 'Middle Eastern',
-				'emoji': '🇸🇦',
-				'description': 'Arabic, Turkish, Persian, Lebanese',
-				'gradient': const LinearGradient(colors: [Color(0xFF795548), Color(0xFFA1887F)]),
-				'route': '/food/vendors/middle_eastern',
+				'name': 'Asian',
+				'emoji': '🇨🇳',
+				'description': 'Chinese, Japanese, Thai, Korean, Indian',
+				'gradient': const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]),
+				'route': '/food/vendors/asian',
 			},
 			{
-				'name': 'African',
-				'emoji': '🌍',
-				'description': 'Moroccan, Ethiopian, South African',
-				'gradient': const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]),
-				'route': '/food/vendors/african',
+				'name': 'European',
+				'emoji': '🇪🇺',
+				'description': 'Italian, French, Spanish, German cuisine',
+				'gradient': const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF64B5F6)]),
+				'route': '/food/vendors/european',
 			},
 			{
 				'name': 'Mediterranean',
@@ -48,6 +41,13 @@ class ContinentalCuisineScreen extends StatelessWidget {
 				'description': 'Greek, Turkish, Israeli, Moroccan',
 				'gradient': const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF4DD0E1)]),
 				'route': '/food/vendors/mediterranean',
+			},
+			{
+				'name': 'Middle Eastern',
+				'emoji': '🇸🇦',
+				'description': 'Arabic, Turkish, Persian, Lebanese',
+				'gradient': const LinearGradient(colors: [Color(0xFF795548), Color(0xFFA1887F)]),
+				'route': '/food/vendors/middle_eastern',
 			},
 		];
 
