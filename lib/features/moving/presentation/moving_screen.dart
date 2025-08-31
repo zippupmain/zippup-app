@@ -74,18 +74,18 @@ class _MovingScreenState extends State<MovingScreen> {
 		await showModalBottomSheet(context: context, isScrollControlled: true, builder: (ctx) {
 			return StatefulBuilder(builder: (ctx, setModalState) {
 				return Container(
-				decoration: const BoxDecoration(
-					gradient: LinearGradient(
-						colors: [Color(0xFFFAFAFA), Color(0xFFFFFFFF)],
-						begin: Alignment.topCenter,
-						end: Alignment.bottomCenter,
+					decoration: const BoxDecoration(
+						gradient: LinearGradient(
+							colors: [Color(0xFFFAFAFA), Color(0xFFFFFFFF)],
+							begin: Alignment.topCenter,
+							end: Alignment.bottomCenter,
+						),
+						borderRadius: BorderRadius.only(
+							topLeft: Radius.circular(20),
+							topRight: Radius.circular(20),
+						),
 					),
-					borderRadius: BorderRadius.only(
-						topLeft: Radius.circular(20),
-						topRight: Radius.circular(20),
-					),
-				),
-				child: Padding(
+					child: Padding(
 					padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
 					child: Column(
 						mainAxisSize: MainAxisSize.min,
