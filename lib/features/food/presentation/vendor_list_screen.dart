@@ -208,13 +208,13 @@ class _VendorListScreenState extends State<VendorListScreen> {
 										onTap: () => context.push('/food/vendor?vendorId=$vid'),
 										borderRadius: BorderRadius.circular(16),
 										child: Padding(
-											padding: const EdgeInsets.all(16),
+											padding: const EdgeInsets.all(20), // Increased padding for mobile
 											child: Row(
 												children: [
 													// Vendor image/emoji
 													Container(
-														width: 80,
-														height: 80,
+														width: 85,
+														height: 85,
 														decoration: BoxDecoration(
 															gradient: gradient,
 															borderRadius: BorderRadius.circular(12),
@@ -226,12 +226,13 @@ class _VendorListScreenState extends State<VendorListScreen> {
 															),
 														),
 													),
-													const SizedBox(width: 16),
+													const SizedBox(width: 18), // Increased spacing
 													
 													// Vendor details
 													Expanded(
 														child: Column(
 															crossAxisAlignment: CrossAxisAlignment.start,
+															mainAxisAlignment: MainAxisAlignment.spaceBetween, // Better distribution
 															children: [
 																// Vendor name and branch
 																Text(
@@ -300,7 +301,7 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																		Text('(${rating.toStringAsFixed(1)})', style: const TextStyle(fontSize: 12)),
 																	],
 																),
-																const SizedBox(height: 6),
+																const SizedBox(height: 8),
 																
 																// Opening hours
 																Row(
@@ -313,20 +314,25 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																		),
 																	],
 																),
-																const SizedBox(height: 4),
+																const SizedBox(height: 6),
 																
-																// Delivery info row
+																// Delivery info row - split for better mobile layout
 																Row(
 																	children: [
 																		Icon(Icons.delivery_dining, size: 14, color: Colors.orange.shade600),
 																		const SizedBox(width: 4),
 																		Text(deliveryTime, style: TextStyle(color: Colors.orange.shade600, fontSize: 12)),
-																		const SizedBox(width: 8),
-																		Icon(Icons.attach_money, size: 14, color: Colors.green.shade600),
-																		Text('₦$deliveryFee delivery', style: TextStyle(color: Colors.green.shade600, fontSize: 12)),
 																	],
 																),
 																const SizedBox(height: 4),
+																Row(
+																	children: [
+																		Icon(Icons.attach_money, size: 14, color: Colors.green.shade600),
+																		const SizedBox(width: 4),
+																		Text('₦$deliveryFee delivery', style: TextStyle(color: Colors.green.shade600, fontSize: 12)),
+																	],
+																),
+																const SizedBox(height: 6),
 																
 																// Location and min order
 																Row(
@@ -373,73 +379,74 @@ class _VendorListScreenState extends State<VendorListScreen> {
 														),
 													),
 													
-													// Action buttons - repositioned
-													Column(
-														mainAxisAlignment: MainAxisAlignment.start,
-														children: [
-															// Quick order indicator
-															if (widget.category == 'grocery') Container(
-																padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-																decoration: BoxDecoration(
-																	color: Colors.blue.shade100,
-																	borderRadius: BorderRadius.circular(8),
-																),
-																child: const Text(
-																	'🛒 GROCERY',
-																	style: TextStyle(
-																		color: Colors.blue,
-																		fontWeight: FontWeight.bold,
-																		fontSize: 8,
+													// Action section - redesigned for mobile
+													SizedBox(
+														width: 90, // Fixed width to prevent blocking
+														child: Column(
+															crossAxisAlignment: CrossAxisAlignment.end,
+															mainAxisAlignment: MainAxisAlignment.start, // Align to top
+															children: [
+																// Grocery indicator - raised position to not block rating
+																if (widget.category == 'grocery') Container(
+																	margin: const EdgeInsets.only(bottom: 8),
+																	padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+																	decoration: BoxDecoration(
+																		color: Colors.blue.shade100,
+																		borderRadius: BorderRadius.circular(8),
 																	),
-																),
-															),
-															
-															const SizedBox(height: 6),
-															
-															// Menu and chat buttons in row
-															Row(
-																mainAxisAlignment: MainAxisAlignment.end,
-																children: [
-																	// Chat button - moved to not block delivery fee
-																	InkWell(
-																		onTap: () => context.pushNamed('chat', 
-																			pathParameters: {'threadId': 'vendor_$vid'}, 
-																			queryParameters: {'title': v['name'] ?? 'Chat'}),
-																		child: Container(
-																			padding: const EdgeInsets.all(6),
-																			decoration: BoxDecoration(
-																				gradient: const LinearGradient(
-																					colors: [Color(0xFF607D8B), Color(0xFF90A4AE)],
-																				),
-																				shape: BoxShape.circle,
-																			),
-																			child: const Icon(Icons.chat_bubble_outline, size: 14, color: Colors.white),
+																	child: const Text(
+																		'🛒 GROCERY',
+																		style: TextStyle(
+																			color: Colors.blue,
+																			fontWeight: FontWeight.bold,
+																			fontSize: 8,
 																		),
 																	),
-																	const SizedBox(width: 6),
-																	
-																	// Menu button - compact
-																	InkWell(
+																),
+																
+																// Menu button
+																Container(
+																	width: 80,
+																	margin: const EdgeInsets.only(bottom: 8),
+																	child: InkWell(
 																		onTap: () => context.push('/food/vendor?vendorId=$vid'),
 																		child: Container(
-																			padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+																			padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
 																			decoration: BoxDecoration(
 																				gradient: gradient,
 																				borderRadius: BorderRadius.circular(12),
 																			),
 																			child: const Text(
 																				'MENU',
+																				textAlign: TextAlign.center,
 																				style: TextStyle(
 																					color: Colors.white,
 																					fontWeight: FontWeight.bold,
-																					fontSize: 9,
+																					fontSize: 10,
 																				),
 																			),
 																		),
 																	),
-																],
-															),
-														],
+																),
+																
+																// Chat button - repositioned to bottom
+																InkWell(
+																	onTap: () => context.pushNamed('chat', 
+																		pathParameters: {'threadId': 'vendor_$vid'}, 
+																		queryParameters: {'title': v['name'] ?? 'Chat'}),
+																	child: Container(
+																		padding: const EdgeInsets.all(8),
+																		decoration: BoxDecoration(
+																			gradient: const LinearGradient(
+																				colors: [Color(0xFF607D8B), Color(0xFF90A4AE)],
+																			),
+																			shape: BoxShape.circle,
+																		),
+																		child: const Icon(Icons.chat_bubble_outline, size: 16, color: Colors.white),
+																	),
+																),
+															],
+														),
 													),
 												],
 											),
