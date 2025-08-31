@@ -160,64 +160,97 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 							),
 						),
 					),
-					// Date and time controls - made horizontally scrollable
+					// Date and time controls - made scrollable
 					Container(
-						height: 160, // Increased height for mobile
 						color: Colors.white,
-						padding: const EdgeInsets.symmetric(vertical: 8),
-						child: SingleChildScrollView(
-							scrollDirection: Axis.horizontal,
-							padding: const EdgeInsets.symmetric(horizontal: 16),
-							child: Column(children: [
-								// First row of controls
-								SingleChildScrollView(
-									scrollDirection: Axis.horizontal,
-									child: Row(children: [
-							OutlinedButton.icon(onPressed: _pickStartDate, icon: const Icon(Icons.calendar_today), label: Text(_startDate == null ? 'Select start date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}')),
-							const SizedBox(width: 8),
-							if (_useEndDate)
-								OutlinedButton.icon(onPressed: _pickEndDate, icon: const Icon(Icons.calendar_month), label: Text(_endDate == null ? 'Select end date' : '${_endDate!.year}-${_endDate!.month.toString().padLeft(2,'0')}-${_endDate!.day.toString().padLeft(2,'0')}')),
-							const Spacer(),
-							if (!_useEndDate && !(_yearlyApartment && _selected == 'Apartment'))
-								SizedBox(
-									width: 120,
-									child: TextField(
-										controller: _days,
-										keyboardType: TextInputType.number,
-										decoration: const InputDecoration(labelText: 'Days'),
-										onChanged: (_) => setState(() {}),
+						padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+						child: Column(children: [
+							// First row - date selection (horizontally scrollable)
+							SingleChildScrollView(
+								scrollDirection: Axis.horizontal,
+								child: Row(children: [
+									OutlinedButton.icon(
+										onPressed: _pickStartDate, 
+										icon: const Icon(Icons.calendar_today, color: Colors.black), 
+										label: Text(
+											_startDate == null ? 'Select start date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}',
+											style: const TextStyle(color: Colors.black),
+										),
 									),
+									const SizedBox(width: 8),
+									if (_useEndDate)
+										OutlinedButton.icon(
+											onPressed: _pickEndDate, 
+											icon: const Icon(Icons.calendar_month, color: Colors.black), 
+											label: Text(
+												_endDate == null ? 'Select end date' : '${_endDate!.year}-${_endDate!.month.toString().padLeft(2,'0')}-${_endDate!.day.toString().padLeft(2,'0')}',
+												style: const TextStyle(color: Colors.black),
+											),
+										),
+									const SizedBox(width: 8),
+									if (!_useEndDate && !(_yearlyApartment && _selected == 'Apartment'))
+										SizedBox(
+											width: 120,
+											child: TextField(
+												controller: _days,
+												keyboardType: TextInputType.number,
+												style: const TextStyle(color: Colors.black),
+												decoration: const InputDecoration(
+													labelText: 'Days',
+													labelStyle: TextStyle(color: Colors.black),
+													border: OutlineInputBorder(),
+												),
+												onChanged: (_) => setState(() {}),
+											),
+										),
+								]),
+							),
+							const SizedBox(height: 8),
+							// Second row - time selection (horizontally scrollable)
+							SingleChildScrollView(
+								scrollDirection: Axis.horizontal,
+								child: Row(children: [
+									OutlinedButton.icon(
+										onPressed: () => _pickTime(isStart: true), 
+										icon: const Icon(Icons.schedule, color: Colors.black), 
+										label: Text('Start ${_startTime.format(context)}', style: const TextStyle(color: Colors.black)),
+									),
+									const SizedBox(width: 8),
+									OutlinedButton.icon(
+										onPressed: () => _pickTime(isStart: false), 
+										icon: const Icon(Icons.schedule_outlined, color: Colors.black), 
+										label: Text('End ${_endTime.format(context)}', style: const TextStyle(color: Colors.black)),
+									),
+									const SizedBox(width: 8),
+									DropdownButton<String>(
+										value: _sort,
+										items: const [
+											DropdownMenuItem(value: 'nearest', child: Text('Nearest', style: TextStyle(color: Colors.black))),
+											DropdownMenuItem(value: 'price_asc', child: Text('Price: Low to High', style: TextStyle(color: Colors.black))),
+											DropdownMenuItem(value: 'price_desc', child: Text('Price: High to Low', style: TextStyle(color: Colors.black))),
+											DropdownMenuItem(value: 'rating', child: Text('Rating', style: TextStyle(color: Colors.black))),
+										],
+										onChanged: (v) => setState(() => _sort = v ?? 'nearest'),
+									),
+								]),
+							),
+							const SizedBox(height: 8),
+							// Switches
+							SwitchListTile(
+								title: const Text('Pick end date', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+								value: _useEndDate,
+								onChanged: (v) => setState(() { _useEndDate = v; if (v) { _yearlyApartment = false; } }),
+								activeColor: Colors.green,
+							),
+							if (_selected == 'Apartment')
+								SwitchListTile(
+									title: const Text('Yearly (365 days)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+									value: _yearlyApartment,
+									onChanged: (v) => setState(() { _yearlyApartment = v; if (v) { _useEndDate = false; _days.text = '365'; } }),
+									activeColor: Colors.green,
 								),
 						]),
-						Row(children: [
-							OutlinedButton.icon(onPressed: () => _pickTime(isStart: true), icon: const Icon(Icons.schedule), label: Text('Start ${_startTime.format(context)}')),
-							const SizedBox(width: 8),
-							OutlinedButton.icon(onPressed: () => _pickTime(isStart: false), icon: const Icon(Icons.schedule_outlined), label: Text('End ${_endTime.format(context)}')),
-							const Spacer(),
-							DropdownButton<String>(
-								value: _sort,
-								items: const [
-									DropdownMenuItem(value: 'nearest', child: Text('Nearest')),
-									DropdownMenuItem(value: 'price_asc', child: Text('Price: Low to High')),
-									DropdownMenuItem(value: 'price_desc', child: Text('Price: High to Low')),
-									DropdownMenuItem(value: 'rating', child: Text('Rating')),
-								],
-								onChanged: (v) => setState(() => _sort = v ?? 'nearest'),
-							),
-						]),
-						SwitchListTile(
-							title: const Text('Pick end date'),
-							value: _useEndDate,
-							onChanged: (v) => setState(() { _useEndDate = v; if (v) { _yearlyApartment = false; } }),
-						),
-						if (_selected == 'Apartment')
-							SwitchListTile(
-								title: const Text('Yearly (365 days)'),
-								value: _yearlyApartment,
-								onChanged: (v) => setState(() { _yearlyApartment = v; if (v) { _useEndDate = false; _days.text = '365'; } }),
-							),
-					]),
-				),
+					),
 				const Divider(height: 1),
 				Expanded(
 					child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -282,6 +315,7 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 					),
 				),
 			]),
+			),
 		);
 	}
 }

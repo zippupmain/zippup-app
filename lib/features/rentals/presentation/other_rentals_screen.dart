@@ -107,44 +107,90 @@ class _OtherRentalsScreenState extends State<OtherRentalsScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Other Rentals')),
-			body: Column(children: [
-				SingleChildScrollView(
-					scrollDirection: Axis.horizontal,
-					padding: const EdgeInsets.all(8),
-					child: Wrap(spacing: 8, children: _subtypes.map((t) => ChoiceChip(label: Text(t), selected: _selected == t, onSelected: (_) => setState(() => _selected = t))).toList()),
-				),
-				Padding(
-					padding: const EdgeInsets.symmetric(horizontal: 16),
-					child: Row(children: [
-						OutlinedButton.icon(onPressed: _pickStartDate, icon: const Icon(Icons.calendar_today), label: Text(_startDate == null ? 'Select date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}')),
-						const SizedBox(width: 8),
-						OutlinedButton.icon(onPressed: () => _pickTime(isStart: true), icon: const Icon(Icons.schedule), label: Text('Start ${_startTime.format(context)}')),
-						const SizedBox(width: 8),
-						OutlinedButton.icon(onPressed: () => _pickTime(isStart: false), icon: const Icon(Icons.schedule_outlined), label: Text('End ${_endTime.format(context)}')),
-						const Spacer(),
-						SizedBox(
-							width: 120,
-							child: TextField(
-								controller: _days,
-								keyboardType: TextInputType.number,
-								decoration: const InputDecoration(labelText: 'Days'),
-								onChanged: (_) => setState(() {}),
+			appBar: AppBar(
+				title: const Text('🔧 Other Rentals'),
+				iconTheme: const IconThemeData(color: Colors.black),
+				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+			),
+			body: Container(
+				color: Colors.white, // White background for text visibility
+				child: Column(children: [
+					// Equipment type selection
+					Container(
+						color: Colors.white,
+						child: SingleChildScrollView(
+							scrollDirection: Axis.horizontal,
+							padding: const EdgeInsets.all(8),
+							child: Row(
+								children: _subtypes.map((t) => Padding(
+									padding: const EdgeInsets.symmetric(horizontal: 4),
+									child: ChoiceChip(
+										label: Text(t, style: const TextStyle(color: Colors.black)),
+										selected: _selected == t,
+										onSelected: (_) => setState(() => _selected = t),
+										backgroundColor: Colors.white,
+										selectedColor: Colors.orange.shade100,
+									),
+								)).toList(),
 							),
 						),
-						const SizedBox(width: 12),
-						DropdownButton<String>(
-							value: _sort,
-							items: const [
-								DropdownMenuItem(value: 'nearest', child: Text('Nearest')),
-								DropdownMenuItem(value: 'price_asc', child: Text('Price: Low to High')),
-								DropdownMenuItem(value: 'price_desc', child: Text('Price: High to Low')),
-								DropdownMenuItem(value: 'rating', child: Text('Rating')),
-							],
-							onChanged: (v) => setState(() => _sort = v ?? 'nearest'),
+					),
+					// Date and time controls - made horizontally scrollable
+					Container(
+						color: Colors.white,
+						padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+						child: SingleChildScrollView(
+							scrollDirection: Axis.horizontal,
+							child: Row(children: [
+								OutlinedButton.icon(
+									onPressed: _pickStartDate, 
+									icon: const Icon(Icons.calendar_today, color: Colors.black), 
+									label: Text(
+										_startDate == null ? 'Select date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}',
+										style: const TextStyle(color: Colors.black),
+									),
+								),
+								const SizedBox(width: 8),
+								OutlinedButton.icon(
+									onPressed: () => _pickTime(isStart: true), 
+									icon: const Icon(Icons.schedule, color: Colors.black), 
+									label: Text('Start ${_startTime.format(context)}', style: const TextStyle(color: Colors.black)),
+								),
+								const SizedBox(width: 8),
+								OutlinedButton.icon(
+									onPressed: () => _pickTime(isStart: false), 
+									icon: const Icon(Icons.schedule_outlined, color: Colors.black), 
+									label: Text('End ${_endTime.format(context)}', style: const TextStyle(color: Colors.black)),
+								),
+								const SizedBox(width: 8),
+								SizedBox(
+									width: 120,
+									child: TextField(
+										controller: _days,
+										keyboardType: TextInputType.number,
+										style: const TextStyle(color: Colors.black),
+										decoration: const InputDecoration(
+											labelText: 'Days',
+											labelStyle: TextStyle(color: Colors.black),
+											border: OutlineInputBorder(),
+										),
+										onChanged: (_) => setState(() {}),
+									),
+								),
+								const SizedBox(width: 12),
+								DropdownButton<String>(
+									value: _sort,
+									items: const [
+										DropdownMenuItem(value: 'nearest', child: Text('Nearest', style: TextStyle(color: Colors.black))),
+										DropdownMenuItem(value: 'price_asc', child: Text('Price: Low to High', style: TextStyle(color: Colors.black))),
+										DropdownMenuItem(value: 'price_desc', child: Text('Price: High to Low', style: TextStyle(color: Colors.black))),
+										DropdownMenuItem(value: 'rating', child: Text('Rating', style: TextStyle(color: Colors.black))),
+									],
+									onChanged: (v) => setState(() => _sort = v ?? 'nearest'),
+								),
+							]),
 						),
-					]),
-				),
+					),
 				const Divider(height: 1),
 				Expanded(
 					child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -209,6 +255,7 @@ class _OtherRentalsScreenState extends State<OtherRentalsScreen> {
 					),
 				),
 			]),
+			),
 		);
 	}
 }
