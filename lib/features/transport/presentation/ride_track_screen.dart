@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -432,10 +433,8 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 						} else if (destLat != null && destLng != null) {
 							_updateEta(originLat: driverLat, originLng: driverLng, destLat: destLat, destLng: destLng);
 						}
-						// Stop rider-side simulation when real driver appears
-						_riderSimTimer?.cancel();
-						_riderSimTimer = null;
-						_simulatedDriver = null;
+						// Keep simulation running but use real position when available
+						_simulatedDriver = pos; // Update simulated position with real position
 					} else {
 						// Enhanced simulation: show realistic driver movement
 						if (pickupLat != null && pickupLng != null && destLat != null && destLng != null) {
@@ -569,12 +568,32 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 														.limit(1)
 														.get(),
 													FirebaseFirestore.instance.collection('applications').doc(ride.driverId!).get(),
-												]),
+												]).timeout(const Duration(seconds: 10), onTimeout: () {
+													print('⏰ Driver info fetch timed out after 10 seconds');
+													throw TimeoutException('Driver info fetch timed out', const Duration(seconds: 10));
+												}),
 												builder: (context, s) {
 													if (s.connectionState == ConnectionState.waiting) {
 														return const ListTile(
 															leading: CircularProgressIndicator(),
 															title: Text('Loading driver info...'),
+														);
+													}
+													
+													if (s.hasError) {
+														print('❌ Error loading driver info: ${s.error}');
+														return const ListTile(
+															leading: Icon(Icons.error, color: Colors.red),
+															title: Text('Driver info unavailable'),
+															subtitle: Text('Please check connection'),
+														);
+													}
+													
+													if (!s.hasData || s.data == null) {
+														print('⚠️ No data received for driver info');
+														return const ListTile(
+															leading: Icon(Icons.person, color: Colors.grey),
+															title: Text('Driver details pending...'),
 														);
 													}
 													

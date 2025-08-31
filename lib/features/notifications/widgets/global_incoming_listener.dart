@@ -209,6 +209,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				}
 				
 				// Better name resolution with multiple fallbacks
+				print('🔍 Starting name resolution for rider: $riderId');
+				print('📄 Public profile data keys: ${pu.keys.toList()}');
+				print('👤 User profile data keys: ${u.keys.toList()}');
+				
 				if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
 					riderName = pu['name'].toString().trim();
 					print('✅ Found name in public profile: $riderName');
@@ -217,11 +221,13 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					print('✅ Found name in user profile: $riderName');
 				} else if (u['displayName'] != null && u['displayName'].toString().trim().isNotEmpty) {
 					riderName = u['displayName'].toString().trim();
+					print('✅ Found displayName: $riderName');
 				} else if (u['firstName'] != null || u['lastName'] != null) {
 					final firstName = (u['firstName'] ?? '').toString().trim();
 					final lastName = (u['lastName'] ?? '').toString().trim();
 					if (firstName.isNotEmpty || lastName.isNotEmpty) {
 						riderName = '$firstName $lastName'.trim();
+						print('✅ Found firstName/lastName: $riderName');
 					}
 				} else if (u['email'] != null) {
 					// Extract name from email as last resort
@@ -230,7 +236,13 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					if (atIndex > 0) {
 						riderName = email.substring(0, atIndex).replaceAll('.', ' ').replaceAll('_', ' ');
 						riderName = riderName.split(' ').map((word) => word.isNotEmpty ? word[0].toUpperCase() + word.substring(1).toLowerCase() : '').join(' ');
+						print('✅ Extracted name from email: $riderName');
 					}
+				}
+				
+				print('🎯 Final rider name: $riderName');
+				if (riderName == 'Customer') {
+					print('⚠️ WARNING: Still showing default "Customer" name - check user profile data');
 				}
 				
 				// Better photo resolution
@@ -251,7 +263,23 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
-		try { await SoundService.instance.playCall(); } catch (_) {}
+		// Play notification sound with enhanced error handling
+		try { 
+			print('🔔 Attempting to play RIDE REQUEST notification sound...');
+			await SoundService.instance.playCall();
+			print('✅ Ride request notification sound played successfully');
+		} catch (e) {
+			print('❌ Failed to play ride notification sound: $e');
+			// Fallback: try system beep
+			try {
+				await SystemSound.play(SystemSoundType.alert);
+				await HapticFeedback.mediumImpact();
+				print('✅ Fallback ride notification sound played');
+			} catch (fallbackError) {
+				print('❌ Even fallback ride notification sound failed: $fallbackError');
+			}
+		}
+		
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('🚗 New Ride Request'),
 			content: Column(
