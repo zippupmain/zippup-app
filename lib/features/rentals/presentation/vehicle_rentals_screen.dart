@@ -107,28 +107,85 @@ class _VehicleRentalsScreenState extends State<VehicleRentalsScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Vehicle Rentals')),
+			appBar: AppBar(
+				title: const Text('🚗 Vehicle Rentals'),
+				iconTheme: const IconThemeData(color: Colors.black),
+				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+			),
 			body: Column(children: [
+				// Vehicle type selection - horizontal scroll
 				SingleChildScrollView(
 					scrollDirection: Axis.horizontal,
 					padding: const EdgeInsets.all(8),
-					child: Wrap(spacing: 8, children: _subtypes.map((t) => ChoiceChip(label: Text(t), selected: _selected == t, onSelected: (_) => setState(() => _selected = t))).toList()),
+					child: Row(
+						children: _subtypes.map((t) => Padding(
+							padding: const EdgeInsets.symmetric(horizontal: 4),
+							child: ChoiceChip(
+								label: Text(t, style: const TextStyle(color: Colors.black)),
+								selected: _selected == t,
+								onSelected: (_) => setState(() => _selected = t),
+							),
+						)).toList(),
+					),
 				),
-				Padding(
-					padding: const EdgeInsets.symmetric(horizontal: 16),
-					child: Row(children: [
-						OutlinedButton.icon(onPressed: _pickStartDate, icon: const Icon(Icons.calendar_today), label: Text(_startDate == null ? 'Select date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}')),
-						const SizedBox(width: 8),
-						OutlinedButton.icon(onPressed: () => _pickTime(isStart: true), icon: const Icon(Icons.schedule), label: Text('Start ${_startTime.format(context)}')),
-						const SizedBox(width: 8),
-						OutlinedButton.icon(onPressed: () => _pickTime(isStart: false), icon: const Icon(Icons.schedule_outlined), label: Text('End ${_endTime.format(context)}')),
-						const Spacer(),
-						SizedBox(
-							width: 120,
-							child: TextField(
-								controller: _days,
-								keyboardType: TextInputType.number,
-								decoration: const InputDecoration(labelText: 'Days'),
+				// Date and time selection - made scrollable
+				Container(
+					height: 120, // Fixed height container
+					child: SingleChildScrollView(
+						scrollDirection: Axis.horizontal,
+						padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+						child: Row(children: [
+							// Select date
+							OutlinedButton.icon(
+								onPressed: _pickStartDate,
+								icon: const Icon(Icons.calendar_today, color: Colors.black),
+								label: Text(
+									_startDate == null ? 'Select date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}',
+									style: const TextStyle(color: Colors.black),
+								),
+								style: OutlinedButton.styleFrom(
+									side: const BorderSide(color: Colors.black54),
+								),
+							),
+							const SizedBox(width: 8),
+							// Start time
+							OutlinedButton.icon(
+								onPressed: () => _pickTime(isStart: true),
+								icon: const Icon(Icons.schedule, color: Colors.black),
+								label: Text(
+									'Start ${_startTime.format(context)}',
+									style: const TextStyle(color: Colors.black),
+								),
+								style: OutlinedButton.styleFrom(
+									side: const BorderSide(color: Colors.black54),
+								),
+							),
+							const SizedBox(width: 8),
+							// End time
+							OutlinedButton.icon(
+								onPressed: () => _pickTime(isStart: false),
+								icon: const Icon(Icons.schedule_outlined, color: Colors.black),
+								label: Text(
+									'End ${_endTime.format(context)}',
+									style: const TextStyle(color: Colors.black),
+								),
+								style: OutlinedButton.styleFrom(
+									side: const BorderSide(color: Colors.black54),
+								),
+							),
+							const SizedBox(width: 12),
+							// Days input
+							SizedBox(
+								width: 120,
+								child: TextField(
+									controller: _days,
+									keyboardType: TextInputType.number,
+									style: const TextStyle(color: Colors.black),
+								decoration: const InputDecoration(
+									labelText: 'Days',
+									labelStyle: TextStyle(color: Colors.black),
+									border: OutlineInputBorder(),
+								),
 								onChanged: (_) => setState(() {}),
 							),
 						),
@@ -143,7 +200,8 @@ class _VehicleRentalsScreenState extends State<VehicleRentalsScreen> {
 							],
 							onChanged: (v) => setState(() => _sort = v ?? 'nearest'),
 						),
-					]),
+											]),
+					),
 				),
 				const Divider(height: 1),
 				Expanded(
