@@ -21,30 +21,40 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 			'title': '🎉 Event Planning Providers',
 			'icon': Icons.celebration,
 			'color': Colors.pink,
+			'lightColor': const Color(0xFFFCE4EC),
+			'darkColor': const Color(0xFFAD1457),
 			'services': ['Wedding Planning', 'Birthday Parties', 'Corporate Events', 'Conferences'],
 		},
 		'tutoring': {
 			'title': '👨‍🏫 Tutoring Providers',
 			'icon': Icons.school,
 			'color': Colors.blue,
+			'lightColor': const Color(0xFFE3F2FD),
+			'darkColor': const Color(0xFF1565C0),
 			'services': ['Math', 'English', 'Science', 'Languages', 'Music', 'Art'],
 		},
 		'education': {
 			'title': '📚 Education Providers',
 			'icon': Icons.menu_book,
 			'color': Colors.green,
+			'lightColor': const Color(0xFFE8F5E8),
+			'darkColor': const Color(0xFF2E7D32),
 			'services': ['Online Courses', 'Workshops', 'Seminars', 'Training Programs'],
 		},
 		'creative': {
 			'title': '🎨 Creative Service Providers',
 			'icon': Icons.palette,
 			'color': Colors.purple,
+			'lightColor': const Color(0xFFF3E5F5),
+			'darkColor': const Color(0xFF7B1FA2),
 			'services': ['Photography', 'Graphic Design', 'Content Creation', 'Video Production'],
 		},
 		'business': {
 			'title': '💼 Business Service Providers',
 			'icon': Icons.business,
 			'color': Colors.indigo,
+			'lightColor': const Color(0xFFE8EAF6),
+			'darkColor': const Color(0xFF303F9F),
 			'services': ['Consulting', 'Legal Services', 'Accounting', 'Marketing', 'HR Services'],
 		},
 	};
@@ -88,11 +98,13 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 	Widget build(BuildContext context) {
 		final config = _serviceConfigs[widget.serviceType] ?? _serviceConfigs['events']!;
 		final serviceColor = config['color'] as Color;
+		final lightColor = config['lightColor'] as Color;
+		final darkColor = config['darkColor'] as Color;
 
 		return Scaffold(
 			appBar: AppBar(
 				title: Text(config['title'] as String),
-				backgroundColor: serviceColor.shade50,
+				backgroundColor: lightColor,
 				iconTheme: const IconThemeData(color: Colors.black),
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
 			),
@@ -119,10 +131,10 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 									),
 									focusedBorder: OutlineInputBorder(
 										borderRadius: BorderRadius.circular(12),
-										borderSide: BorderSide(color: serviceColor.shade600, width: 2),
+										borderSide: BorderSide(color: darkColor, width: 2),
 									),
 									filled: true,
-									fillColor: serviceColor.shade50,
+									fillColor: lightColor,
 								),
 								onChanged: (value) {
 									setState(() => _searchQuery = value.toLowerCase());
@@ -148,7 +160,7 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 												}
 											},
 											backgroundColor: Colors.white,
-											selectedColor: serviceColor.shade100,
+											selectedColor: lightColor,
 										),
 									)).toList(),
 								),
@@ -264,7 +276,7 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 																				),
 																				if (specialization.isNotEmpty) Text(
 																					specialization,
-																					style: TextStyle(color: serviceColor.shade700, fontWeight: FontWeight.w600),
+																					style: TextStyle(color: darkColor, fontWeight: FontWeight.w600),
 																				),
 																				Row(
 																					children: [
@@ -289,7 +301,7 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 															if (description.isNotEmpty) Container(
 																padding: const EdgeInsets.all(12),
 																decoration: BoxDecoration(
-																	color: serviceColor.shade50,
+																	color: lightColor,
 																	borderRadius: BorderRadius.circular(8),
 																),
 																child: Text(
@@ -311,7 +323,7 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 																				style: TextStyle(
 																					fontSize: 18,
 																					fontWeight: FontWeight.bold,
-																					color: serviceColor.shade700,
+																					color: darkColor,
 																				),
 																			),
 																			const Text(
@@ -326,7 +338,7 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 																		icon: const Icon(Icons.calendar_today),
 																		label: const Text('Book Now'),
 																		style: FilledButton.styleFrom(
-																			backgroundColor: serviceColor.shade600,
+																			backgroundColor: darkColor,
 																		),
 																	),
 																],
