@@ -93,11 +93,17 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					}
 					
 					if (shouldShow && !_shown.contains('ride:${d.id}')) {
-						print('🚨 Showing ride notification for ride: ${d.id}');
+						print('🚨 SHOWING RIDE NOTIFICATION for ride: ${d.id}');
+						print('📋 Ride data: ${data}');
+						print('👤 Customer ID: ${data['riderId']}');
+						print('🚗 Ride type: ${data['type']}');
+						print('📍 From: ${data['pickupAddress']}');
 						_shown.add('ride:${d.id}');
 						_showRideDialog(d.id, data);
 					} else if (!shouldShow) {
 						print('🚫 Not showing ride ${d.id} - shouldShow: $shouldShow, assignedDriverId: $assignedDriverId, isActiveProvider: $isActiveTransportProvider');
+					} else if (_shown.contains('ride:${d.id}')) {
+						print('⏭️ Already showed ride ${d.id}, skipping...');
 					}
 				}
 			});

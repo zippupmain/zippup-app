@@ -488,10 +488,10 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 									markerId: const MarkerId('driver'),
 									position: _simulatedDriver!,
 									infoWindow: InfoWindow(
-										title: 'Driver',
-										snippet: ride.status == RideStatus.arrived ? 'Arrived at pickup' : 'En route',
+										title: '🚗 Your Driver',
+										snippet: ride.status == RideStatus.arrived ? '✅ Arrived at pickup' : '🚗 En route to you',
 									),
-									icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+									icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
 								));
 								center = _simulatedDriver;
 							}
@@ -512,7 +512,20 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 													width: isDriver ? 44 : 36,
 													height: isDriver ? 44 : 36,
 													child: isDriver
-														? const Icon(Icons.directions_car, color: Colors.blue, size: 40)
+														? Container(
+															decoration: BoxDecoration(
+																color: Colors.blue,
+																borderRadius: BorderRadius.circular(20),
+																boxShadow: [
+																	BoxShadow(
+																		color: Colors.blue.withOpacity(0.3),
+																		spreadRadius: 3,
+																		blurRadius: 5,
+																	),
+																],
+															),
+															child: const Icon(Icons.directions_car, color: Colors.white, size: 36),
+														)
 														: const Icon(Icons.location_on, color: Colors.redAccent),
 												);
 											}).toList();
