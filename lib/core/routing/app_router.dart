@@ -32,6 +32,7 @@ import 'package:zippup/features/hire/presentation/hire_search_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_search_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_search_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_search_screen.dart';
+import 'package:zippup/features/personal/presentation/personal_normal_booking_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
@@ -317,11 +318,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					name: 'productDetail',
 					builder: (context, state) => ProductDetailScreen(productId: state.uri.queryParameters['productId'] ?? ''),
 				),
-      GoRoute(
-        path: '/personal',
-        name: 'personal',
-        builder: (context, state) => const PersonalBookingScreen(),
-      ),
+      				GoRoute(
+					path: '/personal',
+					name: 'personal',
+					builder: (context, state) => const PersonalBookingScreen(),
+				),
+				GoRoute(
+					path: '/personal/normal-booking',
+					name: 'personalNormalBooking',
+					builder: (context, state) => const PersonalNormalBookingScreen(),
+				),
       GoRoute(
         path: '/emergency/roadside',
         name: 'roadside',

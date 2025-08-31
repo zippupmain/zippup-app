@@ -114,10 +114,64 @@ class _PersonalBookingScreenState extends State<PersonalBookingScreen> {
 			),
 			body: SingleChildScrollView(
 				padding: const EdgeInsets.all(16),
-				child: Column(
-					crossAxisAlignment: CrossAxisAlignment.stretch,
-					children: [
-						// Service type selection
+									child: Column(
+						crossAxisAlignment: CrossAxisAlignment.stretch,
+						children: [
+							// Service mode selection
+							Card(
+								color: Colors.purple.shade50,
+								child: Padding(
+									padding: const EdgeInsets.all(16),
+									child: Column(
+										crossAxisAlignment: CrossAxisAlignment.start,
+										children: [
+											const Text('Service Mode', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+											const SizedBox(height: 12),
+											Row(
+												children: [
+													Expanded(
+														child: OutlinedButton.icon(
+															onPressed: () {
+																// Navigate to normal booking form
+																context.push('/personal/normal-booking');
+															},
+															icon: const Icon(Icons.handshake, color: Colors.purple),
+															label: const Text('Meet Provider', style: TextStyle(color: Colors.purple)),
+															style: OutlinedButton.styleFrom(
+																side: const BorderSide(color: Colors.purple),
+																padding: const EdgeInsets.symmetric(vertical: 12),
+															),
+														),
+													),
+													const SizedBox(width: 12),
+													Expanded(
+														child: FilledButton.icon(
+															onPressed: () {
+																// Continue with home service (current flow)
+															},
+															icon: const Icon(Icons.home),
+															label: const Text('Home Service'),
+															style: FilledButton.styleFrom(
+																backgroundColor: Colors.purple.shade600,
+																padding: const EdgeInsets.symmetric(vertical: 12),
+															),
+														),
+													),
+												],
+											),
+											const SizedBox(height: 8),
+											const Text(
+												'• Meet Provider: Visit their salon/clinic/studio\n• Home Service: Provider comes to your location',
+												style: TextStyle(color: Colors.black54, fontSize: 12),
+											),
+										],
+									),
+								),
+							),
+
+							const SizedBox(height: 16),
+
+							// Service type selection
 						Card(
 							child: Padding(
 								padding: const EdgeInsets.all(16),
