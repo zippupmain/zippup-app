@@ -243,19 +243,67 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				),
 				GoRoute(
 					path: '/others/events',
-					name: 'othersEvents',
-					builder: (context, state) => const OthersSearchScreen(kind: 'events'),
+					builder: (context, state) => Scaffold(
+						appBar: AppBar(
+							title: const Text('🎉 Events Planning'),
+							iconTheme: const IconThemeData(color: Colors.black),
+						),
+						body: const Center(child: Text('Events planning services coming soon!')),
+					),
 				),
 				GoRoute(
 					path: '/others/tickets',
-					name: 'othersTickets',
-					builder: (context, state) => const OthersSearchScreen(kind: 'tickets'),
+					builder: (context, state) => Scaffold(
+						appBar: AppBar(
+							title: const Text('🎫 Event Tickets'),
+							iconTheme: const IconThemeData(color: Colors.black),
+						),
+						body: const Center(child: Text('Event tickets coming soon!')),
+					),
 				),
 				GoRoute(
 					path: '/others/tutors',
-					name: 'othersTutors',
-					builder: (context, state) => const OthersSearchScreen(kind: 'tutors'),
+					builder: (context, state) => Scaffold(
+						appBar: AppBar(
+							title: const Text('👨‍🏫 Tutoring'),
+							iconTheme: const IconThemeData(color: Colors.black),
+						),
+						body: const Center(child: Text('Tutoring services coming soon!')),
+					),
 				),
+				GoRoute(
+					path: '/others/education',
+					builder: (context, state) => Scaffold(
+						appBar: AppBar(
+							title: const Text('📚 Education'),
+							iconTheme: const IconThemeData(color: Colors.black),
+						),
+						body: const Center(child: Text('Education services coming soon!')),
+					),
+				),
+				GoRoute(
+					path: '/others/creative',
+					builder: (context, state) => Scaffold(
+						appBar: AppBar(
+							title: const Text('🎨 Creative Services'),
+							iconTheme: const IconThemeData(color: Colors.black),
+						),
+						body: const Center(child: Text('Creative services coming soon!')),
+					),
+				),
+				GoRoute(
+					path: '/others/business',
+					builder: (context, state) => Scaffold(
+						appBar: AppBar(
+							title: const Text('💼 Business Services'),
+							iconTheme: const IconThemeData(color: Colors.black),
+						),
+						body: const Center(child: Text('Business services coming soon!')),
+					),
+				),
+
+
+
 				GoRoute(
 					path: '/vendor',
 					name: 'vendorDetail',

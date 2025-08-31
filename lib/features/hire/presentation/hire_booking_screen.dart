@@ -120,6 +120,8 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 			appBar: AppBar(
 				title: const Text('🔧 Hire Services'),
 				backgroundColor: Colors.blue.shade50,
+				iconTheme: const IconThemeData(color: Colors.black),
+				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
 			),
 			body: SingleChildScrollView(
 				padding: const EdgeInsets.all(16),

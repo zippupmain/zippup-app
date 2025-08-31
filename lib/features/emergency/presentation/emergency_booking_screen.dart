@@ -106,6 +106,8 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 			appBar: AppBar(
 				title: const Text('🚨 Emergency Services'),
 				backgroundColor: Colors.red.shade50,
+				iconTheme: const IconThemeData(color: Colors.black),
+				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
 			),
 			body: SingleChildScrollView(
 				padding: const EdgeInsets.all(16),

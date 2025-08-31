@@ -359,14 +359,14 @@ class _TransportScreenState extends State<TransportScreen> {
 										),
 										const SizedBox(height: 8),
 										SwitchListTile(
-											title: const Text('Schedule booking'),
+											title: const Text('Schedule booking', style: TextStyle(color: Colors.black)),
 											value: scheduled,
 											onChanged: (v) => setModalState(() => scheduled = v),
 										),
 										if (scheduled)
 											ListTile(
-												title: const Text('Scheduled time'),
-												subtitle: Text(scheduledAt?.toString() ?? 'Pick time'),
+												title: const Text('Scheduled time', style: TextStyle(color: Colors.black)),
+												subtitle: Text(scheduledAt?.toString() ?? 'Pick time', style: const TextStyle(color: Colors.black54)),
 												onTap: () async {
 													final now = DateTime.now();
 													final date = await showDatePicker(context: ctx, firstDate: now, lastDate: now.add(const Duration(days: 30)), initialDate: now);
@@ -672,7 +672,7 @@ class _TransportScreenState extends State<TransportScreen> {
 						const SizedBox(height: 16),
 						AddressField(controller: _pickup, label: 'Pickup address'),
 						const SizedBox(height: 8),
-						const Text('Stops (max 5):', style: TextStyle(fontWeight: FontWeight.w600)),
+						const Text('Stops (max 5):', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
 						for (int i = 0; i < _stops.length; i++)
 							Row(children: [
 								Expanded(child: AddressField(controller: _stops[i], label: 'Stop ${i + 1} (destination)')),

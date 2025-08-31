@@ -104,6 +104,8 @@ class _PersonalBookingScreenState extends State<PersonalBookingScreen> {
 			appBar: AppBar(
 				title: const Text('💆 Personal Services'),
 				backgroundColor: Colors.purple.shade50,
+				iconTheme: const IconThemeData(color: Colors.black),
+				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
 			),
 			body: SingleChildScrollView(
 				padding: const EdgeInsets.all(16),
