@@ -3,9 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_map/flutter_map.dart' as lm;
+import 'package:latlong2/latlong.dart' as ll;
 import 'package:zippup/common/models/hire_booking.dart';
 import 'package:zippup/features/orders/widgets/status_timeline.dart';
 import 'package:zippup/services/notifications/sound_service.dart';
+import 'package:zippup/services/distance/distance_service.dart';
 
 class HireTrackScreen extends StatefulWidget {
 	const HireTrackScreen({super.key, required this.bookingId});
@@ -17,9 +22,15 @@ class HireTrackScreen extends StatefulWidget {
 
 class _HireTrackScreenState extends State<HireTrackScreen> {
 	bool _shownSummary = false;
+	final DistanceService _distance = DistanceService();
+	Set<Polyline> _polylines = {};
+	LatLng? _simulatedProvider;
+	Timer? _providerSimTimer;
+	String _eta = '';
 
 	@override
 	void dispose() {
+		_providerSimTimer?.cancel();
 		super.dispose();
 	}
 
