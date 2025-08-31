@@ -410,7 +410,7 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																		pathParameters: {'threadId': 'vendor_$vid'}, 
 																		queryParameters: {'title': v['name'] ?? 'Chat'}),
 																	child: Container(
-																		margin: const EdgeInsets.only(bottom: 8),
+																		margin: const EdgeInsets.only(bottom: 12),
 																		padding: const EdgeInsets.all(8),
 																		decoration: BoxDecoration(
 																			gradient: const LinearGradient(
@@ -422,9 +422,10 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																	),
 																),
 																
-																// Menu button - moved under chat button
+																// Menu button - moved down one step
 																Container(
 																	width: 80,
+																	margin: const EdgeInsets.only(top: 8), // Added margin to move down
 																	child: InkWell(
 																		onTap: () => context.push('/food/vendor?vendorId=$vid'),
 																		child: Container(

@@ -174,17 +174,20 @@ class _MovingScreenState extends State<MovingScreen> {
 							
 							// Schedule booking section - like transport
 							SwitchListTile(
-								title: const Text('Schedule booking', style: TextStyle(color: Colors.black)),
+								title: const Text('Schedule Booking', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+								subtitle: const Text('Book for a future date and time', style: TextStyle(color: Colors.black54)),
 								value: modalScheduled,
 								onChanged: (v) => setModalState(() => modalScheduled = v),
+								activeColor: Colors.indigo,
 							),
 							if (modalScheduled) ...[
 								ListTile(
-									title: const Text('Select date', style: TextStyle(color: Colors.black)),
+									title: const Text('Select Date', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
 									subtitle: Text(
-										modalScheduledAt == null ? 'Pick a date' : '${modalScheduledAt!.year}-${modalScheduledAt!.month.toString().padLeft(2,'0')}-${modalScheduledAt!.day.toString().padLeft(2,'0')}',
-										style: const TextStyle(color: Colors.black54),
+										modalScheduledAt == null ? 'Tap to pick a date' : '${modalScheduledAt!.year}-${modalScheduledAt!.month.toString().padLeft(2,'0')}-${modalScheduledAt!.day.toString().padLeft(2,'0')}',
+										style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
 									),
+									leading: const Icon(Icons.calendar_today, color: Colors.indigo),
 									onTap: () async {
 										final now = DateTime.now();
 										final date = await showDatePicker(context: ctx, firstDate: now, lastDate: now.add(const Duration(days: 60)), initialDate: modalScheduledAt ?? now);
@@ -194,11 +197,12 @@ class _MovingScreenState extends State<MovingScreen> {
 									},
 								),
 								ListTile(
-									title: const Text('Select time', style: TextStyle(color: Colors.black)),
+									title: const Text('Select Time', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
 									subtitle: Text(
-										modalScheduledAt == null ? 'Pick a time' : '${modalScheduledAt!.hour.toString().padLeft(2,'0')}:${modalScheduledAt!.minute.toString().padLeft(2,'0')}',
-										style: const TextStyle(color: Colors.black54),
+										modalScheduledAt == null ? 'Tap to pick a time' : '${modalScheduledAt!.hour.toString().padLeft(2,'0')}:${modalScheduledAt!.minute.toString().padLeft(2,'0')}',
+										style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
 									),
+									leading: const Icon(Icons.access_time, color: Colors.indigo),
 									onTap: () async {
 										final picked = await showTimePicker(context: ctx, initialTime: TimeOfDay.fromDateTime(modalScheduledAt ?? DateTime.now()));
 										if (picked == null) return;
@@ -426,7 +430,20 @@ class _MovingScreenState extends State<MovingScreen> {
 					const SizedBox(height: 8),
 					AddressField(controller: _dropoff, label: 'Dropoff address'),
 					const SizedBox(height: 8),
-					TextField(controller: _notes, decoration: const InputDecoration(labelText: 'Notes (optional)')),
+					TextField(
+						controller: _notes,
+						style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+						decoration: const InputDecoration(
+							labelText: 'Notes (optional)',
+							labelStyle: TextStyle(color: Colors.black87),
+							hintText: 'Add any special instructions...',
+							hintStyle: TextStyle(color: Colors.black54),
+							border: OutlineInputBorder(),
+							filled: true,
+							fillColor: Colors.white,
+						),
+						maxLines: 3,
+					),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _submitting ? null : _openClassModal, child: Text(_submitting ? 'Submitting...' : 'Choose class')),
 				],
