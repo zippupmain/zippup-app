@@ -10,7 +10,7 @@ import 'package:latlong2/latlong.dart' as ll;
 import 'package:zippup/common/models/hire_booking.dart';
 import 'package:zippup/features/orders/widgets/status_timeline.dart';
 import 'package:zippup/services/notifications/sound_service.dart';
-import 'package:zippup/services/distance/distance_service.dart';
+
 
 class HireTrackScreen extends StatefulWidget {
 	const HireTrackScreen({super.key, required this.bookingId});
@@ -22,7 +22,7 @@ class HireTrackScreen extends StatefulWidget {
 
 class _HireTrackScreenState extends State<HireTrackScreen> {
 	bool _shownSummary = false;
-	final DistanceService _distance = DistanceService();
+
 	Set<Polyline> _polylines = {};
 	LatLng? _simulatedProvider;
 	Timer? _providerSimTimer;
