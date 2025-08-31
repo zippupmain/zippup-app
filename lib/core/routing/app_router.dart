@@ -39,6 +39,8 @@ import 'package:zippup/features/digital/presentation/airtime_purchase_screen.dar
 import 'package:zippup/features/digital/presentation/data_purchase_screen.dart';
 import 'package:zippup/features/digital/presentation/bill_payment_screen.dart';
 import 'package:zippup/features/digital/presentation/wallet_screen.dart';
+import 'package:zippup/features/digital/presentation/global_airtime_screen.dart';
+import 'package:zippup/features/digital/presentation/country_selection_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
@@ -149,6 +151,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					path: '/digital/airtime',
 					name: 'airtimePurchase',
 					builder: (context, state) => const AirtimePurchaseScreen(),
+				),
+				GoRoute(
+					path: '/digital/global-airtime',
+					name: 'globalAirtimePurchase',
+					builder: (context, state) => const GlobalAirtimeScreen(),
+				),
+				GoRoute(
+					path: '/digital/country-selection',
+					name: 'countrySelection',
+					builder: (context, state) => const CountrySelectionScreen(),
 				),
 				GoRoute(
 					path: '/digital/data',

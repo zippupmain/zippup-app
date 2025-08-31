@@ -43,6 +43,12 @@ class DigitalScreen extends StatelessWidget {
 					childAspectRatio: 1.2,
 					children: const [
 						_DigitalCard(
+							label: 'My Wallet',
+							icon: Icons.account_balance_wallet,
+							emoji: '💳',
+							gradient: LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]),
+						),
+						_DigitalCard(
 							label: 'Buy Airtime',
 							icon: Icons.phone_iphone,
 							emoji: '📞',
@@ -64,18 +70,12 @@ class DigitalScreen extends StatelessWidget {
 							label: 'Digital Products',
 							icon: Icons.shopping_bag,
 							emoji: '💻',
-							gradient: LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]),
+							gradient: LinearGradient(colors: [Color(0xFF607D8B), Color(0xFF90A4AE)]),
 						),
 						_DigitalCard(
-							label: 'Gift Cards',
-							icon: Icons.card_giftcard,
-							emoji: '🎁',
-							gradient: LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF06292)]),
-						),
-						_DigitalCard(
-							label: 'Subscriptions',
-							icon: Icons.subscriptions,
-							emoji: '📺',
+							label: 'Select Country',
+							icon: Icons.public,
+							emoji: '🌍',
 							gradient: LinearGradient(colors: [Color(0xFF673AB7), Color(0xFF9575CD)]),
 						),
 					],
@@ -102,8 +102,11 @@ class _DigitalCard extends StatelessWidget {
 		return InkWell(
 			onTap: () {
 				switch (label) {
+					case 'My Wallet':
+						context.push('/wallet');
+						break;
 					case 'Buy Airtime':
-						context.push('/digital/airtime');
+						context.push('/digital/global-airtime');
 						break;
 					case 'Buy Data':
 						context.push('/digital/data');
@@ -111,7 +114,18 @@ class _DigitalCard extends StatelessWidget {
 					case 'Pay Bills':
 						context.push('/digital/bills');
 						break;
+					case 'Select Country':
+						context.push('/digital/country-selection');
+						break;
+					case 'Digital Products':
+						ScaffoldMessenger.of(context).showSnackBar(
+							const SnackBar(content: Text('Digital products coming soon!'))
+						);
+						break;
 					default:
+						ScaffoldMessenger.of(context).showSnackBar(
+							const SnackBar(content: Text('Feature coming soon!'))
+						);
 				}
 			},
 			borderRadius: BorderRadius.circular(20),
