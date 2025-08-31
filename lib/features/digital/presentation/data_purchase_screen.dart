@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/payments/payments_service.dart';
+import 'package:zippup/services/location/country_detection_service.dart';
+import 'package:zippup/services/digital/reloadly_service.dart';
 
 class DataPurchaseScreen extends StatefulWidget {
 	const DataPurchaseScreen({super.key});
@@ -18,6 +20,12 @@ class _DataPurchaseScreenState extends State<DataPurchaseScreen> {
 	String _paymentMethod = 'wallet';
 	bool _isProcessing = false;
 	double _walletBalance = 0.0;
+	String _detectedCountry = 'NG';
+	String _currencySymbol = '₦';
+	String _currencyCode = 'NGN';
+	List<Map<String, dynamic>> _operators = [];
+	Map<String, dynamic>? _selectedOperator;
+	bool _isLoadingOperators = false;
 
 	final Map<String, Map<String, dynamic>> _networks = {
 		'mtn': {
@@ -56,7 +64,69 @@ class _DataPurchaseScreenState extends State<DataPurchaseScreen> {
 	@override
 	void initState() {
 		super.initState();
-		_loadWalletBalance();
+		_detectCountryAndLoadData();
+		_phoneController.addListener(_onPhoneNumberChanged);
+	}
+
+	@override
+	void dispose() {
+		_phoneController.removeListener(_onPhoneNumberChanged);
+		super.dispose();
+	}
+
+	Future<void> _detectCountryAndLoadData() async {
+		try {
+			final detectedCountry = await CountryDetectionService.detectUserCountry();
+			final currencyInfo = CountryDetectionService.getCurrencyInfo(detectedCountry);
+			
+			setState(() {
+				_detectedCountry = detectedCountry;
+				_currencySymbol = currencyInfo['symbol']!;
+				_currencyCode = currencyInfo['code']!;
+			});
+			
+			await _loadWalletBalance();
+			await _loadOperators();
+		} catch (e) {
+			print('Error detecting country: $e');
+			await _loadWalletBalance();
+		}
+	}
+
+	void _onPhoneNumberChanged() {
+		final phoneNumber = _phoneController.text.trim();
+		if (phoneNumber.length >= 3) {
+			final detectedCountry = ReloadlyService.getCountryCodeFromPhone(phoneNumber);
+			if (detectedCountry != _detectedCountry) {
+				setState(() {
+					_detectedCountry = detectedCountry;
+					final currencyInfo = CountryDetectionService.getCurrencyInfo(detectedCountry);
+					_currencySymbol = currencyInfo['symbol']!;
+					_currencyCode = currencyInfo['code']!;
+					_operators = [];
+					_selectedOperator = null;
+				});
+				_loadOperators();
+			}
+		}
+	}
+
+	Future<void> _loadOperators() async {
+		setState(() => _isLoadingOperators = true);
+		
+		try {
+			final operators = await ReloadlyService.getOperatorsByCountry(_detectedCountry);
+			setState(() {
+				_operators = operators;
+				if (operators.isNotEmpty) {
+					_selectedOperator = operators.first;
+				}
+			});
+		} catch (e) {
+			print('Error loading operators: $e');
+		} finally {
+			setState(() => _isLoadingOperators = false);
+		}
 	}
 
 	Future<void> _loadWalletBalance() async {
@@ -211,7 +281,7 @@ class _DataPurchaseScreenState extends State<DataPurchaseScreen> {
 
 		return Scaffold(
 			appBar: AppBar(
-				title: const Text('📶 Buy Data'),
+				title: Text('📶 Buy Data - $_detectedCountry'),
 				backgroundColor: Colors.purple.shade50,
 				iconTheme: const IconThemeData(color: Colors.black),
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
@@ -237,7 +307,7 @@ class _DataPurchaseScreenState extends State<DataPurchaseScreen> {
 												children: [
 													const Text('Wallet Balance', style: TextStyle(color: Colors.black54)),
 													Text(
-														'₦${_walletBalance.toStringAsFixed(2)}',
+														'$_currencySymbol${_walletBalance.toStringAsFixed(2)}',
 														style: const TextStyle(
 															fontSize: 24,
 															fontWeight: FontWeight.bold,

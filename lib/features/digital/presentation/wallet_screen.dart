@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/payments/payments_service.dart';
+import 'package:zippup/services/location/country_detection_service.dart';
 
 class WalletScreen extends StatefulWidget {
 	const WalletScreen({super.key});
@@ -15,11 +16,32 @@ class _WalletScreenState extends State<WalletScreen> {
 	double _walletBalance = 0.0;
 	bool _isLoading = true;
 	List<Map<String, dynamic>> _recentTransactions = [];
+	String _currentCountry = 'NG';
+	String _currencySymbol = '₦';
+	String _currencyCode = 'NGN';
 
 	@override
 	void initState() {
 		super.initState();
-		_loadWalletData();
+		_detectCountryAndLoadWallet();
+	}
+
+	Future<void> _detectCountryAndLoadWallet() async {
+		try {
+			final detectedCountry = await CountryDetectionService.detectUserCountry();
+			final currencyInfo = CountryDetectionService.getCurrencyInfo(detectedCountry);
+			
+			setState(() {
+				_currentCountry = detectedCountry;
+				_currencySymbol = currencyInfo['symbol']!;
+				_currencyCode = currencyInfo['code']!;
+			});
+			
+			await _loadWalletData();
+		} catch (e) {
+			print('Error detecting country: $e');
+			await _loadWalletData();
+		}
 	}
 
 	Future<void> _loadWalletData() async {
@@ -167,7 +189,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
 		return Scaffold(
 			appBar: AppBar(
-				title: const Text('💳 My Wallet'),
+				title: Text('💳 My Wallet - $_currentCountry'),
 				backgroundColor: Colors.green.shade50,
 				iconTheme: const IconThemeData(color: Colors.black),
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
@@ -209,7 +231,7 @@ class _WalletScreenState extends State<WalletScreen> {
 											),
 											const SizedBox(height: 8),
 											Text(
-												'₦${_walletBalance.toStringAsFixed(2)}',
+												'$_currencySymbol${_walletBalance.toStringAsFixed(2)}',
 												style: const TextStyle(
 													color: Colors.white,
 													fontSize: 36,
