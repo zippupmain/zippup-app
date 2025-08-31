@@ -137,6 +137,35 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 			body: Container(
 				color: Colors.white, // White background for text visibility
 				child: Column(children: [
+					// Search bar
+					Container(
+						color: Colors.white,
+						padding: const EdgeInsets.all(16),
+						child: TextField(
+							style: const TextStyle(color: Colors.black),
+							decoration: InputDecoration(
+								labelText: 'Search properties...',
+								labelStyle: const TextStyle(color: Colors.black),
+								hintText: 'Location, amenities, or property type...',
+								hintStyle: const TextStyle(color: Colors.black38),
+								prefixIcon: const Icon(Icons.search, color: Colors.green),
+								border: OutlineInputBorder(
+									borderRadius: BorderRadius.circular(12),
+									borderSide: const BorderSide(color: Colors.green),
+								),
+								focusedBorder: OutlineInputBorder(
+									borderRadius: BorderRadius.circular(12),
+									borderSide: BorderSide(color: Colors.green.shade600, width: 2),
+								),
+								filled: true,
+								fillColor: Colors.green.shade50,
+							),
+							onChanged: (value) {
+								// TODO: Implement search filtering
+								setState(() {});
+							},
+						),
+					),
 					// Property type selection
 					Container(
 						color: Colors.white,

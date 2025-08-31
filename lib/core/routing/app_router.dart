@@ -33,6 +33,7 @@ import 'package:zippup/features/emergency/presentation/emergency_search_screen.d
 import 'package:zippup/features/moving/presentation/moving_search_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_search_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_normal_booking_screen.dart';
+import 'package:zippup/features/others/presentation/others_providers_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
@@ -279,6 +280,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				GoRoute(
 					path: '/others/tickets',
 					builder: (context, state) => const EventTicketingScreen(),
+				),
+				GoRoute(
+					path: '/others/providers',
+					name: 'othersProviders',
+					builder: (context, state) => OthersProvidersScreen(
+						serviceType: state.uri.queryParameters['serviceType'] ?? 'events',
+						appointmentId: state.uri.queryParameters['appointmentId'],
+					),
 				),
 				GoRoute(
 					path: '/others/tutors',

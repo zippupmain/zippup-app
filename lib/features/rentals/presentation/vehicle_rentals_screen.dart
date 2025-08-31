@@ -115,6 +115,35 @@ class _VehicleRentalsScreenState extends State<VehicleRentalsScreen> {
 			body: Container(
 				color: Colors.white, // White background for text visibility
 				child: Column(children: [
+					// Search bar
+					Container(
+						color: Colors.white,
+						padding: const EdgeInsets.all(16),
+						child: TextField(
+							style: const TextStyle(color: Colors.black),
+							decoration: InputDecoration(
+								labelText: 'Search vehicles...',
+								labelStyle: const TextStyle(color: Colors.black),
+								hintText: 'Car brand, model, or features...',
+								hintStyle: const TextStyle(color: Colors.black38),
+								prefixIcon: const Icon(Icons.search, color: Colors.blue),
+								border: OutlineInputBorder(
+									borderRadius: BorderRadius.circular(12),
+									borderSide: const BorderSide(color: Colors.blue),
+								),
+								focusedBorder: OutlineInputBorder(
+									borderRadius: BorderRadius.circular(12),
+									borderSide: BorderSide(color: Colors.blue.shade600, width: 2),
+								),
+								filled: true,
+								fillColor: Colors.blue.shade50,
+							),
+							onChanged: (value) {
+								// TODO: Implement search filtering
+								setState(() {});
+							},
+						),
+					),
 					// Vehicle type selection - horizontal scroll
 					Container(
 						color: Colors.white,

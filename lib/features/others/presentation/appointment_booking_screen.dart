@@ -121,9 +121,9 @@ class _AppointmentBookingScreenState extends State<AppointmentBookingScreen> {
 				'paymentMethod': 'card',
 			});
 
-			// Navigate to tracking screen
+			// Navigate to provider list screen
 			if (mounted) {
-				context.push('/track/appointment?appointmentId=${appointmentRef.id}');
+				context.push('/others/providers?serviceType=${widget.serviceType}&appointmentId=${appointmentRef.id}');
 			}
 
 		} catch (e) {

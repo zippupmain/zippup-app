@@ -115,6 +115,35 @@ class _OtherRentalsScreenState extends State<OtherRentalsScreen> {
 			body: Container(
 				color: Colors.white, // White background for text visibility
 				child: Column(children: [
+					// Search bar
+					Container(
+						color: Colors.white,
+						padding: const EdgeInsets.all(16),
+						child: TextField(
+							style: const TextStyle(color: Colors.black),
+							decoration: InputDecoration(
+								labelText: 'Search equipment...',
+								labelStyle: const TextStyle(color: Colors.black),
+								hintText: 'Tools, machines, or equipment type...',
+								hintStyle: const TextStyle(color: Colors.black38),
+								prefixIcon: const Icon(Icons.search, color: Colors.orange),
+								border: OutlineInputBorder(
+									borderRadius: BorderRadius.circular(12),
+									borderSide: const BorderSide(color: Colors.orange),
+								),
+								focusedBorder: OutlineInputBorder(
+									borderRadius: BorderRadius.circular(12),
+									borderSide: BorderSide(color: Colors.orange.shade600, width: 2),
+								),
+								filled: true,
+								fillColor: Colors.orange.shade50,
+							),
+							onChanged: (value) {
+								// TODO: Implement search filtering
+								setState(() {});
+							},
+						),
+					),
 					// Equipment type selection
 					Container(
 						color: Colors.white,
