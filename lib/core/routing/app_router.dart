@@ -11,6 +11,9 @@ import 'package:zippup/features/hire/presentation/hire_screen.dart';
 import 'package:zippup/features/hire/presentation/hire_booking_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_booking_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_booking_screen.dart';
+import 'package:zippup/features/others/presentation/appointment_booking_screen.dart';
+import 'package:zippup/features/others/presentation/event_ticketing_screen.dart';
+import 'package:zippup/features/others/presentation/create_event_screen.dart';
 import 'package:zippup/features/digital/presentation/digital_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_list_screen.dart';
 import 'package:zippup/features/auth/presentation/auth_gate.dart';
@@ -243,63 +246,31 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				),
 				GoRoute(
 					path: '/others/events',
-					builder: (context, state) => Scaffold(
-						appBar: AppBar(
-							title: const Text('🎉 Events Planning'),
-							iconTheme: const IconThemeData(color: Colors.black),
-						),
-						body: const Center(child: Text('Events planning services coming soon!')),
-					),
+					builder: (context, state) => const AppointmentBookingScreen(serviceType: 'events'),
 				),
 				GoRoute(
 					path: '/others/tickets',
-					builder: (context, state) => Scaffold(
-						appBar: AppBar(
-							title: const Text('🎫 Event Tickets'),
-							iconTheme: const IconThemeData(color: Colors.black),
-						),
-						body: const Center(child: Text('Event tickets coming soon!')),
-					),
+					builder: (context, state) => const EventTicketingScreen(),
 				),
 				GoRoute(
 					path: '/others/tutors',
-					builder: (context, state) => Scaffold(
-						appBar: AppBar(
-							title: const Text('👨‍🏫 Tutoring'),
-							iconTheme: const IconThemeData(color: Colors.black),
-						),
-						body: const Center(child: Text('Tutoring services coming soon!')),
-					),
+					builder: (context, state) => const AppointmentBookingScreen(serviceType: 'tutoring'),
 				),
 				GoRoute(
 					path: '/others/education',
-					builder: (context, state) => Scaffold(
-						appBar: AppBar(
-							title: const Text('📚 Education'),
-							iconTheme: const IconThemeData(color: Colors.black),
-						),
-						body: const Center(child: Text('Education services coming soon!')),
-					),
+					builder: (context, state) => const AppointmentBookingScreen(serviceType: 'education'),
 				),
 				GoRoute(
 					path: '/others/creative',
-					builder: (context, state) => Scaffold(
-						appBar: AppBar(
-							title: const Text('🎨 Creative Services'),
-							iconTheme: const IconThemeData(color: Colors.black),
-						),
-						body: const Center(child: Text('Creative services coming soon!')),
-					),
+					builder: (context, state) => const AppointmentBookingScreen(serviceType: 'creative'),
 				),
 				GoRoute(
 					path: '/others/business',
-					builder: (context, state) => Scaffold(
-						appBar: AppBar(
-							title: const Text('💼 Business Services'),
-							iconTheme: const IconThemeData(color: Colors.black),
-						),
-						body: const Center(child: Text('Business services coming soon!')),
-					),
+					builder: (context, state) => const AppointmentBookingScreen(serviceType: 'business'),
+				),
+				GoRoute(
+					path: '/events/create',
+					builder: (context, state) => const CreateEventScreen(),
 				),
 
 
