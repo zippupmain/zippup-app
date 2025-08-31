@@ -288,9 +288,9 @@ class _MovingScreenState extends State<MovingScreen> {
 				}
 			} catch (_) {/* ignore assignment failures */}
 			
-			// Navigate directly to tracking screen like transport
+			// Navigate to transport-style search screen
 			if (mounted) {
-				context.push('/track/moving?bookingId=${doc.id}');
+				context.push('/moving/search?bookingId=${doc.id}');
 			}
 		} catch (e) {
 			if (mounted) {

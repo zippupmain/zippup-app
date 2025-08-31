@@ -84,9 +84,9 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 				'paymentMethod': 'card',
 			});
 
-			// Navigate to tracking screen
+			// Navigate to transport-style search screen
 			if (mounted) {
-				context.push('/track/emergency?bookingId=${bookingRef.id}');
+				context.push('/emergency/search?bookingId=${bookingRef.id}');
 			}
 
 		} catch (e) {

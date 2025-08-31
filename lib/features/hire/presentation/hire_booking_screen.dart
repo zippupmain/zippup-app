@@ -98,9 +98,9 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 				'paymentMethod': 'card',
 			});
 
-			// Navigate to tracking screen
+			// Navigate to transport-style search screen
 			if (mounted) {
-				context.push('/track/hire?bookingId=${bookingRef.id}');
+				context.push('/hire/search?bookingId=${bookingRef.id}');
 			}
 
 		} catch (e) {

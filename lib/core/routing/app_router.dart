@@ -28,6 +28,9 @@ import 'package:zippup/features/transport/presentation/ride_track_screen.dart';
 import 'package:zippup/features/transport/presentation/driver_ride_nav_screen.dart';
 import 'package:zippup/features/transport/presentation/courier_dashboard_screen.dart';
 import 'package:zippup/features/hire/presentation/hire_track_screen.dart';
+import 'package:zippup/features/hire/presentation/hire_search_screen.dart';
+import 'package:zippup/features/emergency/presentation/emergency_search_screen.dart';
+import 'package:zippup/features/moving/presentation/moving_search_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
@@ -204,6 +207,24 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					name: 'trackOrder',
 					builder: (context, state) => TrackOrderScreen(orderId: state.uri.queryParameters['orderId'] ?? ''),
 				),
+				// Search/Connecting screens (transport-style)
+				GoRoute(
+					path: '/hire/search',
+					name: 'hireSearch',
+					builder: (context, state) => HireSearchScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
+				),
+				GoRoute(
+					path: '/emergency/search',
+					name: 'emergencySearch',
+					builder: (context, state) => EmergencySearchScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
+				),
+				GoRoute(
+					path: '/moving/search',
+					name: 'movingSearch',
+					builder: (context, state) => MovingSearchScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
+				),
+				
+				// Tracking screens
 				GoRoute(
 					path: '/track/ride',
 					name: 'trackRide',
