@@ -434,7 +434,7 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 							_updateEta(originLat: driverLat, originLng: driverLng, destLat: destLat, destLng: destLng);
 						}
 						// Keep simulation running but use real position when available
-						_simulatedDriver = pos; // Update simulated position with real position
+						_simulatedDriver = LatLng(driverLat, driverLng); // Update simulated position with real position
 					} else {
 						// Enhanced simulation: show realistic driver movement
 						if (pickupLat != null && pickupLng != null && destLat != null && destLng != null) {
