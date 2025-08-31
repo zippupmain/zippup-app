@@ -33,11 +33,12 @@ class _EventTicketingScreenState extends State<EventTicketingScreen> {
 				],
 			),
 			body: Container(
+				color: Colors.white, // White background for text visibility
 				decoration: const BoxDecoration(
 					gradient: LinearGradient(
 						begin: Alignment.topCenter,
 						end: Alignment.bottomCenter,
-						colors: [Color(0xFFF3E5F5), Color(0xFFE1BEE7)],
+						colors: [Colors.white, Color(0xFFFAFAFA)],
 					),
 				),
 				child: Column(

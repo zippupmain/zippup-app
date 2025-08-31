@@ -152,13 +152,14 @@ class _AppointmentBookingScreenState extends State<AppointmentBookingScreen> {
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
 			),
 			body: Container(
+				color: Colors.white, // White background for text visibility
 				decoration: BoxDecoration(
 					gradient: LinearGradient(
 						begin: Alignment.topCenter,
 						end: Alignment.bottomCenter,
 						colors: [
-							gradient.colors.first.withOpacity(0.1),
-							gradient.colors.last.withOpacity(0.05),
+							Colors.white,
+							gradient.colors.first.withOpacity(0.02),
 						],
 					),
 				),

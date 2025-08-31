@@ -112,29 +112,38 @@ class _VehicleRentalsScreenState extends State<VehicleRentalsScreen> {
 				iconTheme: const IconThemeData(color: Colors.black),
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
 			),
-			body: Column(children: [
-				// Vehicle type selection - horizontal scroll
-				SingleChildScrollView(
-					scrollDirection: Axis.horizontal,
-					padding: const EdgeInsets.all(8),
-					child: Row(
-						children: _subtypes.map((t) => Padding(
-							padding: const EdgeInsets.symmetric(horizontal: 4),
-							child: ChoiceChip(
-								label: Text(t, style: const TextStyle(color: Colors.black)),
-								selected: _selected == t,
-								onSelected: (_) => setState(() => _selected = t),
+			body: Container(
+				color: Colors.white, // White background for text visibility
+				child: Column(children: [
+					// Vehicle type selection - horizontal scroll
+					Container(
+						color: Colors.white,
+						child: SingleChildScrollView(
+							scrollDirection: Axis.horizontal,
+							padding: const EdgeInsets.all(8),
+							child: Row(
+								children: _subtypes.map((t) => Padding(
+									padding: const EdgeInsets.symmetric(horizontal: 4),
+									child: ChoiceChip(
+										label: Text(t, style: const TextStyle(color: Colors.black)),
+										selected: _selected == t,
+										onSelected: (_) => setState(() => _selected = t),
+										backgroundColor: Colors.white,
+										selectedColor: Colors.blue.shade100,
+									),
+								)).toList(),
 							),
-						)).toList(),
+						),
 					),
-				),
-				// Date and time selection - made scrollable
-				Container(
-					height: 120, // Fixed height container
-					child: SingleChildScrollView(
-						scrollDirection: Axis.horizontal,
-						padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-						child: Row(children: [
+					// Date and time selection - made scrollable with white background
+					Container(
+						height: 140, // Increased height for better mobile experience
+						color: Colors.white,
+						padding: const EdgeInsets.symmetric(vertical: 8),
+						child: SingleChildScrollView(
+							scrollDirection: Axis.horizontal,
+							padding: const EdgeInsets.symmetric(horizontal: 16),
+							child: Row(children: [
 							// Select date
 							OutlinedButton.icon(
 								onPressed: _pickStartDate,
@@ -200,7 +209,7 @@ class _VehicleRentalsScreenState extends State<VehicleRentalsScreen> {
 							],
 							onChanged: (v) => setState(() => _sort = v ?? 'nearest'),
 						),
-											]),
+						]),
 					),
 				),
 				const Divider(height: 1),
@@ -267,6 +276,7 @@ class _VehicleRentalsScreenState extends State<VehicleRentalsScreen> {
 					),
 				),
 			]),
+			),
 		);
 	}
 }

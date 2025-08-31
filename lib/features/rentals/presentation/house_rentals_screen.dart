@@ -129,17 +129,50 @@ class _HouseRentalsScreenState extends State<HouseRentalsScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('House Rentals')),
-			body: Column(children: [
-				SingleChildScrollView(
-					scrollDirection: Axis.horizontal,
-					padding: const EdgeInsets.all(8),
-					child: Wrap(spacing: 8, children: _subtypes.map((t) => ChoiceChip(label: Text(t), selected: _selected == t, onSelected: (_) => setState(() { _selected = t; if (_selected != 'Apartment') _yearlyApartment = false; }))).toList()),
-				),
-				Padding(
-					padding: const EdgeInsets.symmetric(horizontal: 16),
-					child: Column(children: [
-						Row(children: [
+			appBar: AppBar(
+				title: const Text('🏠 House Rentals'),
+				iconTheme: const IconThemeData(color: Colors.black),
+				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+			),
+			body: Container(
+				color: Colors.white, // White background for text visibility
+				child: Column(children: [
+					// Property type selection
+					Container(
+						color: Colors.white,
+						child: SingleChildScrollView(
+							scrollDirection: Axis.horizontal,
+							padding: const EdgeInsets.all(8),
+							child: Row(
+								children: _subtypes.map((t) => Padding(
+									padding: const EdgeInsets.symmetric(horizontal: 4),
+									child: ChoiceChip(
+										label: Text(t, style: const TextStyle(color: Colors.black)),
+										selected: _selected == t,
+										onSelected: (_) => setState(() { 
+											_selected = t; 
+											if (_selected != 'Apartment') _yearlyApartment = false; 
+										}),
+										backgroundColor: Colors.white,
+										selectedColor: Colors.green.shade100,
+									),
+								)).toList(),
+							),
+						),
+					),
+					// Date and time controls - made horizontally scrollable
+					Container(
+						height: 160, // Increased height for mobile
+						color: Colors.white,
+						padding: const EdgeInsets.symmetric(vertical: 8),
+						child: SingleChildScrollView(
+							scrollDirection: Axis.horizontal,
+							padding: const EdgeInsets.symmetric(horizontal: 16),
+							child: Column(children: [
+								// First row of controls
+								SingleChildScrollView(
+									scrollDirection: Axis.horizontal,
+									child: Row(children: [
 							OutlinedButton.icon(onPressed: _pickStartDate, icon: const Icon(Icons.calendar_today), label: Text(_startDate == null ? 'Select start date' : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2,'0')}-${_startDate!.day.toString().padLeft(2,'0')}')),
 							const SizedBox(width: 8),
 							if (_useEndDate)
