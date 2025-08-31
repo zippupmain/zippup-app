@@ -229,7 +229,7 @@ class _WalletScreenState extends State<WalletScreen> {
 									Expanded(
 										child: Card(
 											child: InkWell(
-												onTap: _showAddFundsDialog,
+												onTap: () => context.push('/wallet/add-funds'),
 												borderRadius: BorderRadius.circular(12),
 												child: const Padding(
 													padding: EdgeInsets.all(16),
@@ -248,12 +248,7 @@ class _WalletScreenState extends State<WalletScreen> {
 									Expanded(
 										child: Card(
 											child: InkWell(
-												onTap: () {
-													// TODO: Navigate to withdraw screen
-													ScaffoldMessenger.of(context).showSnackBar(
-														const SnackBar(content: Text('Withdraw feature coming soon!'))
-													);
-												},
+												onTap: () => context.push('/wallet/withdraw'),
 												borderRadius: BorderRadius.circular(12),
 												child: const Padding(
 													padding: EdgeInsets.all(16),

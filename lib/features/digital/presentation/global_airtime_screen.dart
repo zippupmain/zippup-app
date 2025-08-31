@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/digital/reloadly_service.dart';
 import 'package:zippup/services/payments/payments_service.dart';
+import 'package:zippup/services/location/country_detection_service.dart';
 
 class GlobalAirtimeScreen extends StatefulWidget {
 	const GlobalAirtimeScreen({super.key});
@@ -30,7 +31,25 @@ class _GlobalAirtimeScreenState extends State<GlobalAirtimeScreen> {
 	void initState() {
 		super.initState();
 		_loadWalletBalance();
+		_detectCountryAndLoadOperators();
 		_phoneController.addListener(_onPhoneNumberChanged);
+	}
+
+	Future<void> _detectCountryAndLoadOperators() async {
+		try {
+			final detectedCountry = await CountryDetectionService.detectUserCountry();
+			final currencyInfo = CountryDetectionService.getCurrencyInfo(detectedCountry);
+			
+			setState(() {
+				_detectedCountry = detectedCountry;
+				_currencySymbol = currencyInfo['symbol']!;
+				_currencyCode = currencyInfo['code']!;
+			});
+			
+			await _loadOperators();
+		} catch (e) {
+			print('Error detecting country: $e');
+		}
 	}
 
 	@override

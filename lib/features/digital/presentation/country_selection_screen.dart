@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zippup/services/location/country_detection_service.dart';
 
 class CountrySelectionScreen extends StatefulWidget {
 	const CountrySelectionScreen({super.key});
@@ -67,9 +68,8 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
 	Future<void> _selectCountry(String countryCode) async {
 		setState(() => _selectedCountry = countryCode);
 		
-		// Save to preferences
-		final prefs = await SharedPreferences.getInstance();
-		await prefs.setString('selected_country', countryCode);
+		// Save to preferences using the service
+		await CountryDetectionService.saveCountrySelection(countryCode);
 		
 		// Show confirmation
 		if (mounted) {
