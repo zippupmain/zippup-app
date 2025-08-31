@@ -53,7 +53,7 @@ import 'package:zippup/features/emergency/presentation/emergency_providers_scree
 import 'package:zippup/features/profile/presentation/profile_settings_screen.dart';
 import 'package:zippup/features/admin/presentation/vendor_admin_screen.dart';
 import 'package:zippup/features/admin/presentation/driver_delivery_screen.dart';
-import 'package:zippup/features/wallet/presentation/wallet_screen.dart';
+
 import 'package:zippup/features/settings/presentation/languages_screen.dart';
 import 'package:zippup/features/profile/presentation/business_profile_screen.dart';
 import 'package:zippup/features/support/presentation/support_screen.dart';

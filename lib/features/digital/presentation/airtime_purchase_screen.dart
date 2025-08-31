@@ -484,9 +484,9 @@ class _AirtimePurchaseScreenState extends State<AirtimePurchaseScreen> {
 												],
 											),
 											const SizedBox(height: 8),
-											const Text(
+											Text(
 												'• Wallet payments are instant\n• Card payments redirect to secure gateway\n• Airtime is delivered within 30 seconds\n• Check balance with ${networkData['ussd'] ?? '*#'}',
-												style: TextStyle(color: Colors.black87),
+												style: const TextStyle(color: Colors.black87),
 											),
 										],
 									),
