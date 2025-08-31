@@ -109,18 +109,16 @@ class _DigitalCard extends StatelessWidget {
 						context.push('/digital/global-airtime');
 						break;
 					case 'Buy Data':
-						context.push('/digital/data');
+						context.push('/digital/global-data');
 						break;
 					case 'Pay Bills':
-						context.push('/digital/bills');
+						context.push('/digital/global-bills');
 						break;
 					case 'Select Country':
 						context.push('/digital/country-selection');
 						break;
 					case 'Digital Products':
-						ScaffoldMessenger.of(context).showSnackBar(
-							const SnackBar(content: Text('Digital products coming soon!'))
-						);
+						context.push('/digital/products');
 						break;
 					default:
 						ScaffoldMessenger.of(context).showSnackBar(

@@ -43,6 +43,9 @@ import 'package:zippup/features/digital/presentation/global_airtime_screen.dart'
 import 'package:zippup/features/digital/presentation/country_selection_screen.dart';
 import 'package:zippup/features/digital/presentation/add_funds_screen.dart';
 import 'package:zippup/features/digital/presentation/withdraw_funds_screen.dart';
+import 'package:zippup/features/digital/presentation/global_data_screen.dart';
+import 'package:zippup/features/digital/presentation/global_bills_screen.dart';
+import 'package:zippup/features/digital/presentation/digital_products_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
@@ -188,6 +191,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					path: '/wallet/withdraw',
 					name: 'withdrawFunds',
 					builder: (context, state) => const WithdrawFundsScreen(),
+				),
+				GoRoute(
+					path: '/digital/global-data',
+					name: 'globalDataPurchase',
+					builder: (context, state) => const GlobalDataScreen(),
+				),
+				GoRoute(
+					path: '/digital/global-bills',
+					name: 'globalBillPayment',
+					builder: (context, state) => const GlobalBillsScreen(),
+				),
+				GoRoute(
+					path: '/digital/products',
+					name: 'digitalProducts',
+					builder: (context, state) => const DigitalProductsScreen(),
 				),
 				GoRoute(
 					path: '/courier',

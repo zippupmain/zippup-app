@@ -303,7 +303,7 @@ class _WalletScreenState extends State<WalletScreen> {
 												children: [
 													Expanded(
 														child: OutlinedButton.icon(
-															onPressed: () => context.push('/digital/airtime'),
+															onPressed: () => context.push('/digital/global-airtime'),
 															icon: const Icon(Icons.phone, color: Colors.blue),
 															label: const Text('Airtime', style: TextStyle(color: Colors.blue)),
 														),
@@ -311,7 +311,7 @@ class _WalletScreenState extends State<WalletScreen> {
 													const SizedBox(width: 8),
 													Expanded(
 														child: OutlinedButton.icon(
-															onPressed: () => context.push('/digital/data'),
+															onPressed: () => context.push('/digital/global-data'),
 															icon: const Icon(Icons.network_cell, color: Colors.purple),
 															label: const Text('Data', style: TextStyle(color: Colors.purple)),
 														),
@@ -319,7 +319,7 @@ class _WalletScreenState extends State<WalletScreen> {
 													const SizedBox(width: 8),
 													Expanded(
 														child: OutlinedButton.icon(
-															onPressed: () => context.push('/digital/bills'),
+															onPressed: () => context.push('/digital/global-bills'),
 															icon: const Icon(Icons.receipt_long, color: Colors.orange),
 															label: const Text('Bills', style: TextStyle(color: Colors.orange)),
 														),
