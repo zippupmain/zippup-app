@@ -479,7 +479,7 @@ class _GlobalAirtimeScreenState extends State<GlobalAirtimeScreen> {
 												decoration: InputDecoration(
 													labelText: 'Enter amount',
 													labelStyle: const TextStyle(color: Colors.black),
-													hintText: 'Minimum $_currencySymbol1',
+													hintText: 'Minimum $_currencySymbol 1',
 													hintStyle: const TextStyle(color: Colors.black38),
 													prefixIcon: const Icon(Icons.attach_money, color: Colors.green),
 													border: const OutlineInputBorder(),
