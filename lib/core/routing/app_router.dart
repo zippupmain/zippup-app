@@ -16,6 +16,7 @@ import 'package:zippup/features/others/presentation/event_ticketing_screen.dart'
 import 'package:zippup/features/others/presentation/create_event_screen.dart';
 import 'package:zippup/features/digital/presentation/digital_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_list_screen.dart';
+import 'package:zippup/features/food/presentation/continental_cuisine_screen.dart';
 import 'package:zippup/features/auth/presentation/auth_gate.dart';
 import 'package:zippup/features/cart/presentation/cart_screen.dart';
 import 'package:zippup/features/chat/presentation/chat_screen.dart';
@@ -194,6 +195,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					path: '/chat/:threadId',
 					name: 'chat',
 					builder: (context, state) => ChatScreen(threadId: state.pathParameters['threadId']!, title: state.uri.queryParameters['title'] ?? 'Chat'),
+				),
+				GoRoute(
+					path: '/food/vendors/continental',
+					name: 'continentalCuisine',
+					builder: (context, state) => const ContinentalCuisineScreen(),
 				),
 				GoRoute(
 					path: '/food/vendors/:category',

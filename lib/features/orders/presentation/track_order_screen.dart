@@ -233,7 +233,63 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
 								StatusTimeline(steps: steps, currentIndex: idx),
 								if (_etaMinutes != null) Padding(padding: const EdgeInsets.only(top: 8.0), child: Text('ETA: $_etaMinutes min')),
 								if ((order.category == OrderCategory.food || order.category == OrderCategory.groceries) && FirebaseAuth.instance.currentUser?.uid == order.buyerId && data['deliveryCode'] != null && (order.status.index < OrderStatus.delivered.index))
-									Padding(padding: const EdgeInsets.only(top: 8.0), child: Text('Your delivery code: ${data['deliveryCode']}', style: const TextStyle(fontWeight: FontWeight.bold))),
+									Container(
+										margin: const EdgeInsets.only(top: 16),
+										padding: const EdgeInsets.all(16),
+										decoration: BoxDecoration(
+											gradient: LinearGradient(
+												colors: [Colors.green.shade50, Colors.green.shade100],
+											),
+											borderRadius: BorderRadius.circular(12),
+											border: Border.all(color: Colors.green.shade300, width: 2),
+										),
+										child: Column(
+											children: [
+												Row(
+													mainAxisAlignment: MainAxisAlignment.center,
+													children: [
+														Icon(Icons.delivery_dining, color: Colors.green.shade700, size: 28),
+														const SizedBox(width: 12),
+														const Text(
+															'Delivery Code',
+															style: TextStyle(
+																fontWeight: FontWeight.bold,
+																fontSize: 18,
+																color: Colors.black,
+															),
+														),
+													],
+												),
+												const SizedBox(height: 12),
+												Container(
+													padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+													decoration: BoxDecoration(
+														color: Colors.white,
+														borderRadius: BorderRadius.circular(8),
+														border: Border.all(color: Colors.green.shade400, width: 2),
+													),
+													child: Text(
+														'${data['deliveryCode']}',
+														style: TextStyle(
+															fontSize: 32,
+															fontWeight: FontWeight.bold,
+															color: Colors.green.shade800,
+															letterSpacing: 4,
+														),
+													),
+												),
+												const SizedBox(height: 8),
+												const Text(
+													'📱 Show this code to the delivery person',
+													style: TextStyle(
+														color: Colors.black87,
+														fontSize: 14,
+														fontWeight: FontWeight.w600,
+													),
+												),
+											],
+										),
+									),
 								if (_cancelable(order)) Align(
 									alignment: Alignment.centerRight,
 									child: TextButton.icon(onPressed: () => _promptCancel(context, order), icon: const Icon(Icons.cancel_outlined), label: const Text('Cancel')),
