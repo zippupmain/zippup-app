@@ -35,6 +35,10 @@ import 'package:zippup/features/moving/presentation/moving_search_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_search_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_normal_booking_screen.dart';
 import 'package:zippup/features/others/presentation/others_providers_screen.dart';
+import 'package:zippup/features/digital/presentation/airtime_purchase_screen.dart';
+import 'package:zippup/features/digital/presentation/data_purchase_screen.dart';
+import 'package:zippup/features/digital/presentation/bill_payment_screen.dart';
+import 'package:zippup/features/digital/presentation/wallet_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
@@ -140,6 +144,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					path: '/digital',
 					name: 'digital',
 					builder: (context, state) => const DigitalScreen(),
+				),
+				GoRoute(
+					path: '/digital/airtime',
+					name: 'airtimePurchase',
+					builder: (context, state) => const AirtimePurchaseScreen(),
+				),
+				GoRoute(
+					path: '/digital/data',
+					name: 'dataPurchase',
+					builder: (context, state) => const DataPurchaseScreen(),
+				),
+				GoRoute(
+					path: '/digital/bills',
+					name: 'billPayment',
+					builder: (context, state) => const BillPaymentScreen(),
+				),
+				GoRoute(
+					path: '/wallet',
+					name: 'wallet',
+					builder: (context, state) => const WalletScreen(),
 				),
 				GoRoute(
 					path: '/courier',
