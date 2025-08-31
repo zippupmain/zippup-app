@@ -140,11 +140,11 @@ class FoodScreen extends StatelessWidget {
 							onTap: () => context.push('/food/vendors/pizza'),
 						),
 						_CategoryCard(
-							label: 'Chinese',
+							label: 'Continental',
 							icon: Icons.ramen_dining,
 							emoji: '🥡',
 							gradient: const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]),
-							onTap: () => context.push('/food/vendors/chinese'),
+							onTap: () => context.push('/food/vendors/continental'),
 						),
 						_CategoryCard(
 							label: 'Desserts',

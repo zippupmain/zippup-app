@@ -61,7 +61,7 @@ class _VendorListScreenState extends State<VendorListScreen> {
 			'fast_food': '🍔',
 			'local': '🍲',
 			'pizza': '🍕',
-			'chinese': '🥡',
+			'continental': '🥡',
 			'desserts': '🍰',
 			'drinks': '🥤',
 		};
@@ -71,7 +71,7 @@ class _VendorListScreenState extends State<VendorListScreen> {
 			'fast_food': const LinearGradient(colors: [Color(0xFFFF5722), Color(0xFFFF8A65)]),
 			'local': const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]),
 			'pizza': const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF06292)]),
-			'chinese': const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]),
+			'continental': const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]),
 			'desserts': const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)]),
 			'drinks': const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF64B5F6)]),
 		};

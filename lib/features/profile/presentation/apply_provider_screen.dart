@@ -24,6 +24,9 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	Uint8List? _idBytes;
 	Uint8List? _bizBytes;
 	bool _saving = false;
+	// Payment options
+	bool _acceptsCash = true;
+	bool _acceptsCard = true;
 	// Vehicle details for Ride & Moving
 	final _vehicleBrand = TextEditingController();
 	final _vehicleColor = TextEditingController();
@@ -69,6 +72,17 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	}
 
 	Future<void> _submit() async {
+		// Validate payment methods
+		if (!_acceptsCash && !_acceptsCard) {
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(
+					content: Text('⚠️ Please select at least one payment method'),
+					backgroundColor: Colors.red,
+				)
+			);
+			return;
+		}
+		
 		setState(() => _saving = true);
 		try {
 			final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -110,6 +124,12 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'vehiclePhotoUrls': vehicleUrls,
 				'description': _description.text.trim().isEmpty ? null : _description.text.trim(),
 				'size': _size.text.trim().isEmpty ? null : _size.text.trim(),
+				'acceptsCash': _acceptsCash,
+				'acceptsCard': _acceptsCard,
+				'paymentMethods': [
+					if (_acceptsCash) 'cash',
+					if (_acceptsCard) 'card',
+				],
 				'status': 'pending',
 				'createdAt': DateTime.now().toIso8601String(),
 			});
@@ -217,6 +237,75 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 					const SizedBox(height: 8),
 					ListTile(title: const Text('Upload ID/Passport'), trailing: const Icon(Icons.upload_file), onTap: _pickId, subtitle: Text(_idBytes != null ? 'Selected' : 'Not uploaded')),
 					ListTile(title: const Text('Upload business document (registration/permits)'), trailing: const Icon(Icons.upload_file), onTap: _pickBiz, subtitle: Text(_bizBytes != null ? 'Selected' : 'Not uploaded')),
+					
+					// Payment options section
+					const SizedBox(height: 16),
+					Card(
+						color: Colors.green.shade50,
+						child: Padding(
+							padding: const EdgeInsets.all(16),
+							child: Column(
+								crossAxisAlignment: CrossAxisAlignment.start,
+								children: [
+									Row(
+										children: [
+											const Icon(Icons.payment, color: Colors.green),
+											const SizedBox(width: 8),
+											const Text('Payment Methods Accepted', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+										],
+									),
+									const SizedBox(height: 12),
+									CheckboxListTile(
+										title: const Text('Cash Payments', style: TextStyle(color: Colors.black)),
+										subtitle: const Text('Accept cash payments from customers', style: TextStyle(color: Colors.black54)),
+										value: _acceptsCash,
+										onChanged: (value) => setState(() => _acceptsCash = value ?? true),
+										activeColor: Colors.green,
+									),
+									CheckboxListTile(
+										title: const Text('Card Payments', style: TextStyle(color: Colors.black)),
+										subtitle: const Text('Accept automatic card/wallet payments', style: TextStyle(color: Colors.black54)),
+										value: _acceptsCard,
+										onChanged: (value) => setState(() => _acceptsCard = value ?? true),
+										activeColor: Colors.green,
+									),
+									if (!_acceptsCash && !_acceptsCard) Container(
+										padding: const EdgeInsets.all(8),
+										decoration: BoxDecoration(
+											color: Colors.red.shade50,
+											borderRadius: BorderRadius.circular(8),
+											border: Border.all(color: Colors.red.shade200),
+										),
+										child: const Row(
+											children: [
+												Icon(Icons.warning, color: Colors.red, size: 16),
+												SizedBox(width: 8),
+												Expanded(
+													child: Text(
+														'You must accept at least one payment method',
+														style: TextStyle(color: Colors.red, fontSize: 12),
+													),
+												),
+											],
+										),
+									),
+									const SizedBox(height: 8),
+									Container(
+										padding: const EdgeInsets.all(12),
+										decoration: BoxDecoration(
+											color: Colors.blue.shade50,
+											borderRadius: BorderRadius.circular(8),
+										),
+										child: const Text(
+											'💡 Platform fee: 15% commission on all transactions. Cash payments require manual reconciliation.',
+											style: TextStyle(color: Colors.black87, fontSize: 12),
+										),
+									),
+								],
+							),
+						),
+					),
+					
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _saving ? null : _submit, child: const Text('Submit application')),
 				],
