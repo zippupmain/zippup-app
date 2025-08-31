@@ -48,7 +48,7 @@ class _HireSearchScreenState extends State<HireSearchScreen> with TickerProvider
 				if (!doc.exists) return;
 				
 				final data = doc.data()!;
-				final booking = HireBooking.fromJson({...data, 'id': doc.id});
+				final booking = HireBooking.fromJson(doc.id, data);
 				
 				setState(() => _booking = booking);
 				
@@ -199,7 +199,7 @@ class _HireSearchScreenState extends State<HireSearchScreen> with TickerProvider
 														const Icon(Icons.star, color: Colors.orange, size: 20),
 														const SizedBox(width: 8),
 														Text(
-															'Service Class: ${_booking!.serviceClass}',
+															'Service Class: ${_booking!.type.name}',
 															style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
 														),
 													],

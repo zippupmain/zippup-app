@@ -48,7 +48,7 @@ class _EmergencySearchScreenState extends State<EmergencySearchScreen> with Tick
 				if (!doc.exists) return;
 				
 				final data = doc.data()!;
-				final booking = EmergencyBooking.fromJson({...data, 'id': doc.id});
+				final booking = EmergencyBooking.fromJson(doc.id, data);
 				
 				setState(() => _booking = booking);
 				
@@ -92,11 +92,10 @@ class _EmergencySearchScreenState extends State<EmergencySearchScreen> with Tick
 	Color _getPriorityColor() {
 		if (_booking == null) return Colors.red;
 		switch (_booking!.priority) {
-			case 'critical': return Colors.red.shade800;
-			case 'high': return Colors.red.shade600;
-			case 'medium': return Colors.orange.shade600;
-			case 'low': return Colors.yellow.shade700;
-			default: return Colors.red;
+			case EmergencyPriority.critical: return Colors.red.shade800;
+			case EmergencyPriority.high: return Colors.red.shade600;
+			case EmergencyPriority.medium: return Colors.orange.shade600;
+			case EmergencyPriority.low: return Colors.yellow.shade700;
 		}
 	}
 
@@ -203,7 +202,7 @@ class _EmergencySearchScreenState extends State<EmergencySearchScreen> with Tick
 														Icon(Icons.priority_high, color: priorityColor, size: 20),
 														const SizedBox(width: 8),
 														Text(
-															'Priority: ${_booking!.priority.toUpperCase()}',
+															'Priority: ${_booking!.priority.name.toUpperCase()}',
 															style: TextStyle(
 																fontSize: 14,
 																fontWeight: FontWeight.w600,

@@ -48,7 +48,7 @@ class _MovingSearchScreenState extends State<MovingSearchScreen> with TickerProv
 				if (!doc.exists) return;
 				
 				final data = doc.data()!;
-				final booking = MovingBooking.fromJson({...data, 'id': doc.id});
+				final booking = MovingBooking.fromJson(doc.id, data);
 				
 				setState(() => _booking = booking);
 				
@@ -212,7 +212,7 @@ class _MovingSearchScreenState extends State<MovingSearchScreen> with TickerProv
 														const Icon(Icons.schedule, color: Colors.blue, size: 20),
 														const SizedBox(width: 8),
 														Text(
-															'Scheduled: ${DateTime.parse(_booking!.scheduledAt!).toString().substring(0, 16)}',
+															'Scheduled: ${_booking!.scheduledAt!.substring(0, 16)}',
 															style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
 														),
 													],
