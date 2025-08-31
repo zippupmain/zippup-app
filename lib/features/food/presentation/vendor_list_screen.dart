@@ -373,13 +373,13 @@ class _VendorListScreenState extends State<VendorListScreen> {
 														),
 													),
 													
-													// Action buttons
+													// Action buttons - repositioned
 													Column(
-														mainAxisAlignment: MainAxisAlignment.spaceBetween,
+														mainAxisAlignment: MainAxisAlignment.start,
 														children: [
 															// Quick order indicator
 															if (widget.category == 'grocery') Container(
-																padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+																padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
 																decoration: BoxDecoration(
 																	color: Colors.blue.shade100,
 																	borderRadius: BorderRadius.circular(8),
@@ -389,57 +389,55 @@ class _VendorListScreenState extends State<VendorListScreen> {
 																	style: TextStyle(
 																		color: Colors.blue,
 																		fontWeight: FontWeight.bold,
-																		fontSize: 9,
+																		fontSize: 8,
 																	),
 																),
 															),
 															
-															const SizedBox(height: 8),
+															const SizedBox(height: 6),
 															
-															// Menu button
-															InkWell(
-																onTap: () => context.push('/food/vendor?vendorId=$vid'),
-																child: Container(
-																	padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-																	decoration: BoxDecoration(
-																		gradient: gradient,
-																		borderRadius: BorderRadius.circular(20),
-																		boxShadow: [
-																			BoxShadow(
-																				color: gradient.colors.first.withOpacity(0.3),
-																				blurRadius: 4,
-																				offset: const Offset(0, 2),
+															// Menu and chat buttons in row
+															Row(
+																mainAxisAlignment: MainAxisAlignment.end,
+																children: [
+																	// Chat button - moved to not block delivery fee
+																	InkWell(
+																		onTap: () => context.pushNamed('chat', 
+																			pathParameters: {'threadId': 'vendor_$vid'}, 
+																			queryParameters: {'title': v['name'] ?? 'Chat'}),
+																		child: Container(
+																			padding: const EdgeInsets.all(6),
+																			decoration: BoxDecoration(
+																				gradient: const LinearGradient(
+																					colors: [Color(0xFF607D8B), Color(0xFF90A4AE)],
+																				),
+																				shape: BoxShape.circle,
 																			),
-																		],
-																	),
-																	child: const Text(
-																		'VIEW MENU',
-																		style: TextStyle(
-																			color: Colors.white,
-																			fontWeight: FontWeight.bold,
-																			fontSize: 11,
+																			child: const Icon(Icons.chat_bubble_outline, size: 14, color: Colors.white),
 																		),
 																	),
-																),
-															),
-															
-															const SizedBox(height: 8),
-															
-															// Chat button
-															InkWell(
-																onTap: () => context.pushNamed('chat', 
-																	pathParameters: {'threadId': 'vendor_$vid'}, 
-																	queryParameters: {'title': v['name'] ?? 'Chat'}),
-																child: Container(
-																	padding: const EdgeInsets.all(8),
-																	decoration: BoxDecoration(
-																		gradient: const LinearGradient(
-																			colors: [Color(0xFF607D8B), Color(0xFF90A4AE)],
+																	const SizedBox(width: 6),
+																	
+																	// Menu button - compact
+																	InkWell(
+																		onTap: () => context.push('/food/vendor?vendorId=$vid'),
+																		child: Container(
+																			padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+																			decoration: BoxDecoration(
+																				gradient: gradient,
+																				borderRadius: BorderRadius.circular(12),
+																			),
+																			child: const Text(
+																				'MENU',
+																				style: TextStyle(
+																					color: Colors.white,
+																					fontWeight: FontWeight.bold,
+																					fontSize: 9,
+																				),
+																			),
 																		),
-																		shape: BoxShape.circle,
 																	),
-																	child: const Icon(Icons.chat_bubble_outline, size: 16, color: Colors.white),
-																),
+																],
 															),
 														],
 													),

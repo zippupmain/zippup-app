@@ -323,8 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
 					),
 				],
 				),
-				// Draggable panic button overlay
-				_PositionedDraggablePanic(),
+				// Panic button now in service grid
 			]),
 			),
 			bottomNavigationBar: NavigationBar(
@@ -379,6 +378,9 @@ class _QuickActions extends StatelessWidget {
 		_QuickAction('Grocery', Icons.local_grocery_store, 'foodVendors', 
 			const LinearGradient(colors: [Color(0xFF8BC34A), Color(0xFFAED581)]), 
 			Colors.white, '🥬'),
+		_QuickAction('SOS', Icons.emergency_share, 'panic', 
+			const LinearGradient(colors: [Color(0xFFFF1744), Color(0xFFD32F2F)]), 
+			Colors.white, '🆘'),
 	];
 
 	@override

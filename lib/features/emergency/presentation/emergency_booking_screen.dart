@@ -120,14 +120,14 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 								child: Column(
 									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										const Text('Emergency Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+										const Text('Emergency Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 										const SizedBox(height: 12),
 										..._emergencyTypes.entries.map((entry) {
 											return RadioListTile<String>(
 												value: entry.key,
 												groupValue: _selectedType,
 												onChanged: (value) => setState(() => _selectedType = value!),
-												title: Text(entry.value),
+												title: Text(entry.value, style: const TextStyle(color: Colors.black)),
 												dense: true,
 											);
 										}).toList(),
@@ -145,7 +145,7 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 								child: Column(
 									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										const Text('Priority Level', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+										const Text('Priority Level', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 										const SizedBox(height: 12),
 										RadioListTile<String>(
 											value: 'low',
@@ -189,7 +189,7 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 								child: Column(
 									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										const Text('Emergency Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+										const Text('Emergency Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 										const SizedBox(height: 12),
 										AddressField(
 											controller: _addressController,
@@ -210,7 +210,7 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 								child: Column(
 									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										const Text('Emergency Description', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+										const Text('Emergency Description', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 										const SizedBox(height: 12),
 										TextField(
 											controller: _descriptionController,

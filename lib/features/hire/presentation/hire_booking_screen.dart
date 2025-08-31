@@ -133,7 +133,7 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 								child: Column(
 									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										const Text('Service Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+										const Text('Service Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 										const SizedBox(height: 12),
 										Wrap(
 											spacing: 8,
@@ -166,7 +166,7 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 								child: Column(
 									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										const Text('What service do you need?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+										const Text('What service do you need?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 										const SizedBox(height: 12),
 										TextField(
 											controller: _serviceController,

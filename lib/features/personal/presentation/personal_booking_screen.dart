@@ -117,7 +117,7 @@ class _PersonalBookingScreenState extends State<PersonalBookingScreen> {
 								child: Column(
 									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										const Text('Service Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+										const Text('Service Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 										const SizedBox(height: 12),
 										Wrap(
 											spacing: 8,
