@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zippup/services/notifications/reliable_sound_service.dart';
+import 'package:zippup/services/notifications/audible_notification_service.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NotificationTestScreen extends StatefulWidget {
@@ -310,11 +311,66 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
             const SizedBox(height: 24),
             
             ElevatedButton.icon(
-              onPressed: _isLoading ? null : _testAllSounds,
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Testing AUDIBLE notifications...';
+                });
+                try {
+                  final results = await AudibleNotificationService.instance.testAllSounds();
+                  final successCount = results.values.where((s) => s).length;
+                  setState(() {
+                    _testResult = '🔊 AUDIBLE Test Results: $successCount/4 sounds played\n'
+                      'Customer: ${results['customer'] == true ? '✅' : '❌'}\n'
+                      'Driver: ${results['driver'] == true ? '✅' : '❌'}\n'
+                      'Completion: ${results['completion'] == true ? '✅' : '❌'}\n'
+                      'Emergency: ${results['emergency'] == true ? '✅' : '❌'}\n'
+                      'Check console for detailed logs.';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Audible notification test failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
               icon: const Icon(Icons.volume_up),
-              label: const Text('Test All Notification Sounds'),
+              label: const Text('Test AUDIBLE Notifications'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Playing LOUDEST possible notification...';
+                });
+                try {
+                  final success = await AudibleNotificationService.instance.playLoudestNotification();
+                  setState(() {
+                    _testResult = success 
+                      ? '📢 LOUDEST notification SUCCESS! You should have heard it!'
+                      : '❌ Even LOUDEST notification failed. Check device volume.';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Loudest notification test failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
+              icon: const Icon(Icons.campaign),
+              label: const Text('Play LOUDEST Notification'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepOrange,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),

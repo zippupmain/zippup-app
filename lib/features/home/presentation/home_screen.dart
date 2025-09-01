@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 import 'package:zippup/services/notifications/sound_service.dart';
 import 'package:zippup/services/localization/app_localizations.dart';
+import 'package:zippup/services/notifications/audible_notification_service.dart';
 
 // Enhanced implementations with colorful design
 Widget _PositionedUnreadDot() => const SizedBox.shrink();
@@ -241,6 +242,27 @@ class _HomeScreenState extends State<HomeScreen> {
 							PopupMenuItem(child: const Text('Profile'), onTap: () => context.push('/profile')),
 							PopupMenuItem(child: const Text('Bookings'), onTap: () => context.push('/bookings')),
 							PopupMenuItem(child: const Text('Wallet'), onTap: () => context.push('/wallet')),
+							PopupMenuItem(
+								child: const Text('🔊 Test Notification'),
+								onTap: () async {
+									// Create a test notification record
+									await FirebaseFirestore.instance.collection('notifications').add({
+										'userId': FirebaseAuth.instance.currentUser?.uid,
+										'title': '🧪 Test Notification',
+										'body': 'This is a test notification to verify the bell system works',
+										'route': '/notification-test',
+										'read': false,
+										'createdAt': FieldValue.serverTimestamp(),
+									});
+									
+									// Play audible notification
+									await AudibleNotificationService.instance.playDriverNotification();
+									
+									ScaffoldMessenger.of(context).showSnackBar(
+										const SnackBar(content: Text('🔔 Test notification created! Check the bell icon.')),
+									);
+								},
+							),
 							if (_isPlatformAdmin) PopupMenuItem(child: const Text('Platform Admin'), onTap: () => context.push('/admin/platform')),
 							const PopupMenuDivider(),
 							PopupMenuItem(

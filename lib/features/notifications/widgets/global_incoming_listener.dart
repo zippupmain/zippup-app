@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:zippup/services/notifications/reliable_sound_service.dart';
+import 'package:zippup/services/notifications/audible_notification_service.dart';
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 
 class GlobalIncomingListener extends StatefulWidget {
@@ -77,6 +78,13 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						print('🚗 Ride type: ${data['type']}');
 						print('📍 From: ${data['pickupAddress']}');
 						_shown.add('ride:${d.id}');
+						
+						// Create notification record for bell icon
+						_createNotificationRecord(
+							'🚗 New Ride Request',
+							'From: ${data['pickupAddress'] ?? 'Unknown location'}',
+							'/driver/ride?rideId=${d.id}',
+						);
 						
 						// Show floating notification first
 						NotificationOverlay.show(
@@ -256,13 +264,13 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
-		// Play notification sound with enhanced error handling
+		// Play AUDIBLE notification sound
 		try { 
-			print('🔔 Playing RIDE REQUEST notification sound...');
-			final success = await ReliableSoundService.instance.playDriverNotification();
-			print(success ? '✅ Ride request sound SUCCESS' : '❌ Ride request sound FAILED');
+			print('🔊 Playing AUDIBLE RIDE REQUEST notification...');
+			final success = await AudibleNotificationService.instance.playDriverNotification();
+			print(success ? '🎉 AUDIBLE ride request sound SUCCESS' : '💥 AUDIBLE ride request sound FAILED');
 		} catch (e) {
-			print('❌ Critical error playing ride notification: $e');
+			print('❌ Critical error playing audible ride notification: $e');
 		}
 		
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
@@ -356,8 +364,8 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			}
 		} catch (_) {}
 		try { 
-			final success = await ReliableSoundService.instance.playDriverNotification(); 
-			print(success ? '✅ Order notification SUCCESS' : '❌ Order notification FAILED');
+			final success = await AudibleNotificationService.instance.playDriverNotification(); 
+			print(success ? '🎉 AUDIBLE order notification SUCCESS' : '💥 AUDIBLE order notification FAILED');
 		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('💼 New Job Request'),
@@ -386,8 +394,8 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
 		try { 
-			final success = await ReliableSoundService.instance.playCustomerNotification(); 
-			print(success ? '✅ Delivery notification SUCCESS' : '❌ Delivery notification FAILED');
+			final success = await AudibleNotificationService.instance.playCustomerNotification(); 
+			print(success ? '🎉 AUDIBLE delivery notification SUCCESS' : '💥 AUDIBLE delivery notification FAILED');
 		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('🚚 New Delivery Assigned'),
@@ -403,8 +411,8 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
 		try { 
-			final success = await ReliableSoundService.instance.playDriverNotification(); 
-			print(success ? '✅ Moving notification SUCCESS' : '❌ Moving notification FAILED');
+			final success = await AudibleNotificationService.instance.playDriverNotification(); 
+			print(success ? '🎉 AUDIBLE moving notification SUCCESS' : '💥 AUDIBLE moving notification FAILED');
 		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('📦 New Moving Request'),
@@ -438,13 +446,24 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						if (shouldShow && !_shown.contains('$service:${d.id}')) {
 							_shown.add('$service:${d.id}');
 							
-							// Show floating notification first
+							// Create notification record for bell icon first
 							final serviceEmoji = {
 								'hire': '🔧',
 								'emergency': '🚨',
 								'moving': '📦',
 								'personal': '💆',
+								'rentals': '🏠',
+								'marketplace': '🛒',
+								'others': '📋',
 							}[service] ?? '💼';
+							
+							_createNotificationRecord(
+								'$serviceEmoji New ${service.toUpperCase()} Request',
+								data['description']?.toString() ?? 'Service request received',
+								_routeForService(service),
+							);
+							
+							// Show floating notification
 							
 							NotificationOverlay.show(
 								context,
@@ -469,6 +488,27 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		// Show popups globally regardless of current page
 		print('🌍 _shouldShowHere() called - returning true for global notifications');
 		return true;
+	}
+
+	/// Create a notification record that will show in the bell icon
+	Future<void> _createNotificationRecord(String title, String body, String route) async {
+		try {
+			final uid = FirebaseAuth.instance.currentUser?.uid;
+			if (uid == null) return;
+			
+			await FirebaseFirestore.instance.collection('notifications').add({
+				'userId': uid,
+				'title': title,
+				'body': body,
+				'route': route,
+				'read': false,
+				'createdAt': FieldValue.serverTimestamp(),
+			});
+			
+			print('✅ Created notification record: $title');
+		} catch (e) {
+			print('❌ Failed to create notification record: $e');
+		}
 	}
 
 	Future<void> _showServiceDialog(String id, Map<String, dynamic> data, String service) async {
@@ -524,10 +564,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			}
 		} catch (_) {}
 		
-		// Play notification sound
+		// Play AUDIBLE notification sound
 		try { 
-			final success = await ReliableSoundService.instance.playDriverNotification(); 
-			print(success ? '✅ Service notification SUCCESS' : '❌ Service notification FAILED');
+			final success = await AudibleNotificationService.instance.playDriverNotification(); 
+			print(success ? '🎉 AUDIBLE service notification SUCCESS' : '💥 AUDIBLE service notification FAILED');
 		} catch (_) {}
 		
 		// Show dialog based on service type
