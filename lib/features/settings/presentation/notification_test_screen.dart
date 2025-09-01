@@ -4,6 +4,8 @@ import 'package:zippup/services/notifications/audible_notification_service.dart'
 import 'package:zippup/services/notifications/working_sound_service.dart';
 import 'package:zippup/services/notifications/simple_beep_service.dart';
 import 'package:zippup/services/notifications/voice_hijack_service.dart';
+import 'package:zippup/services/notifications/flutter_feedback_service.dart';
+import 'package:zippup/services/notifications/sound_detective_service.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NotificationTestScreen extends StatefulWidget {
@@ -511,6 +513,82 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
               label: const Text('EMERGENCY: Try ANY Sound'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red.shade700,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Testing Flutter built-in feedback system...';
+                });
+                try {
+                  final results = await FlutterFeedbackService.instance.testAllFlutterFeedback(context);
+                  final successCount = results.values.where((s) => s).length;
+                  setState(() {
+                    _testResult = '🎯 FLUTTER FEEDBACK: $successCount/5 methods worked\n'
+                      'Light Impact: ${results['light_impact'] == true ? '✅' : '❌'}\n'
+                      'Medium Impact: ${results['medium_impact'] == true ? '✅' : '❌'}\n'
+                      'Heavy Impact: ${results['heavy_impact'] == true ? '✅' : '❌'}\n'
+                      'Selection Click: ${results['selection_click'] == true ? '✅' : '❌'}\n'
+                      'Vibrate: ${results['vibrate'] == true ? '✅' : '❌'}\n'
+                      'This explains the "shaking" you feel!';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Flutter feedback test failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
+              icon: const Icon(Icons.touch_app),
+              label: const Text('Test Flutter Feedback (Shaking)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.cyan,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Running FULL SOUND INVESTIGATION...';
+                });
+                try {
+                  final results = await SoundDetectiveService.instance.fullSoundInvestigation();
+                  final systemSounds = results['system_sounds'] as Map<String, bool>;
+                  final workingSounds = systemSounds.values.where((s) => s).length;
+                  
+                  setState(() {
+                    _testResult = '🕵️ SOUND DETECTIVE REPORT:\n'
+                      'Working SystemSounds: $workingSounds/2\n'
+                      'Alert Sound: ${systemSounds['alert'] == true ? '✅' : '❌'}\n'
+                      'Click Sound: ${systemSounds['click'] == true ? '✅' : '❌'}\n'
+                      'Timing Test: ${results['timing_test'] == true ? '✅' : '❌'}\n'
+                      'Context Test: ${results['context_test'] == true ? '✅' : '❌'}\n'
+                      '\nThis will help identify why sounds don\'t work!';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Sound investigation failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
+              icon: const Icon(Icons.search),
+              label: const Text('🕵️ SOUND DETECTIVE'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.brown,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
