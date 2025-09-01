@@ -21,7 +21,7 @@ class SoundDetectiveService {
       print('\n--- Testing ${sound['name']} ---');
       try {
         await SystemSound.play(sound['type'] as SystemSoundType);
-        results[sound['name']] = true;
+        results[sound['name'].toString()] = true;
         print('✅ ${sound['name']}: SUCCESS');
         
         // Wait and test again to confirm
@@ -30,7 +30,7 @@ class SoundDetectiveService {
         print('✅ ${sound['name']}: CONFIRMED (played twice)');
         
       } catch (e) {
-        results[sound['name']] = false;
+        results[sound['name'].toString()] = false;
         print('❌ ${sound['name']}: FAILED - $e');
       }
       
@@ -120,7 +120,7 @@ class SoundDetectiveService {
   /// Full investigation of why sounds don't work
   Future<Map<String, dynamic>> fullSoundInvestigation() async {
     print('\n🕵️ FULL SOUND INVESTIGATION STARTING...');
-    print('🎯 Goal: Understand why voice search works but notifications don't');
+    print('🎯 Goal: Understand why voice search works but notifications do not');
     
     final investigation = <String, dynamic>{};
     
