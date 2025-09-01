@@ -350,27 +350,22 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 					decoration: const InputDecoration(labelText: 'Type'),
 					onChanged: (v) => setState(() => _type = v ?? 'individual'),
 				),
-				// Debug information card
-				Card(
-					color: Colors.green.shade50,
-					child: Padding(
-						padding: const EdgeInsets.all(12),
-						child: Column(
-							crossAxisAlignment: CrossAxisAlignment.start,
-							children: [
-								Text('🔍 Business Profile Debug:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade800)),
-								Text('Category: $_category'),
-								Text('Sub-category: $_subcategory'),
-								Text('Service Type: $_serviceType'),
-								Text('Service Sub-type: $_serviceSubtype'),
-								Text('Available Service Types: ${_serviceTypes[_category]?[_subcategory]?.length ?? 0}'),
-								if (_serviceTypes[_category]?[_subcategory] != null)
-									Text('Types: ${_serviceTypes[_category]![_subcategory]!.join(", ")}'),
-							],
+				
+				// Show current selection status
+				if (_category != null && _subcategory != null)
+					Container(
+						padding: const EdgeInsets.all(8),
+						margin: const EdgeInsets.symmetric(vertical: 8),
+						decoration: BoxDecoration(
+							color: Colors.blue.shade50,
+							borderRadius: BorderRadius.circular(8),
+						),
+						child: Text(
+							'Selected: $_category → $_subcategory\n'
+							'Service Type Options Available: ${_serviceTypes[_category]?[_subcategory]?.length ?? 0}',
+							style: const TextStyle(fontSize: 12),
 						),
 					),
-				),
-				const SizedBox(height: 8),
 				
 				TextField(controller: _title, decoration: const InputDecoration(labelText: 'Business title')),
 				TextField(controller: _desc, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),

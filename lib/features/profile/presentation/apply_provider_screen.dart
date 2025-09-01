@@ -282,26 +282,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 						DropdownMenuItem(value: 'individual', child: Text('Individual')),
 						DropdownMenuItem(value: 'company', child: Text('Company')),
 					], onChanged: (v) => setState(() => _type = v as String), decoration: const InputDecoration(labelText: 'Type')),
-					// Debug information card
-					Card(
-						color: Colors.blue.shade50,
-						child: Padding(
-							padding: const EdgeInsets.all(12),
-							child: Column(
-								crossAxisAlignment: CrossAxisAlignment.start,
-								children: [
-									Text('🔍 Debug Info:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade800)),
-									Text('Category: $_category'),
-									Text('Sub-category: $_subcategory'),
-									Text('Service Type: $_serviceType'),
-									Text('Service Sub-type: $_serviceSubtype'),
-									Text('Available Service Types: ${_serviceTypes[_category]?[_subcategory]?.length ?? 0}'),
-									Text('Available Sub-types: ${_serviceSubtypes[_category]?[_subcategory]?[_serviceType]?.length ?? 0}'),
-								],
-							),
-						),
-					),
-					const SizedBox(height: 8),
+
 					
 					TextField(controller: _title, decoration: const InputDecoration(labelText: 'Service title')),
 					if (_category == 'rentals' && _subcategory == 'Vehicle')
