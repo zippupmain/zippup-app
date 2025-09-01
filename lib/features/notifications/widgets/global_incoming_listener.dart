@@ -102,6 +102,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		_setupServiceListener(db, uid, 'emergency_bookings', 'emergency');
 		_setupServiceListener(db, uid, 'moving_bookings', 'moving');
 		_setupServiceListener(db, uid, 'personal_bookings', 'personal');
+		_setupServiceListener(db, uid, 'rental_bookings', 'rentals');
+		_setupServiceListener(db, uid, 'marketplace_orders', 'marketplace');
+		_setupServiceListener(db, uid, 'others_bookings', 'others');
 		
 		_ordersSub = db.collection('orders')
 			.where('providerId', isEqualTo: uid)
@@ -531,6 +534,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			'emergency': '🚨',
 			'moving': '📦',
 			'personal': '💆',
+			'rentals': '🏠',
+			'marketplace': '🛒',
+			'others': '📋',
 		}[service] ?? '💼';
 		
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
@@ -614,6 +620,12 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				return '/hub/moving';
 			case 'personal':
 				return '/hub/personal';
+			case 'rentals':
+				return '/hub/rentals';
+			case 'marketplace':
+				return '/hub/marketplace-provider';
+			case 'others':
+				return '/hub/others-provider';
 			default:
 				return '/hub';
 		}
