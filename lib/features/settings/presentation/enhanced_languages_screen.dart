@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/localization/app_localizations.dart';
+import 'package:zippup/providers/locale_provider.dart';
 
-class EnhancedLanguagesScreen extends StatefulWidget {
+class EnhancedLanguagesScreen extends ConsumerStatefulWidget {
 	const EnhancedLanguagesScreen({super.key});
 
 	@override
-	State<EnhancedLanguagesScreen> createState() => _EnhancedLanguagesScreenState();
+	ConsumerState<EnhancedLanguagesScreen> createState() => _EnhancedLanguagesScreenState();
 }
 
-class _EnhancedLanguagesScreenState extends State<EnhancedLanguagesScreen> {
+class _EnhancedLanguagesScreenState extends ConsumerState<EnhancedLanguagesScreen> {
 	String _selectedLanguage = 'en';
 	final TextEditingController _searchController = TextEditingController();
 	String _searchQuery = '';
@@ -54,12 +56,9 @@ class _EnhancedLanguagesScreenState extends State<EnhancedLanguagesScreen> {
 	@override
 	void initState() {
 		super.initState();
-		_loadSavedLanguage();
-	}
-
-	Future<void> _loadSavedLanguage() async {
-		final savedLanguage = await AppLocalizations.getSavedLanguage();
-		setState(() => _selectedLanguage = savedLanguage);
+		// Get current locale from provider
+		final currentLocale = ref.read(localeProvider);
+		_selectedLanguage = currentLocale.languageCode;
 	}
 
 	List<Map<String, dynamic>> get _filteredLanguages {
@@ -85,8 +84,8 @@ class _EnhancedLanguagesScreenState extends State<EnhancedLanguagesScreen> {
 		setState(() => _selectedLanguage = languageCode);
 		
 		try {
-			// Save to local storage
-			await AppLocalizations.saveLanguage(languageCode);
+			// Use the locale provider to change language
+			await ref.read(localeProvider.notifier).changeLocale(languageCode);
 			
 			// Save to Firestore for user profile
 			final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -101,38 +100,16 @@ class _EnhancedLanguagesScreenState extends State<EnhancedLanguagesScreen> {
 				final language = _languages.firstWhere((l) => l['code'] == languageCode);
 				ScaffoldMessenger.of(context).showSnackBar(
 					SnackBar(
-						content: Text('✅ Language set to ${language['name']}'),
+						content: Text('✅ Language changed to ${language['name']} - Changes applied instantly!'),
 						backgroundColor: Colors.green,
+						duration: const Duration(seconds: 3),
 					)
 				);
 				
-				// Show restart message for full effect
-				showDialog(
-					context: context,
-					builder: (_) => AlertDialog(
-						title: const Text('🌍 Language Changed'),
-						content: Column(
-							mainAxisSize: MainAxisSize.min,
-							children: [
-								Text('Language changed to ${language['name']} (${language['nativeName']})'),
-								const SizedBox(height: 12),
-								const Text(
-									'For best experience, restart the app to see all text in the new language.',
-									style: TextStyle(color: Colors.grey),
-								),
-							],
-						),
-						actions: [
-							TextButton(
-								onPressed: () {
-									Navigator.pop(context);
-									context.pop();
-								},
-								child: const Text('OK'),
-							),
-						],
-					),
-				);
+				// Navigate back after a short delay
+				Future.delayed(const Duration(seconds: 2), () {
+					if (mounted) context.pop();
+				});
 			}
 		} catch (e) {
 			if (mounted) {

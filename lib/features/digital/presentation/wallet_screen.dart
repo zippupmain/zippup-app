@@ -297,7 +297,31 @@ class _WalletScreenState extends State<WalletScreen> {
 									child: Column(
 										crossAxisAlignment: CrossAxisAlignment.start,
 										children: [
-											const Text('Quick Services', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+											Row(
+												children: [
+													const Text('Quick Services', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+													const Spacer(),
+													// Show current language indicator
+													Container(
+														padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+														decoration: BoxDecoration(
+															color: Colors.blue.shade100,
+															borderRadius: BorderRadius.circular(12),
+														),
+														child: Row(
+															mainAxisSize: MainAxisSize.min,
+															children: [
+																const Icon(Icons.translate, size: 14, color: Colors.blue),
+																const SizedBox(width: 4),
+																Text(
+																	Localizations.localeOf(context).languageCode.toUpperCase(),
+																	style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold),
+																),
+															],
+														),
+													),
+												],
+											),
 											const SizedBox(height: 12),
 											// Mobile-optimized quick services
 											LayoutBuilder(
