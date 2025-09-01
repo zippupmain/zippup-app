@@ -74,13 +74,102 @@ class _OthersProviderDashboardScreenState extends State<OthersProviderDashboardS
 						child: Padding(
 							padding: const EdgeInsets.all(12),
 							child: Column(children: [
-								Row(children: [
-									FilledButton.icon(onPressed: _openAddEvent, icon: const Icon(Icons.event), label: const Text('Add event/tickets')),
-									const SizedBox(width: 8),
-									FilledButton.icon(onPressed: _openAddTutor, icon: const Icon(Icons.school), label: const Text('Add tutor service')),
-								]),
+								// Service Categories
+								Card(
+									color: Colors.blue.shade50,
+									child: Padding(
+										padding: const EdgeInsets.all(16),
+										child: Column(
+											crossAxisAlignment: CrossAxisAlignment.start,
+											children: [
+												const Text('📅 Others Services Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+												const SizedBox(height: 12),
+												const Text('Manage your professional services and appointments', style: TextStyle(color: Colors.black54)),
+											],
+										),
+									),
+								),
 								const SizedBox(height: 16),
-								// Could list existing items later
+								
+								// Events Planning
+								Card(
+									child: ListTile(
+										leading: const Icon(Icons.celebration, color: Colors.pink),
+										title: const Text('🎉 Events Planning'),
+										subtitle: const Text('Weddings, corporate events, conferences'),
+										trailing: const Icon(Icons.arrow_forward_ios),
+										onTap: _openAddEvent,
+									),
+								),
+								
+								// Tutoring Services
+								Card(
+									child: ListTile(
+										leading: const Icon(Icons.school, color: Colors.blue),
+										title: const Text('👨‍🏫 Tutoring Services'),
+										subtitle: const Text('Math, English, Science, Languages, Music, Art'),
+										trailing: const Icon(Icons.arrow_forward_ios),
+										onTap: _openAddTutor,
+									),
+								),
+								
+								// Education Services
+								Card(
+									child: ListTile(
+										leading: const Icon(Icons.menu_book, color: Colors.green),
+										title: const Text('📚 Education Services'),
+										subtitle: const Text('Online courses, workshops, seminars'),
+										trailing: const Icon(Icons.arrow_forward_ios),
+										onTap: () {
+											ScaffoldMessenger.of(context).showSnackBar(
+												const SnackBar(content: Text('Education services management coming soon!'))
+											);
+										},
+									),
+								),
+								
+								// Creative Services
+								Card(
+									child: ListTile(
+										leading: const Icon(Icons.palette, color: Colors.purple),
+										title: const Text('🎨 Creative Services'),
+										subtitle: const Text('Photography, design, content creation'),
+										trailing: const Icon(Icons.arrow_forward_ios),
+										onTap: () {
+											ScaffoldMessenger.of(context).showSnackBar(
+												const SnackBar(content: Text('Creative services management coming soon!'))
+											);
+										},
+									),
+								),
+								
+								// Business Services
+								Card(
+									child: ListTile(
+										leading: const Icon(Icons.business, color: Colors.indigo),
+										title: const Text('💼 Business Services'),
+										subtitle: const Text('Consulting, legal, accounting, marketing'),
+										trailing: const Icon(Icons.arrow_forward_ios),
+										onTap: () {
+											ScaffoldMessenger.of(context).showSnackBar(
+												const SnackBar(content: Text('Business services management coming soon!'))
+											);
+										},
+									),
+								),
+								
+								// Event Ticketing
+								Card(
+									child: ListTile(
+										leading: const Icon(Icons.confirmation_number, color: Colors.teal),
+										title: const Text('🎫 Event Ticketing'),
+										subtitle: const Text('Create and sell event tickets'),
+										trailing: const Icon(Icons.arrow_forward_ios),
+										onTap: () => context.push('/events/create'),
+									),
+								),
+								
+								const SizedBox(height: 16),
 							]),
 						),
 					),

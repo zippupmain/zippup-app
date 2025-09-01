@@ -47,6 +47,7 @@ import 'package:zippup/features/digital/presentation/global_data_screen.dart';
 import 'package:zippup/features/digital/presentation/global_bills_screen.dart';
 import 'package:zippup/features/digital/presentation/digital_products_screen.dart';
 import 'package:zippup/features/digital/presentation/digital_provider_dashboard_screen.dart';
+import 'package:zippup/features/food/presentation/food_categories_manage_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
@@ -272,6 +273,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					path: '/food/vendors/:category',
 					name: 'foodVendors',
 					builder: (context, state) => VendorListScreen(category: state.pathParameters['category'] ?? 'fast_food'),
+				),
+				GoRoute(
+					path: '/food/categories/manage',
+					name: 'manageFoodCategories',
+					builder: (context, state) => const FoodCategoriesManageScreen(),
 				),
 				GoRoute(
 					path: '/bookings',

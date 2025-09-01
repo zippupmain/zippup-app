@@ -146,11 +146,44 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 					const ProviderHeader(service: 'hire'),
 					Padding(
 						padding: const EdgeInsets.all(12),
-						child: Row(children: [
-							Expanded(child: SwitchListTile(title: const Text('Go Online'), value: _online, onChanged: _setOnline)),
-							const SizedBox(width: 8),
-							OutlinedButton.icon(onPressed: () => context.push('/hub/orders'), icon: const Icon(Icons.list_alt), label: const Text('All orders')),
-						]),
+						child: Column(
+							children: [
+								Row(children: [
+									Expanded(child: SwitchListTile(title: const Text('Go Online'), value: _online, onChanged: _setOnline)),
+									const SizedBox(width: 8),
+									OutlinedButton.icon(onPressed: () => context.push('/hub/orders'), icon: const Icon(Icons.list_alt), label: const Text('All orders')),
+								]),
+								const SizedBox(height: 8),
+								SingleChildScrollView(
+									scrollDirection: Axis.horizontal,
+									child: Row(children: [
+										OutlinedButton.icon(
+											onPressed: () => context.push('/hire/services/manage'),
+											icon: const Icon(Icons.build, color: Colors.blue),
+											label: const Text('Manage Services', style: TextStyle(color: Colors.blue)),
+										),
+										const SizedBox(width: 8),
+										OutlinedButton.icon(
+											onPressed: () => context.push('/hire/tools/manage'),
+											icon: const Icon(Icons.construction, color: Colors.orange),
+											label: const Text('Tools & Equipment', style: TextStyle(color: Colors.orange)),
+										),
+										const SizedBox(width: 8),
+										OutlinedButton.icon(
+											onPressed: () => context.push('/hire/pricing/manage'),
+											icon: const Icon(Icons.attach_money, color: Colors.green),
+											label: const Text('Pricing & Classes', style: TextStyle(color: Colors.green)),
+										),
+										const SizedBox(width: 8),
+										OutlinedButton.icon(
+											onPressed: () => context.push('/hire/schedule/manage'),
+											icon: const Icon(Icons.schedule, color: Colors.purple),
+											label: const Text('Schedule & Availability', style: TextStyle(color: Colors.purple)),
+										),
+									]),
+								),
+							],
+						),
 					),
 					SingleChildScrollView(
 						scrollDirection: Axis.horizontal,
