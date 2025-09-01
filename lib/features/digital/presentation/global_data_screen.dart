@@ -27,6 +27,7 @@ class _GlobalDataScreenState extends State<GlobalDataScreen> {
 	bool _isProcessing = false;
 	bool _isLoadingOperators = false;
 	bool _isLoadingBundles = false;
+	bool _isLoading = false;
 	double _walletBalance = 0.0;
 
 	@override
@@ -43,6 +44,8 @@ class _GlobalDataScreenState extends State<GlobalDataScreen> {
 	}
 
 	Future<void> _detectCountryAndLoadData() async {
+		setState(() => _isLoading = true);
+		
 		try {
 			final detectedCountry = await CountryDetectionService.detectUserCountry();
 			final currencyInfo = CountryDetectionService.getCurrencyInfo(detectedCountry);
@@ -58,6 +61,8 @@ class _GlobalDataScreenState extends State<GlobalDataScreen> {
 		} catch (e) {
 			print('Error detecting country: $e');
 			await _loadWalletBalance();
+		} finally {
+			setState(() => _isLoading = false);
 		}
 	}
 
