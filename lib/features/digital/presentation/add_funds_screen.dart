@@ -94,16 +94,19 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 		}
 
 		final amount = double.tryParse(amountText);
-		if (amount == null || amount < 100) {
+		final minAmount = _currencyCode == 'USD' ? 5 : _currencyCode == 'GBP' ? 5 : _currencyCode == 'EUR' ? 5 : 100;
+		final maxAmount = _currencyCode == 'USD' ? 10000 : _currencyCode == 'GBP' ? 10000 : _currencyCode == 'EUR' ? 10000 : 1000000;
+		
+		if (amount == null || amount < minAmount) {
 			ScaffoldMessenger.of(context).showSnackBar(
-				const SnackBar(content: Text('Minimum amount is ₦100'))
+				SnackBar(content: Text('Minimum amount is $_currencySymbol$minAmount'))
 			);
 			return;
 		}
 
-		if (amount > 1000000) {
+		if (amount > maxAmount) {
 			ScaffoldMessenger.of(context).showSnackBar(
-				const SnackBar(content: Text('Maximum amount is ₦1,000,000'))
+				SnackBar(content: Text('Maximum amount is $_currencySymbol${maxAmount.toStringAsFixed(0)}'))
 			);
 			return;
 		}
@@ -322,14 +325,14 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 												controller: _amountController,
 												keyboardType: TextInputType.number,
 												style: const TextStyle(color: Colors.black),
-												decoration: const InputDecoration(
+												decoration: InputDecoration(
 													labelText: 'Enter amount',
-													labelStyle: TextStyle(color: Colors.black),
-													hintText: 'Minimum ₦100, Maximum ₦1,000,000',
-													hintStyle: TextStyle(color: Colors.black38),
-													prefixIcon: Icon(Icons.attach_money, color: Colors.green),
-													border: OutlineInputBorder(),
-													focusedBorder: OutlineInputBorder(
+													labelStyle: const TextStyle(color: Colors.black),
+													hintText: 'Minimum $_currencySymbol${_currencyCode == 'USD' ? '5' : _currencyCode == 'GBP' ? '5' : _currencyCode == 'EUR' ? '5' : '100'}, Maximum $_currencySymbol${_currencyCode == 'USD' ? '10,000' : _currencyCode == 'GBP' ? '10,000' : _currencyCode == 'EUR' ? '10,000' : '1,000,000'}',
+													hintStyle: const TextStyle(color: Colors.black38),
+													prefixIcon: const Icon(Icons.attach_money, color: Colors.green),
+													border: const OutlineInputBorder(),
+													focusedBorder: const OutlineInputBorder(
 														borderSide: BorderSide(color: Colors.green, width: 2),
 													),
 												),
@@ -436,10 +439,10 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 												],
 											),
 											const SizedBox(height: 8),
-											const Text(
-												'• Card payments are processed instantly\n• Bank transfers may take 1-5 minutes\n• USSD payments are instant\n• Funds are added automatically after payment\n• Minimum: ₦100, Maximum: ₦1,000,000',
-												style: TextStyle(color: Colors.black87),
-											),
+																							Text(
+													'• Card payments are processed instantly\n• Bank transfers may take 1-5 minutes\n• USSD payments are instant\n• Funds are added automatically after payment\n• Minimum: $_currencySymbol${_currencyCode == 'USD' ? '5' : _currencyCode == 'GBP' ? '5' : _currencyCode == 'EUR' ? '5' : '100'}, Maximum: $_currencySymbol${_currencyCode == 'USD' ? '10,000' : _currencyCode == 'GBP' ? '10,000' : _currencyCode == 'EUR' ? '10,000' : '1,000,000'}',
+													style: const TextStyle(color: Colors.black87),
+												),
 										],
 									),
 								),
@@ -463,10 +466,10 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 												],
 											),
 											const SizedBox(height: 8),
-											const Text(
-												'🔒 All payments are secured with bank-level encryption\n🛡️ We never store your card details\n✅ Powered by Flutterwave and Stripe\n📱 PCI DSS compliant payment processing',
-												style: TextStyle(color: Colors.black87),
-											),
+												Text(
+													'🔒 All payments are secured with bank-level encryption\n🛡️ We never store your card details\n✅ Powered by ${_detectedCountry == 'NG' || _detectedCountry == 'KE' || _detectedCountry == 'GH' || _detectedCountry == 'ZA' ? 'Flutterwave' : 'Stripe'} payment gateway\n📱 PCI DSS compliant payment processing',
+													style: const TextStyle(color: Colors.black87),
+												),
 										],
 									),
 								),

@@ -179,9 +179,10 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 			return;
 		}
 
-		if (amount > 500000) {
+		final maxAmount = _currencyCode == 'USD' ? 5000 : _currencyCode == 'GBP' ? 5000 : _currencyCode == 'EUR' ? 5000 : 500000;
+		if (amount > maxAmount) {
 			ScaffoldMessenger.of(context).showSnackBar(
-				const SnackBar(content: Text('Maximum withdrawal is ₦500,000 per transaction'))
+				SnackBar(content: Text('Maximum withdrawal is $_currencySymbol${maxAmount.toStringAsFixed(0)} per transaction'))
 			);
 			return;
 		}
@@ -558,9 +559,9 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 														],
 													),
 											] else
-												const Text(
-													'• Processing fee: 1% of withdrawal amount\n• Minimum withdrawal: ₦100\n• Maximum withdrawal: ₦500,000 per transaction\n• Processing time: 1-24 hours',
-													style: TextStyle(color: Colors.black87),
+												Text(
+													'• Processing fee: 1% of withdrawal amount\n• Minimum withdrawal: $_currencySymbol${_currencyCode == 'USD' ? '5' : _currencyCode == 'GBP' ? '5' : _currencyCode == 'EUR' ? '5' : '100'}\n• Maximum withdrawal: $_currencySymbol${_currencyCode == 'USD' ? '5,000' : _currencyCode == 'GBP' ? '5,000' : _currencyCode == 'EUR' ? '5,000' : '500,000'} per transaction\n• Processing time: 1-24 hours',
+													style: const TextStyle(color: Colors.black87),
 												),
 										],
 									),
