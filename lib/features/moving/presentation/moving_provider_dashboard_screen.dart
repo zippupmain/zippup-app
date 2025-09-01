@@ -165,12 +165,45 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 					const ProviderHeader(service: 'moving'),
 					Padding(
 						padding: const EdgeInsets.all(12),
-						child: SwitchListTile(
-							title: const Text('Moving Services Online'),
-							subtitle: Text(_online ? 'Available for moving requests' : 'Offline'),
-							value: _online,
-							onChanged: _setOnline,
-							activeColor: Colors.indigo,
+						child: Column(
+							children: [
+								SwitchListTile(
+									title: const Text('Moving Services Online'),
+									subtitle: Text(_online ? 'Available for moving requests' : 'Offline'),
+									value: _online,
+									onChanged: _setOnline,
+									activeColor: Colors.indigo,
+								),
+								const SizedBox(height: 8),
+								SingleChildScrollView(
+									scrollDirection: Axis.horizontal,
+									child: Row(children: [
+										OutlinedButton.icon(
+											onPressed: () => context.push('/moving/vehicles/manage'),
+											icon: const Icon(Icons.local_shipping, color: Colors.orange),
+											label: const Text('Manage Vehicles', style: TextStyle(color: Colors.orange)),
+										),
+										const SizedBox(width: 8),
+										OutlinedButton.icon(
+											onPressed: () => context.push('/moving/team/manage'),
+											icon: const Icon(Icons.group, color: Colors.blue),
+											label: const Text('Moving Team', style: TextStyle(color: Colors.blue)),
+										),
+										const SizedBox(width: 8),
+										OutlinedButton.icon(
+											onPressed: () => context.push('/moving/pricing/manage'),
+											icon: const Icon(Icons.attach_money, color: Colors.green),
+											label: const Text('Pricing & Sizes', style: TextStyle(color: Colors.green)),
+										),
+										const SizedBox(width: 8),
+										OutlinedButton.icon(
+											onPressed: () => context.push('/moving/schedule/manage'),
+											icon: const Icon(Icons.schedule, color: Colors.purple),
+											label: const Text('Schedule Management', style: TextStyle(color: Colors.purple)),
+										),
+									]),
+								),
+							],
 						),
 					),
 					Expanded(child: TabBarView(children: [

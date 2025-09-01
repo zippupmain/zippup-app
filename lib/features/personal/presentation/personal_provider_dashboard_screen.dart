@@ -99,11 +99,44 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 					const ProviderHeader(service: 'personal'),
 					Padding(
 						padding: const EdgeInsets.all(12),
-						child: Row(children: [
-							Expanded(child: SwitchListTile(title: const Text('Go Online'), value: _online, onChanged: _setOnline)),
-							const SizedBox(width: 8),
-							OutlinedButton.icon(onPressed: () => context.push('/hub/orders'), icon: const Icon(Icons.list_alt), label: const Text('All orders')),
-						]),
+						child: Column(
+							children: [
+								Row(children: [
+									Expanded(child: SwitchListTile(title: const Text('Go Online'), value: _online, onChanged: _setOnline)),
+									const SizedBox(width: 8),
+									OutlinedButton.icon(onPressed: () => context.push('/hub/orders'), icon: const Icon(Icons.list_alt), label: const Text('All orders')),
+								]),
+								const SizedBox(height: 8),
+								SingleChildScrollView(
+									scrollDirection: Axis.horizontal,
+									child: Row(children: [
+										OutlinedButton.icon(
+											onPressed: () => context.push('/personal/services/manage'),
+											icon: const Icon(Icons.spa, color: Colors.purple),
+											label: const Text('Manage Services', style: TextStyle(color: Colors.purple)),
+										),
+										const SizedBox(width: 8),
+										OutlinedButton.icon(
+											onPressed: () => context.push('/personal/schedule/manage'),
+											icon: const Icon(Icons.schedule, color: Colors.blue),
+											label: const Text('Schedule & Availability', style: TextStyle(color: Colors.blue)),
+										),
+										const SizedBox(width: 8),
+										OutlinedButton.icon(
+											onPressed: () => context.push('/personal/pricing/manage'),
+											icon: const Icon(Icons.attach_money, color: Colors.green),
+											label: const Text('Pricing & Packages', style: TextStyle(color: Colors.green)),
+										),
+										const SizedBox(width: 8),
+										OutlinedButton.icon(
+											onPressed: () => context.push('/personal/location/manage'),
+											icon: const Icon(Icons.location_on, color: Colors.red),
+											label: const Text('Service Locations', style: TextStyle(color: Colors.red)),
+										),
+									]),
+								),
+							],
+						),
 					),
 					SingleChildScrollView(
 						scrollDirection: Axis.horizontal,
