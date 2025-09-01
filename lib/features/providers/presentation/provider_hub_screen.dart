@@ -32,7 +32,11 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 			if (_isProviderMode) {
 				final prof = await FirebaseFirestore.instance.collection('provider_profiles').where('userId', isEqualTo: uid).where('service', isEqualTo: _service).limit(1).get();
 				if (prof.docs.isNotEmpty) {
-					_online = prof.docs.first.get('availabilityOnline') == true;
+					// Default to online/active, providers can toggle offline
+					_online = prof.docs.first.get('availabilityOnline') ?? true;
+				} else {
+					// Default to online for new providers
+					_online = true;
 				}
 			}
 		} catch (_) {}
@@ -190,13 +194,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 						onTap: () => context.push('/hub/delivery'),
 					),
 					
-					// Digital Services (New)
-					if (_service == 'digital') ListTile(
-						leading: const Icon(Icons.phone_android, color: Colors.green),
-						title: const Text('📱 Digital Services Dashboard'),
-						subtitle: const Text('Airtime, data, bills, commissions'),
-						onTap: () => context.push('/hub/digital'),
-					),
+
 					ListTile(leading: const Icon(Icons.settings_suggest), title: const Text('Manage service profiles'), onTap: () => context.push('/providers')),
 					const SizedBox(height: 24),
 				]),

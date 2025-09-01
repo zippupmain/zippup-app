@@ -25,7 +25,12 @@ class _AdminHubScreenState extends State<AdminHubScreen> with SingleTickerProvid
 	}
 
 	Future<void> _approve(String id) async {
-		await FirebaseFirestore.instance.collection('provider_profiles').doc(id).set({'status': 'active', 'metadata.kycStatus': 'approved'}, SetOptions(merge: true));
+		await FirebaseFirestore.instance.collection('provider_profiles').doc(id).set({
+			'status': 'active', 
+			'metadata.kycStatus': 'approved',
+			'availabilityOnline': true, // Default to online/active
+			'approvedAt': DateTime.now().toIso8601String(),
+		}, SetOptions(merge: true));
 	}
 
 	Future<void> _reject(String id) async {

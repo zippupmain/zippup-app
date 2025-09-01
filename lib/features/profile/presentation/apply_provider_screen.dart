@@ -43,13 +43,13 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 		'transport': ['Taxi', 'Bike', 'Bus', 'Tricycle', 'Courier'],
 		'moving': ['Truck', 'Backie/Pickup', 'Courier'],
 		'rentals': ['Vehicle', 'Houses', 'Other rentals'],
-		'food': ['Fast Food', 'Local', 'Grocery'],
+		'food': ['Fast Food', 'Local', 'Pizza', 'Continental', 'Desserts', 'Drinks', 'Bakery'],
 		'groceries': ['Grocery Store'],
-		'hire': ['Home', 'Tech', 'Construction', 'Auto', 'Personal'],
+		'hire': ['Home Services', 'Tech Services', 'Construction', 'Auto Services', 'Personal Care'],
 		'marketplace': ['Electronics', 'Vehicles', 'Property', 'Fashion', 'Jobs', 'Services'],
 		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Roadside'],
-		'personal': ['Makeup', 'Hair', 'Nails', 'Pedicure', 'Massage', 'Barbing', 'Hair styling'],
-		'others': ['Events planning', 'Live event tickets', 'Tutors'],
+		'personal': ['Beauty Services', 'Wellness Services', 'Fitness Services', 'Tutoring Services', 'Cleaning Services', 'Childcare Services'],
+		'others': ['Events Planning', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Event Ticketing'],
 	};
 
 	Future<void> _pickVehiclePhotos() async {
