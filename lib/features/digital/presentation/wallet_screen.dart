@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/payments/payments_service.dart';
 import 'package:zippup/services/location/country_detection_service.dart';
+import 'package:zippup/services/localization/app_localizations.dart';
 
 class WalletScreen extends StatefulWidget {
 	const WalletScreen({super.key});
@@ -189,7 +190,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
 		return Scaffold(
 			appBar: AppBar(
-				title: Text('💳 My Wallet - $_currentCountry'),
+				title: Text('💳 ${AppLocalizations.of(context)?.wallet ?? 'My Wallet'} - $_currentCountry'),
 				backgroundColor: Colors.green.shade50,
 				iconTheme: const IconThemeData(color: Colors.black),
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
@@ -259,7 +260,7 @@ class _WalletScreenState extends State<WalletScreen> {
 														children: [
 															Icon(Icons.add_circle, color: Colors.green, size: 32),
 															SizedBox(height: 8),
-															Text('Add Funds', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+															Text(AppLocalizations.of(context)?.addFunds ?? 'Add Funds', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
 														],
 													),
 												),
@@ -278,7 +279,7 @@ class _WalletScreenState extends State<WalletScreen> {
 														children: [
 															Icon(Icons.remove_circle, color: Colors.blue, size: 32),
 															SizedBox(height: 8),
-															Text('Withdraw', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+															Text(AppLocalizations.of(context)?.withdraw ?? 'Withdraw', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
 														],
 													),
 												),
@@ -299,7 +300,7 @@ class _WalletScreenState extends State<WalletScreen> {
 										children: [
 											Row(
 												children: [
-													const Text('Quick Services', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+													Text(AppLocalizations.of(context)?.quickServices ?? 'Quick Services', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 													const Spacer(),
 													// Show current language indicator
 													Container(
@@ -336,7 +337,7 @@ class _WalletScreenState extends State<WalletScreen> {
 																			child: OutlinedButton.icon(
 																				onPressed: () => context.push('/digital/global-airtime'),
 																				icon: const Icon(Icons.phone, color: Colors.blue, size: 18),
-																				label: const Text('Airtime', style: TextStyle(color: Colors.blue, fontSize: 12)),
+																				label: Text(AppLocalizations.of(context)?.airtime ?? 'Airtime', style: const TextStyle(color: Colors.blue, fontSize: 12)),
 																				style: OutlinedButton.styleFrom(
 																					padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
 																				),
@@ -347,7 +348,7 @@ class _WalletScreenState extends State<WalletScreen> {
 																			child: OutlinedButton.icon(
 																				onPressed: () => context.push('/digital/global-data'),
 																				icon: const Icon(Icons.network_cell, color: Colors.purple, size: 18),
-																				label: const Text('Data', style: TextStyle(color: Colors.purple, fontSize: 12)),
+																				label: Text(AppLocalizations.of(context)?.data ?? 'Data', style: const TextStyle(color: Colors.purple, fontSize: 12)),
 																				style: OutlinedButton.styleFrom(
 																					padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
 																				),
@@ -361,7 +362,7 @@ class _WalletScreenState extends State<WalletScreen> {
 																	child: OutlinedButton.icon(
 																		onPressed: () => context.push('/digital/global-bills'),
 																		icon: const Icon(Icons.receipt_long, color: Colors.orange, size: 18),
-																		label: const Text('Pay Bills', style: TextStyle(color: Colors.orange, fontSize: 12)),
+																		label: Text(AppLocalizations.of(context)?.payBills ?? 'Pay Bills', style: const TextStyle(color: Colors.orange, fontSize: 12)),
 																		style: OutlinedButton.styleFrom(
 																			padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
 																		),

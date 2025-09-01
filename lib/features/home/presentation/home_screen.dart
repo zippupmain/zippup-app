@@ -11,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 import 'package:zippup/services/notifications/sound_service.dart';
+import 'package:zippup/services/localization/app_localizations.dart';
 
 // Enhanced implementations with colorful design
 Widget _PositionedUnreadDot() => const SizedBox.shrink();
@@ -201,9 +202,9 @@ class _HomeScreenState extends State<HomeScreen> {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(
-				title: const Text(
-					'ZippUp',
-					style: TextStyle(
+				title: Text(
+					AppLocalizations.of(context)?.appName ?? 'ZippUp',
+					style: const TextStyle(
 						fontWeight: FontWeight.bold,
 						fontSize: 22,
 					),
@@ -346,44 +347,47 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _QuickActions extends StatelessWidget {
-	final List<_QuickAction> actions = const [
-		_QuickAction('Ride', Icons.directions_car_filled, 'transport', 
-			const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF21CBF3)]), 
-			Colors.white, '🚗'),
-		_QuickAction('Food', Icons.restaurant, 'food', 
-			const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFFFB74D)]), 
-			Colors.white, '🍽️'),
-		_QuickAction('Hire', Icons.handyman, 'hire', 
-			const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)]), 
-			Colors.white, '🔧'),
-		_QuickAction('Moving', Icons.local_shipping, 'moving', 
-			const LinearGradient(colors: [Color(0xFF3F51B5), Color(0xFF7986CB)]), 
-			Colors.white, '📦'),
-		_QuickAction('TopUp', Icons.phone_iphone, 'digital', 
-			const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]), 
-			Colors.white, '📱'),
-		_QuickAction('Emergency', Icons.emergency_share, 'emergency', 
-			const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]), 
-			Colors.white, '🚨'),
-		_QuickAction('Others', Icons.category, 'others', 
-			const LinearGradient(colors: [Color(0xFF607D8B), Color(0xFF90A4AE)]), 
-			Colors.white, '📋'),
-		_QuickAction('Personal', Icons.spa, 'personal', 
-			const LinearGradient(colors: [Color(0xFF673AB7), Color(0xFF9575CD)]), 
-			Colors.white, '💆'),
-		_QuickAction('Market(P)', Icons.shopping_bag, 'marketplace', 
-			const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF06292)]), 
-			Colors.white, '🛒'),
-		_QuickAction('Rentals', Icons.key, 'rentals', 
-			const LinearGradient(colors: [Color(0xFFFF5722), Color(0xFFFF8A65)]), 
-			Colors.white, '🏠'),
-		_QuickAction('Grocery', Icons.local_grocery_store, 'foodVendors', 
-			const LinearGradient(colors: [Color(0xFF8BC34A), Color(0xFFAED581)]), 
-			Colors.white, '🥬'),
-		_QuickAction('SOS', Icons.emergency_share, 'panic', 
-			const LinearGradient(colors: [Color(0xFFFF1744), Color(0xFFD32F2F)]), 
-			Colors.white, '🆘'),
-	];
+	List<_QuickAction> _getActions(BuildContext context) {
+		final l = AppLocalizations.of(context);
+		return [
+			_QuickAction(l?.transport ?? 'Ride', Icons.directions_car_filled, 'transport', 
+				const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF21CBF3)]), 
+				Colors.white, '🚗'),
+			_QuickAction(l?.food ?? 'Food', Icons.restaurant, 'food', 
+				const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFFFB74D)]), 
+				Colors.white, '🍽️'),
+			_QuickAction(l?.hire ?? 'Hire', Icons.handyman, 'hire', 
+				const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)]), 
+				Colors.white, '🔧'),
+			_QuickAction(l?.moving ?? 'Moving', Icons.local_shipping, 'moving', 
+				const LinearGradient(colors: [Color(0xFF3F51B5), Color(0xFF7986CB)]), 
+				Colors.white, '📦'),
+			_QuickAction(l?.digital ?? 'TopUp', Icons.phone_iphone, 'digital', 
+				const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]), 
+				Colors.white, '📱'),
+			_QuickAction(l?.emergency ?? 'Emergency', Icons.emergency_share, 'emergency', 
+				const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFEF5350)]), 
+				Colors.white, '🚨'),
+			_QuickAction(l?.others ?? 'Others', Icons.category, 'others', 
+				const LinearGradient(colors: [Color(0xFF607D8B), Color(0xFF90A4AE)]), 
+				Colors.white, '📋'),
+			_QuickAction(l?.personal ?? 'Personal', Icons.spa, 'personal', 
+				const LinearGradient(colors: [Color(0xFF673AB7), Color(0xFF9575CD)]), 
+				Colors.white, '💆'),
+			_QuickAction(l?.marketplace ?? 'Market(P)', Icons.shopping_bag, 'marketplace', 
+				const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF06292)]), 
+				Colors.white, '🛒'),
+			_QuickAction(l?.rentals ?? 'Rentals', Icons.key, 'rentals', 
+				const LinearGradient(colors: [Color(0xFFFF5722), Color(0xFFFF8A65)]), 
+				Colors.white, '🏠'),
+			_QuickAction(l?.grocery ?? 'Grocery', Icons.local_grocery_store, 'foodVendors', 
+				const LinearGradient(colors: [Color(0xFF8BC34A), Color(0xFFAED581)]), 
+				Colors.white, '🥬'),
+			_QuickAction('SOS', Icons.emergency_share, 'panic', 
+				const LinearGradient(colors: [Color(0xFFFF1744), Color(0xFFD32F2F)]), 
+				Colors.white, '🆘'),
+		];
+	}
 
 	@override
 	Widget build(BuildContext context) {
@@ -420,7 +424,7 @@ class _QuickActions extends StatelessWidget {
 						),
 						const SizedBox(height: 16),
 						GridView.builder(
-							itemCount: actions.length,
+							itemCount: _getActions(context).length,
 							shrinkWrap: true,
 							physics: const NeverScrollableScrollPhysics(),
 							gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -430,10 +434,10 @@ class _QuickActions extends StatelessWidget {
 								crossAxisSpacing: 12,
 							),
 					itemBuilder: (context, i) {
-						final a = actions[i];
+						final a = _getActions(context)[i];
 						return InkWell(
 							onTap: () {
-								if (a.title == 'Grocery') {
+								if (a.routeName == 'foodVendors') {
 									context.push('/food/vendors/grocery');
 								} else {
 									context.pushNamed(a.routeName);
