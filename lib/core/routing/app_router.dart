@@ -46,6 +46,7 @@ import 'package:zippup/features/digital/presentation/withdraw_funds_screen.dart'
 import 'package:zippup/features/digital/presentation/global_data_screen.dart';
 import 'package:zippup/features/digital/presentation/global_bills_screen.dart';
 import 'package:zippup/features/digital/presentation/digital_products_screen.dart';
+import 'package:zippup/features/digital/presentation/digital_provider_dashboard_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
@@ -619,6 +620,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/hub/delivery',
         name: 'deliveryProviderDashboard',
         builder: (context, state) => const deliverydash.DeliveryProviderDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/hub/digital',
+        name: 'digitalProviderDashboard',
+        builder: (context, state) => const DigitalProviderDashboardScreen(),
       ),
       GoRoute(
         path: '/providers',

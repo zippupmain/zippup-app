@@ -108,16 +108,95 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 						]),
 					),
 					const Divider(),
-					ListTile(leading: const Icon(Icons.inbox), title: const Text('Incoming & Active orders'), subtitle: const Text('Requests routed to you'), onTap: () => context.push('/hub/orders')),
-					ListTile(leading: const Icon(Icons.bar_chart), title: const Text('Analytics'), onTap: () => context.push('/hub/analytics')),
-					if (_service == 'food') ListTile(leading: const Icon(Icons.restaurant_menu), title: const Text('Food dashboard'), onTap: () => context.push('/hub/food')),
-					if (_service == 'transport') ListTile(leading: const Icon(Icons.local_taxi), title: const Text('Transport dashboard'), onTap: () => context.push('/hub/transport')),
-					if (_service == 'grocery') ListTile(leading: const Icon(Icons.local_grocery_store), title: const Text('Grocery dashboard'), onTap: () => context.push('/hub/grocery')),
-					if (_service == 'hire') ListTile(leading: const Icon(Icons.handyman), title: const Text('Hire dashboard'), onTap: () => context.push('/hub/hire')),
-					if (_service == 'emergency') ListTile(leading: const Icon(Icons.emergency), title: const Text('Emergency dashboard'), onTap: () => context.push('/hub/emergency')),
-					if (_service == 'moving') ListTile(leading: const Icon(Icons.local_shipping), title: const Text('Moving dashboard'), onTap: () => context.push('/hub/moving')),
-					if (_service == 'personal') ListTile(leading: const Icon(Icons.spa), title: const Text('Personal dashboard'), onTap: () => context.push('/hub/personal')),
-					if (_service == 'delivery') ListTile(leading: const Icon(Icons.delivery_dining), title: const Text('Delivery dashboard'), onTap: () => context.push('/hub/delivery')),
+					// Global notifications and analytics
+					ListTile(leading: const Icon(Icons.inbox), title: const Text('Incoming & Active orders'), subtitle: const Text('All requests routed to you'), onTap: () => context.push('/hub/orders')),
+					ListTile(leading: const Icon(Icons.bar_chart), title: const Text('Analytics & Earnings'), subtitle: const Text('Performance insights'), onTap: () => context.push('/hub/analytics')),
+					
+					const Divider(),
+					const Padding(
+						padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+						child: Text('Service Dashboards', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+					),
+					
+					// Core Services
+					if (_service == 'transport') ListTile(
+						leading: const Icon(Icons.local_taxi, color: Colors.blue),
+						title: const Text('🚗 Transport Dashboard'),
+						subtitle: const Text('Ride requests, navigation, earnings'),
+						onTap: () => context.push('/hub/transport'),
+					),
+					if (_service == 'food') ListTile(
+						leading: const Icon(Icons.restaurant_menu, color: Colors.orange),
+						title: const Text('🍽️ Food Dashboard'),
+						subtitle: const Text('Orders, menu management, delivery'),
+						onTap: () => context.push('/hub/food'),
+					),
+					if (_service == 'grocery') ListTile(
+						leading: const Icon(Icons.local_grocery_store, color: Colors.green),
+						title: const Text('🥬 Grocery Dashboard'),
+						subtitle: const Text('Grocery orders, inventory, delivery'),
+						onTap: () => context.push('/hub/grocery'),
+					),
+					
+					// New Enhanced Services
+					if (_service == 'hire') ListTile(
+						leading: const Icon(Icons.handyman, color: Colors.blue),
+						title: const Text('👥 Hire Services Dashboard'),
+						subtitle: const Text('Home services, scheduling, tools'),
+						onTap: () => context.push('/hub/hire'),
+					),
+					if (_service == 'emergency') ListTile(
+						leading: const Icon(Icons.emergency, color: Colors.red),
+						title: const Text('🚨 Emergency Dashboard'),
+						subtitle: const Text('Priority responses, vehicle tracking'),
+						onTap: () => context.push('/hub/emergency'),
+					),
+					if (_service == 'moving') ListTile(
+						leading: const Icon(Icons.local_shipping, color: Colors.orange),
+						title: const Text('📦 Moving Dashboard'),
+						subtitle: const Text('Moving requests, vehicle details, routes'),
+						onTap: () => context.push('/hub/moving'),
+					),
+					if (_service == 'personal') ListTile(
+						leading: const Icon(Icons.spa, color: Colors.purple),
+						title: const Text('👤 Personal Services Dashboard'),
+						subtitle: const Text('Beauty, wellness, fitness bookings'),
+						onTap: () => context.push('/hub/personal'),
+					),
+					
+					// Marketplace Services
+					if (_service == 'rentals') ListTile(
+						leading: const Icon(Icons.home_work, color: Colors.brown),
+						title: const Text('🏠 Rentals Dashboard'),
+						subtitle: const Text('Vehicle, house, equipment rentals'),
+						onTap: () => context.push('/hub/rentals'),
+					),
+					if (_service == 'marketplace') ListTile(
+						leading: const Icon(Icons.store, color: Colors.indigo),
+						title: const Text('🛍️ Marketplace Dashboard'),
+						subtitle: const Text('Product listings, sales, inventory'),
+						onTap: () => context.push('/hub/marketplace-provider'),
+					),
+					if (_service == 'others') ListTile(
+						leading: const Icon(Icons.business_center, color: Colors.teal),
+						title: const Text('📅 Others Services Dashboard'),
+						subtitle: const Text('Events, tutoring, creative, business'),
+						onTap: () => context.push('/hub/others-provider'),
+					),
+					if (_service == 'delivery') ListTile(
+						leading: const Icon(Icons.delivery_dining, color: Colors.cyan),
+						title: const Text('🚚 Delivery Dashboard'),
+						subtitle: const Text('Delivery requests, routes, codes'),
+						onTap: () => context.push('/hub/delivery'),
+					),
+					
+					// Digital Services (New)
+					if (_service == 'digital') ListTile(
+						leading: const Icon(Icons.phone_android, color: Colors.green),
+						title: const Text('📱 Digital Services Dashboard'),
+						subtitle: const Text('Airtime, data, bills, commissions'),
+						onTap: () => context.push('/hub/digital'),
+					),
 					ListTile(leading: const Icon(Icons.settings_suggest), title: const Text('Manage service profiles'), onTap: () => context.push('/providers')),
 					const SizedBox(height: 24),
 				]),
