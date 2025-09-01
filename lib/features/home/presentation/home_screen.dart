@@ -521,25 +521,74 @@ class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
 	@override
 	void initState() {
 		super.initState();
-		if (!kIsWeb) {
-			_speech = stt.SpeechToText();
-		}
+		// Initialize speech for all platforms
+		_speech = stt.SpeechToText();
 	}
 
 	Future<void> _toggleListen() async {
+		print('🎤 Voice search toggle pressed, listening: $_listening');
+		
 		if (_listening) {
 			_speech?.stop();
 			setState(() => _listening = false);
+			print('🛑 Voice search stopped');
 			return;
 		}
-		if (_speech == null) return;
-		final available = await _speech!.initialize(onStatus: (_) {}, onError: (_) {});
-		if (!available) return;
-		setState(() => _listening = true);
-		_speech!.listen(onResult: (r) {
-			_controller.text = r.recognizedWords;
-			_controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
-		});
+		
+		if (_speech == null) {
+			print('❌ Speech service not initialized');
+			return;
+		}
+		
+		try {
+			print('🔄 Initializing speech recognition...');
+			final available = await _speech!.initialize(
+				onStatus: (status) {
+					print('🎤 Speech status: $status');
+				}, 
+				onError: (error) {
+					print('❌ Speech error: $error');
+					if (mounted) {
+						setState(() => _listening = false);
+						ScaffoldMessenger.of(context).showSnackBar(
+							SnackBar(content: Text('Voice search error: ${error.errorMsg}')),
+						);
+					}
+				}
+			);
+			
+			if (!available) {
+				print('❌ Speech recognition not available on this device');
+				if (mounted) {
+					ScaffoldMessenger.of(context).showSnackBar(
+						const SnackBar(content: Text('Voice search not available on this device')),
+					);
+				}
+				return;
+			}
+			
+			print('✅ Speech recognition initialized, starting to listen...');
+			setState(() => _listening = true);
+			
+			_speech!.listen(
+				onResult: (result) {
+					print('🎤 Speech result: ${result.recognizedWords}');
+					_controller.text = result.recognizedWords;
+					_controller.selection = TextSelection.fromPosition(
+						TextPosition(offset: _controller.text.length)
+					);
+				},
+				listenFor: const Duration(seconds: 30),
+				pauseFor: const Duration(seconds: 3),
+			);
+		} catch (e) {
+			print('❌ Speech initialization failed: $e');
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					SnackBar(content: Text('Voice search failed: $e')),
+				);
+			}
+		}
 	}
 
 	void _submit() {
@@ -597,17 +646,24 @@ class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
 						gradient: LinearGradient(
 							colors: _listening 
 								? [Colors.red.shade400, Colors.red.shade600]
-								: [Colors.green.shade400, Colors.green.shade600],
+								: [Colors.blue.shade400, Colors.blue.shade600],
 						),
 						shape: BoxShape.circle,
+						boxShadow: [
+							BoxShadow(
+								color: _listening ? Colors.red.withOpacity(0.3) : Colors.blue.withOpacity(0.3),
+								blurRadius: 8,
+								spreadRadius: 2,
+							),
+						],
 					),
 					child: IconButton(
-						tooltip: _listening ? 'Stop' : 'Voice search',
-						onPressed: kIsWeb ? null : _toggleListen,
+						tooltip: _listening ? 'Stop voice search' : 'Start voice search',
+						onPressed: _toggleListen, // Enable for all platforms
 						icon: Icon(
 							_listening ? Icons.stop : Icons.mic,
-							color: kIsWeb ? Colors.grey : Colors.white,
-							size: 20,
+							color: Colors.white,
+							size: 22,
 						),
 					),
 				),

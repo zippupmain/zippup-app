@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zippup/services/notifications/reliable_sound_service.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NotificationTestScreen extends StatefulWidget {
   const NotificationTestScreen({super.key});
@@ -11,6 +12,17 @@ class NotificationTestScreen extends StatefulWidget {
 class _NotificationTestScreenState extends State<NotificationTestScreen> {
   String _testResult = '';
   bool _isLoading = false;
+  
+  // Voice search testing
+  stt.SpeechToText? _speech;
+  bool _isListening = false;
+  String _voiceResult = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _speech = stt.SpeechToText();
+  }
 
   Future<void> _testCustomerSound() async {
     setState(() {
@@ -103,6 +115,83 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     }
   }
 
+  Future<void> _testVoiceSearch() async {
+    print('🎤 Testing voice search functionality...');
+    
+    if (_speech == null) {
+      setState(() {
+        _voiceResult = '❌ Speech service not initialized';
+      });
+      return;
+    }
+
+    if (_isListening) {
+      await _speech!.stop();
+      setState(() {
+        _isListening = false;
+        _voiceResult = '🛑 Voice search stopped';
+      });
+      return;
+    }
+
+    try {
+      setState(() {
+        _voiceResult = '🔄 Initializing voice recognition...';
+      });
+
+      final available = await _speech!.initialize(
+        onStatus: (status) {
+          print('🎤 Voice test status: $status');
+          setState(() {
+            _voiceResult = '🎤 Status: $status';
+          });
+        },
+        onError: (error) {
+          print('❌ Voice test error: $error');
+          setState(() {
+            _voiceResult = '❌ Error: ${error.errorMsg}';
+            _isListening = false;
+          });
+        },
+      );
+
+      if (!available) {
+        setState(() {
+          _voiceResult = '❌ Voice recognition not available on this device';
+        });
+        return;
+      }
+
+      setState(() {
+        _isListening = true;
+        _voiceResult = '🎤 Listening... Say something!';
+      });
+
+      _speech!.listen(
+        onResult: (result) {
+          print('🎤 Voice test result: ${result.recognizedWords}');
+          setState(() {
+            _voiceResult = result.finalResult 
+              ? '✅ Final result: "${result.recognizedWords}"'
+              : '🔄 Partial: "${result.recognizedWords}"';
+          });
+          
+          if (result.finalResult) {
+            setState(() => _isListening = false);
+          }
+        },
+        listenFor: const Duration(seconds: 10),
+        pauseFor: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      print('❌ Voice test failed: $e');
+      setState(() {
+        _voiceResult = '❌ Voice test failed: $e';
+        _isListening = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,6 +262,19 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
+            const SizedBox(height: 12),
+            
+            ElevatedButton.icon(
+              onPressed: (_isLoading || _isListening) ? null : _testVoiceSearch,
+              icon: Icon(_isListening ? Icons.stop : Icons.mic),
+              label: Text(_isListening ? 'Stop Voice Test' : 'Test Voice Search'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isListening ? Colors.red : Colors.teal,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
             const SizedBox(height: 12),
             
             ElevatedButton.icon(
@@ -258,6 +360,34 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
                 ),
               ),
             
+            if (_voiceResult.isNotEmpty)
+              Card(
+                color: _voiceResult.contains('✅') ? Colors.green.shade50 : 
+                       _voiceResult.contains('🎤') ? Colors.blue.shade50 : Colors.orange.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Voice Search Result:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: _voiceResult.contains('✅') ? Colors.green.shade800 : Colors.blue.shade800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _voiceResult,
+                        style: TextStyle(
+                          color: _voiceResult.contains('✅') ? Colors.green.shade700 : Colors.blue.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            
             const Spacer(),
             
             const Card(
@@ -273,9 +403,11 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
                     SizedBox(height: 8),
                     Text('• Make sure device volume is up'),
                     Text('• Check device notification permissions'),
+                    Text('• Check microphone permissions for voice search'),
                     Text('• Try different notification types'),
                     Text('• Check console logs for detailed error messages'),
                     Text('• On web, some browsers block auto-play sounds'),
+                    Text('• For voice search: speak clearly and wait for result'),
                   ],
                 ),
               ),

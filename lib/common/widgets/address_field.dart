@@ -26,9 +26,8 @@ class _AddressFieldState extends State<AddressField> {
 	@override
 	void initState() {
 		super.initState();
-		if (!kIsWeb) {
-			_speech = stt.SpeechToText();
-		}
+		// Initialize speech for all platforms
+		_speech = stt.SpeechToText();
 	}
 
 	void _onChanged(String value) {
@@ -89,24 +88,83 @@ class _AddressFieldState extends State<AddressField> {
 							: SizedBox(
 								width: 72,
 								child: Row(mainAxisSize: MainAxisSize.min, children: [
-									IconButton(
-										tooltip: _listening ? 'Stop' : 'Voice input',
-										onPressed: kIsWeb ? null : () async {
-											if (_speech == null) return;
-											if (_listening) {
-												await _speech!.stop();
-												setState(() => _listening = false);
-												return;
-											}
-											final ok = await _speech!.initialize(onStatus: (_) {}, onError: (_) {});
-											if (!ok) return;
-											setState(() => _listening = true);
-											_speech!.listen(onResult: (r) {
-												widget.controller.text = r.recognizedWords;
-												widget.controller.selection = TextSelection.fromPosition(TextPosition(offset: widget.controller.text.length));
-											});
-										},
-										icon: Icon(_listening ? Icons.stop : Icons.mic_none_rounded),
+									Container(
+										decoration: BoxDecoration(
+											color: _listening ? Colors.red.shade100 : Colors.blue.shade100,
+											shape: BoxShape.circle,
+										),
+										child: IconButton(
+											tooltip: _listening ? 'Stop voice input' : 'Voice input for address',
+											onPressed: () async {
+												print('🎤 Address voice search pressed, listening: $_listening');
+												
+												if (_speech == null) {
+													print('❌ Speech service not initialized');
+													ScaffoldMessenger.of(context).showSnackBar(
+														const SnackBar(content: Text('Voice input not available')),
+													);
+													return;
+												}
+												
+												if (_listening) {
+													await _speech!.stop();
+													setState(() => _listening = false);
+													print('🛑 Address voice input stopped');
+													return;
+												}
+												
+												try {
+													print('🔄 Initializing address voice input...');
+													final available = await _speech!.initialize(
+														onStatus: (status) {
+															print('🎤 Address speech status: $status');
+														}, 
+														onError: (error) {
+															print('❌ Address speech error: $error');
+															if (mounted) {
+																setState(() => _listening = false);
+																ScaffoldMessenger.of(context).showSnackBar(
+																	SnackBar(content: Text('Voice input error: ${error.errorMsg}')),
+																);
+															}
+														}
+													);
+													
+													if (!available) {
+														print('❌ Speech recognition not available');
+														ScaffoldMessenger.of(context).showSnackBar(
+															const SnackBar(content: Text('Voice input not available on this device')),
+														);
+														return;
+													}
+													
+													print('✅ Address speech initialized, listening...');
+													setState(() => _listening = true);
+													
+													_speech!.listen(
+														onResult: (result) {
+															print('🎤 Address speech result: ${result.recognizedWords}');
+															widget.controller.text = result.recognizedWords;
+															widget.controller.selection = TextSelection.fromPosition(
+																TextPosition(offset: widget.controller.text.length)
+															);
+														},
+														listenFor: const Duration(seconds: 30),
+														pauseFor: const Duration(seconds: 3),
+													);
+												} catch (e) {
+													print('❌ Address speech failed: $e');
+													ScaffoldMessenger.of(context).showSnackBar(
+														SnackBar(content: Text('Voice input failed: $e')),
+													);
+												}
+											},
+											icon: Icon(
+												_listening ? Icons.stop : Icons.mic,
+												color: _listening ? Colors.red.shade700 : Colors.blue.shade700,
+												size: 20,
+											),
+										),
 									),
 									const Icon(Icons.place_outlined),
 								]),

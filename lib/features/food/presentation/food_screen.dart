@@ -12,16 +12,57 @@ class FoodScreen extends StatelessWidget {
 	}
 
 	Future<void> _voiceSearch(BuildContext context, TextEditingController controller) async {
-		final speech = stt.SpeechToText();
-		final available = await speech.initialize(options: [stt.SpeechToText.androidIntentLookup]);
-		if (!available) return;
-		speech.listen(onResult: (res) {
-			if (res.finalResult) {
-				controller.text = res.recognizedWords;
-				_goSearch(context, controller.text);
-				speech.stop();
+		print('🎤 Food voice search started');
+		
+		try {
+			final speech = stt.SpeechToText();
+			print('🔄 Initializing food voice search...');
+			
+			final available = await speech.initialize(
+				onStatus: (status) {
+					print('🎤 Food speech status: $status');
+				},
+				onError: (error) {
+					print('❌ Food speech error: $error');
+					ScaffoldMessenger.of(context).showSnackBar(
+						SnackBar(content: Text('Voice search error: ${error.errorMsg}')),
+					);
+				},
+			);
+			
+			if (!available) {
+				print('❌ Speech recognition not available for food search');
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text('Voice search not available on this device')),
+				);
+				return;
 			}
-		});
+			
+			print('✅ Food speech initialized, starting to listen...');
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(content: Text('🎤 Listening... Speak now!'), duration: Duration(seconds: 2)),
+			);
+			
+			speech.listen(
+				onResult: (result) {
+					print('🎤 Food speech result: ${result.recognizedWords}');
+					controller.text = result.recognizedWords;
+					
+					if (result.finalResult) {
+						print('✅ Final food search result: ${result.recognizedWords}');
+						_goSearch(context, controller.text);
+						speech.stop();
+					}
+				},
+				listenFor: const Duration(seconds: 30),
+				pauseFor: const Duration(seconds: 3),
+			);
+		} catch (e) {
+			print('❌ Food voice search failed: $e');
+			ScaffoldMessenger.of(context).showSnackBar(
+				SnackBar(content: Text('Voice search failed: $e')),
+			);
+		}
 	}
 
 	@override
@@ -89,9 +130,17 @@ class FoodScreen extends StatelessWidget {
 												colors: [Color(0xFFFF9800), Color(0xFFFF5722)],
 											),
 											shape: BoxShape.circle,
+											boxShadow: [
+												BoxShadow(
+													color: Colors.orange.withOpacity(0.4),
+													blurRadius: 6,
+													spreadRadius: 1,
+												),
+											],
 										),
 										child: IconButton(
-											icon: const Icon(Icons.mic, color: Colors.white, size: 20),
+											tooltip: 'Voice search for food',
+											icon: const Icon(Icons.mic, color: Colors.white, size: 22),
 											onPressed: () => _voiceSearch(context, controller),
 										),
 									),
