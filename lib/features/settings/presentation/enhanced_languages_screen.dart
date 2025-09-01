@@ -18,39 +18,16 @@ class _EnhancedLanguagesScreenState extends ConsumerState<EnhancedLanguagesScree
 	final TextEditingController _searchController = TextEditingController();
 	String _searchQuery = '';
 
+	// ONLY languages with complete working translations
 	final List<Map<String, dynamic>> _languages = [
-		// Major Global Languages
+		// Global Languages with Full Translations
 		{'code': 'en', 'name': 'English', 'nativeName': 'English', 'flag': '🇺🇸', 'region': 'Global'},
 		{'code': 'es', 'name': 'Spanish', 'nativeName': 'Español', 'flag': '🇪🇸', 'region': 'Global'},
 		{'code': 'fr', 'name': 'French', 'nativeName': 'Français', 'flag': '🇫🇷', 'region': 'Global'},
-		{'code': 'de', 'name': 'German', 'nativeName': 'Deutsch', 'flag': '🇩🇪', 'region': 'Europe'},
-		{'code': 'pt', 'name': 'Portuguese', 'nativeName': 'Português', 'flag': '🇧🇷', 'region': 'Americas'},
-		{'code': 'ar', 'name': 'Arabic', 'nativeName': 'العربية', 'flag': '🇸🇦', 'region': 'Middle East'},
-		{'code': 'zh', 'name': 'Chinese', 'nativeName': '中文', 'flag': '🇨🇳', 'region': 'Asia'},
-		{'code': 'hi', 'name': 'Hindi', 'nativeName': 'हिन्दी', 'flag': '🇮🇳', 'region': 'Asia'},
-		{'code': 'ja', 'name': 'Japanese', 'nativeName': '日本語', 'flag': '🇯🇵', 'region': 'Asia'},
-		{'code': 'ko', 'name': 'Korean', 'nativeName': '한국어', 'flag': '🇰🇷', 'region': 'Asia'},
-		{'code': 'ru', 'name': 'Russian', 'nativeName': 'Русский', 'flag': '🇷🇺', 'region': 'Europe'},
-		{'code': 'it', 'name': 'Italian', 'nativeName': 'Italiano', 'flag': '🇮🇹', 'region': 'Europe'},
-		{'code': 'nl', 'name': 'Dutch', 'nativeName': 'Nederlands', 'flag': '🇳🇱', 'region': 'Europe'},
-		{'code': 'sv', 'name': 'Swedish', 'nativeName': 'Svenska', 'flag': '🇸🇪', 'region': 'Europe'},
-		{'code': 'da', 'name': 'Danish', 'nativeName': 'Dansk', 'flag': '🇩🇰', 'region': 'Europe'},
-		{'code': 'no', 'name': 'Norwegian', 'nativeName': 'Norsk', 'flag': '🇳🇴', 'region': 'Europe'},
-		{'code': 'fi', 'name': 'Finnish', 'nativeName': 'Suomi', 'flag': '🇫🇮', 'region': 'Europe'},
-		{'code': 'pl', 'name': 'Polish', 'nativeName': 'Polski', 'flag': '🇵🇱', 'region': 'Europe'},
-		{'code': 'tr', 'name': 'Turkish', 'nativeName': 'Türkçe', 'flag': '🇹🇷', 'region': 'Europe'},
-		{'code': 'th', 'name': 'Thai', 'nativeName': 'ไทย', 'flag': '🇹🇭', 'region': 'Asia'},
-		{'code': 'vi', 'name': 'Vietnamese', 'nativeName': 'Tiếng Việt', 'flag': '🇻🇳', 'region': 'Asia'},
-		{'code': 'id', 'name': 'Indonesian', 'nativeName': 'Bahasa Indonesia', 'flag': '🇮🇩', 'region': 'Asia'},
-		{'code': 'ms', 'name': 'Malay', 'nativeName': 'Bahasa Melayu', 'flag': '🇲🇾', 'region': 'Asia'},
-		{'code': 'tl', 'name': 'Filipino', 'nativeName': 'Filipino', 'flag': '🇵🇭', 'region': 'Asia'},
-		
-		// African Languages
-		{'code': 'sw', 'name': 'Swahili', 'nativeName': 'Kiswahili', 'flag': '🇰🇪', 'region': 'Africa'},
-		{'code': 'am', 'name': 'Amharic', 'nativeName': 'አማርኛ', 'flag': '🇪🇹', 'region': 'Africa'},
-		{'code': 'ha', 'name': 'Hausa', 'nativeName': 'Hausa', 'flag': '🇳🇬', 'region': 'Africa'},
-		{'code': 'yo', 'name': 'Yoruba', 'nativeName': 'Yorùbá', 'flag': '🇳🇬', 'region': 'Africa'},
-		{'code': 'ig', 'name': 'Igbo', 'nativeName': 'Igbo', 'flag': '🇳🇬', 'region': 'Africa'},
+		{'code': 'de', 'name': 'German', 'nativeName': 'Deutsch', 'flag': '🇩🇪', 'region': 'Global'},
+		{'code': 'ar', 'name': 'Arabic', 'nativeName': 'العربية', 'flag': '🇸🇦', 'region': 'Global'},
+		{'code': 'zh', 'name': 'Chinese', 'nativeName': '中文', 'flag': '🇨🇳', 'region': 'Global'},
+		{'code': 'hi', 'name': 'Hindi', 'nativeName': 'हिन्दी', 'flag': '🇮🇳', 'region': 'Global'},
 	];
 
 	@override
@@ -124,7 +101,7 @@ class _EnhancedLanguagesScreenState extends ConsumerState<EnhancedLanguagesScree
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(
-				title: const Text('🌍 Languages'),
+				title: const Text('🌍 Languages (7 Global)'),
 				backgroundColor: Colors.blue.shade50,
 				iconTheme: const IconThemeData(color: Colors.black),
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
@@ -174,7 +151,7 @@ class _EnhancedLanguagesScreenState extends ConsumerState<EnhancedLanguagesScree
 										SizedBox(width: 8),
 										Expanded(
 											child: Text(
-												'ZippUp supports 30+ languages for truly global reach. Select your preferred language below.',
+												'ZippUp supports 7 major global languages with complete translations. Select your preferred language below.',
 												style: TextStyle(color: Colors.black87, fontSize: 14),
 											),
 										),
