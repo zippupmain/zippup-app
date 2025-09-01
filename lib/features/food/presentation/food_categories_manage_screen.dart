@@ -52,12 +52,7 @@ class _FoodCategoriesManageScreenState extends State<FoodCategoriesManageScreen>
 			'description': 'Beverages and drinks',
 			'examples': ['Smoothies', 'Juices', 'Coffee', 'Tea', 'Soft Drinks'],
 		},
-		'bakery': {
-			'name': 'Bakery',
-			'emoji': '🥖',
-			'description': 'Fresh baked goods',
-			'examples': ['Bread', 'Croissants', 'Muffins', 'Donuts'],
-		},
+
 	};
 
 	@override

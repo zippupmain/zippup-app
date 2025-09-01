@@ -43,7 +43,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 		'transport': ['Taxi', 'Bike', 'Bus', 'Tricycle', 'Courier'],
 		'moving': ['Truck', 'Backie/Pickup', 'Courier'],
 		'rentals': ['Vehicle', 'Houses', 'Other rentals'],
-		'food': ['Fast Food', 'Local', 'Pizza', 'Continental', 'Desserts', 'Drinks', 'Bakery'],
+		'food': ['Fast Food', 'Local', 'Pizza', 'Continental', 'Desserts', 'Drinks'],
 		'groceries': ['Grocery Store'],
 		'hire': ['Home Services', 'Tech Services', 'Construction', 'Auto Services', 'Personal Care'],
 		'marketplace': ['Electronics', 'Vehicles', 'Property', 'Fashion', 'Jobs', 'Services'],
