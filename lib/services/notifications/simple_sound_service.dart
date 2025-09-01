@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
-import 'package:zippup/services/notifications/web_beep_service.dart';
 
 class SimpleSoundService {
   SimpleSoundService._internal();
@@ -25,20 +24,8 @@ class SimpleSoundService {
       }
     }
 
-    // Try web beep first (most reliable on web)
-    if (kIsWeb) {
-      try {
-        final webSuccess = await WebBeepService.playNotificationBeep();
-        if (webSuccess) {
-          print('✅ [CUSTOMER] Web beep SUCCESS');
-          success = true;
-        } else {
-          print('❌ [CUSTOMER] Web beep failed');
-        }
-      } catch (e) {
-        print('❌ [CUSTOMER] Web beep error: $e');
-      }
-    }
+    // Try system sounds (works on all platforms)
+    print('🔊 [CUSTOMER] Attempting system sounds...');
 
     // Try system alert sound
     if (!success) {
@@ -93,20 +80,8 @@ class SimpleSoundService {
       }
     }
 
-    // Try web urgent beep first (most reliable on web)
-    if (kIsWeb) {
-      try {
-        final webSuccess = await WebBeepService.playUrgentBeep();
-        if (webSuccess) {
-          print('✅ [DRIVER] Web urgent beep SUCCESS');
-          success = true;
-        } else {
-          print('❌ [DRIVER] Web urgent beep failed');
-        }
-      } catch (e) {
-        print('❌ [DRIVER] Web urgent beep error: $e');
-      }
-    }
+    // Try urgent system sounds
+    print('🔊 [DRIVER] Attempting urgent system sounds...');
 
     // Double click for urgency
     if (!success) {
@@ -202,22 +177,6 @@ class SimpleSoundService {
     print('🚨 [EMERGENCY] Attempting to play ANY available sound...');
     
     final methods = [
-      () async {
-        if (kIsWeb) {
-          final success = await WebBeepService.playNotificationBeep();
-          if (success) return 'WebBeepService.notification';
-          throw Exception('Web beep failed');
-        }
-        throw Exception('Not web platform');
-      },
-      () async {
-        if (kIsWeb) {
-          final success = await WebBeepService.playUrgentBeep();
-          if (success) return 'WebBeepService.urgent';
-          throw Exception('Web urgent beep failed');
-        }
-        throw Exception('Not web platform');
-      },
       () async {
         await SystemSound.play(SystemSoundType.alert);
         return 'SystemSound.alert';

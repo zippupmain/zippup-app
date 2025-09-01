@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:zippup/services/notifications/simple_sound_service.dart';
+import 'package:zippup/services/notifications/reliable_sound_service.dart';
 
 class NotificationTestScreen extends StatefulWidget {
   const NotificationTestScreen({super.key});
@@ -19,7 +19,7 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     });
 
     try {
-      final success = await SimpleSoundService.instance.playCustomerNotification();
+      final success = await ReliableSoundService.instance.playCustomerNotification();
       setState(() {
         _testResult = success 
           ? '✅ Customer notification SUCCESS! Check console for details.'
@@ -41,7 +41,7 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     });
 
     try {
-      final success = await SimpleSoundService.instance.playDriverNotification();
+      final success = await ReliableSoundService.instance.playDriverNotification();
       setState(() {
         _testResult = success 
           ? '✅ Driver notification SUCCESS! Check console for details.'
@@ -63,7 +63,7 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     });
 
     try {
-      final success = await SimpleSoundService.instance.playCompletionNotification();
+      final success = await ReliableSoundService.instance.playCompletionNotification();
       setState(() {
         _testResult = success 
           ? '✅ Completion notification SUCCESS! Check console for details.'
@@ -85,7 +85,7 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     });
 
     try {
-      final results = await SimpleSoundService.instance.testAllNotifications();
+      final results = await ReliableSoundService.instance.testAllNotifications();
       final successCount = results.values.where((success) => success).length;
       setState(() {
         _testResult = '📊 Test Results: $successCount/3 notifications working\n'
@@ -182,7 +182,7 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
                   _testResult = 'Testing emergency sound fallback...';
                 });
                 try {
-                  final success = await SimpleSoundService.instance.forcePlayAnySound();
+                  final success = await ReliableSoundService.instance.playNotification(isUrgent: true);
                   setState(() {
                     _testResult = success 
                       ? '✅ EMERGENCY sound test SUCCESS! At least one method worked.'

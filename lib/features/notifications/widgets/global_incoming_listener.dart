@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
-import 'package:zippup/services/notifications/simple_sound_service.dart';
+import 'package:zippup/services/notifications/reliable_sound_service.dart';
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 
 class GlobalIncomingListener extends StatefulWidget {
@@ -259,7 +259,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		// Play notification sound with enhanced error handling
 		try { 
 			print('🔔 Playing RIDE REQUEST notification sound...');
-			final success = await SimpleSoundService.instance.playDriverNotification();
+			final success = await ReliableSoundService.instance.playDriverNotification();
 			print(success ? '✅ Ride request sound SUCCESS' : '❌ Ride request sound FAILED');
 		} catch (e) {
 			print('❌ Critical error playing ride notification: $e');
@@ -356,7 +356,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			}
 		} catch (_) {}
 		try { 
-			final success = await SimpleSoundService.instance.playDriverNotification(); 
+			final success = await ReliableSoundService.instance.playDriverNotification(); 
 			print(success ? '✅ Order notification SUCCESS' : '❌ Order notification FAILED');
 		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
@@ -386,7 +386,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
 		try { 
-			final success = await SimpleSoundService.instance.playCustomerNotification(); 
+			final success = await ReliableSoundService.instance.playCustomerNotification(); 
 			print(success ? '✅ Delivery notification SUCCESS' : '❌ Delivery notification FAILED');
 		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
@@ -403,7 +403,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
 		try { 
-			final success = await SimpleSoundService.instance.playDriverNotification(); 
+			final success = await ReliableSoundService.instance.playDriverNotification(); 
 			print(success ? '✅ Moving notification SUCCESS' : '❌ Moving notification FAILED');
 		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
@@ -526,7 +526,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		
 		// Play notification sound
 		try { 
-			final success = await SimpleSoundService.instance.playDriverNotification(); 
+			final success = await ReliableSoundService.instance.playDriverNotification(); 
 			print(success ? '✅ Service notification SUCCESS' : '❌ Service notification FAILED');
 		} catch (_) {}
 		
