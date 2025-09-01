@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:zippup/services/notifications/sound_service.dart';
-import 'package:flutter/services.dart';
+import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 
 class GlobalIncomingListener extends StatefulWidget {
 	final Widget child;
@@ -48,7 +48,8 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			return;
 		}
 		final db = FirebaseFirestore.instance;
-		print('✅ Setting up ride notification listener for user: $uid');
+		print('✅ Setting up AGGRESSIVE ride notification listener for user: $uid');
+		print('🚨 NOTIFICATION DEBUG MODE: Will show all ride requests for testing');
 		
 		// Listen for ride requests assigned to this driver OR unassigned rides for available drivers
 		_ridesSub = db.collection('rides')
@@ -56,41 +57,18 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			.snapshots()
 			.listen((snap) async {
 				print('📡 Received ${snap.docs.length} ride requests from Firestore');
-				// Check if user has active transport provider profile AND is online
-				bool isActiveTransportProvider = false;
-				try {
-					print('🔍 Checking provider profile for user: $uid');
-					final providerSnap = await db.collection('provider_profiles')
-						.where('userId', isEqualTo: uid)
-						.where('service', isEqualTo: 'transport')
-						.where('status', isEqualTo: 'active')
-						.limit(1)
-						.get();
-					print('📋 Found ${providerSnap.docs.length} transport provider profiles');
-					if (providerSnap.docs.isNotEmpty) {
-						final providerData = providerSnap.docs.first.data();
-						final isOnline = providerData['availabilityOnline'] == true;
-						print('🟢 Provider online status: $isOnline');
-						// Show requests if provider exists, regardless of online status for testing
-						// TODO: In production, change this back to: isActiveTransportProvider = isOnline;
-						isActiveTransportProvider = true; // Allow all active providers to receive requests
-						print('🚨 TESTING MODE: Showing requests to all active providers regardless of online status');
-					}
-				} catch (e) {
-					print('❌ Error checking provider profile: $e');
-				}
+				// TESTING MODE: Show notifications to ALL logged-in users
+				bool isActiveTransportProvider = true; // Force true for testing
+				print('🚨 TESTING MODE: Showing ALL ride requests to ANY logged-in user');
+				print('🔍 User $uid will receive ALL ride notifications for testing purposes');
 				
 				for (final d in snap.docs) {
 					final data = d.data();
 					final assignedDriverId = data['driverId']?.toString();
 					
-					// Show if: assigned to this driver OR (no driver assigned AND user is active provider)
-					bool shouldShow = false;
-					if (assignedDriverId == uid) {
-						shouldShow = true; // Directly assigned
-					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && isActiveTransportProvider) {
-						shouldShow = true; // Available for active providers
-					}
+					// TESTING MODE: Show ALL ride requests to ALL users
+					bool shouldShow = true; // Force true for testing
+					print('🚨 TESTING: Will show ride ${d.id} to user $uid (assignedDriverId: $assignedDriverId)');
 					
 					if (shouldShow && !_shown.contains('ride:${d.id}')) {
 						print('🚨 SHOWING RIDE NOTIFICATION for ride: ${d.id}');
@@ -99,6 +77,18 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						print('🚗 Ride type: ${data['type']}');
 						print('📍 From: ${data['pickupAddress']}');
 						_shown.add('ride:${d.id}');
+						
+						// Show floating notification first
+						NotificationOverlay.show(
+							context,
+							title: '🚗 New Ride Request',
+							message: 'From: ${data['pickupAddress'] ?? 'Unknown location'}',
+							backgroundColor: Colors.blue.shade600,
+							icon: Icons.directions_car,
+							onTap: () => _showRideDialog(d.id, data),
+						);
+						
+						// Also show dialog
 						_showRideDialog(d.id, data);
 					} else if (!shouldShow) {
 						print('🚫 Not showing ride ${d.id} - shouldShow: $shouldShow, assignedDriverId: $assignedDriverId, isActiveProvider: $isActiveTransportProvider');
@@ -424,29 +414,8 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 
 	Future<void> _setupServiceListener(FirebaseFirestore db, String uid, String collection, String service) async {
 		try {
-			print('🔗 Setting up $service notification listener');
-			
-			// Check if user has active provider profile for this service
-			final providerSnap = await db.collection('provider_profiles')
-				.where('userId', isEqualTo: uid)
-				.where('service', isEqualTo: service)
-				.where('status', isEqualTo: 'active')
-				.limit(1)
-				.get();
-				
-			if (providerSnap.docs.isEmpty) {
-				print('❌ No active $service provider profile found');
-				return;
-			}
-			
-			final providerData = providerSnap.docs.first.data();
-			final isOnline = providerData['availabilityOnline'] == true;
-			print('🟢 $service provider online status: $isOnline');
-			
-			if (!isOnline) {
-				print('❌ $service provider is offline');
-				return;
-			}
+			print('🔗 Setting up AGGRESSIVE $service notification listener');
+			print('🚨 TESTING MODE: Will show ALL $service requests to user $uid');
 			
 			// Listen for requests
 			db.collection(collection)
@@ -458,16 +427,31 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						final data = d.data();
 						final assignedProviderId = data['providerId']?.toString();
 						
-						// Show if assigned to this provider OR unassigned
-						bool shouldShow = false;
-						if (assignedProviderId == uid) {
-							shouldShow = true;
-						} else if (assignedProviderId == null || assignedProviderId.isEmpty) {
-							shouldShow = true;
-						}
+						// TESTING MODE: Show ALL requests to ALL users
+						bool shouldShow = true; // Force true for testing
+						print('🚨 TESTING: Will show $service request ${d.id} to user $uid (assignedProviderId: $assignedProviderId)');
 						
 						if (shouldShow && !_shown.contains('$service:${d.id}')) {
 							_shown.add('$service:${d.id}');
+							
+							// Show floating notification first
+							final serviceEmoji = {
+								'hire': '🔧',
+								'emergency': '🚨',
+								'moving': '📦',
+								'personal': '💆',
+							}[service] ?? '💼';
+							
+							NotificationOverlay.show(
+								context,
+								title: '$serviceEmoji New ${service.toUpperCase()} Request',
+								message: data['description']?.toString() ?? 'Service request received',
+								backgroundColor: service == 'emergency' ? Colors.red.shade600 : Colors.green.shade600,
+								icon: service == 'emergency' ? Icons.emergency : Icons.work,
+								onTap: () => _showServiceDialog(d.id, data, service),
+							);
+							
+							// Also show dialog
 							_showServiceDialog(d.id, data, service);
 						}
 					}

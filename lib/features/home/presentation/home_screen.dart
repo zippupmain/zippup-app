@@ -9,6 +9,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:zippup/features/notifications/widgets/floating_notification.dart';
+import 'package:zippup/services/notifications/sound_service.dart';
 
 // Enhanced implementations with colorful design
 Widget _PositionedUnreadDot() => const SizedBox.shrink();

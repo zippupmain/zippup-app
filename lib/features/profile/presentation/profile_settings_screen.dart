@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
 	const ProfileSettingsScreen({super.key});
@@ -133,7 +134,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 					TextField(controller: _email, decoration: const InputDecoration(labelText: 'Email address')),
 					const SizedBox(height: 12),
 					FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving…' : 'Save')),
-					const SizedBox(height: 48),
+					const SizedBox(height: 24),
+					
+					// Notification test button
+					OutlinedButton.icon(
+						onPressed: () => context.push('/notification-test'),
+						icon: const Icon(Icons.volume_up, color: Colors.orange),
+						label: const Text('🔔 Test Notification Sounds', style: TextStyle(color: Colors.orange)),
+						style: OutlinedButton.styleFrom(
+							side: const BorderSide(color: Colors.orange),
+							padding: const EdgeInsets.symmetric(vertical: 12),
+						),
+					),
+					
+					const SizedBox(height: 24),
 					const Divider(),
 				],
 			),
