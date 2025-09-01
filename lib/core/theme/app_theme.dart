@@ -29,12 +29,12 @@ class AppTheme {
         selectedItemColor: brandBlue,
         unselectedItemColor: Colors.grey,
       ),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         color: Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 2,
       ),
-      dialogTheme: const DialogTheme(
+      dialogTheme: const DialogThemeData(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
       ),
