@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
-import 'package:zippup/services/notifications/sound_service.dart';
+import 'package:zippup/services/notifications/simple_sound_service.dart';
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 
 class GlobalIncomingListener extends StatefulWidget {
@@ -258,19 +258,11 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		} catch (_) {}
 		// Play notification sound with enhanced error handling
 		try { 
-			print('🔔 Attempting to play RIDE REQUEST notification sound...');
-			await SoundService.instance.playCall();
-			print('✅ Ride request notification sound played successfully');
+			print('🔔 Playing RIDE REQUEST notification sound...');
+			final success = await SimpleSoundService.instance.playDriverNotification();
+			print(success ? '✅ Ride request sound SUCCESS' : '❌ Ride request sound FAILED');
 		} catch (e) {
-			print('❌ Failed to play ride notification sound: $e');
-			// Fallback: try system beep
-			try {
-				await SystemSound.play(SystemSoundType.alert);
-				await HapticFeedback.mediumImpact();
-				print('✅ Fallback ride notification sound played');
-			} catch (fallbackError) {
-				print('❌ Even fallback ride notification sound failed: $fallbackError');
-			}
+			print('❌ Critical error playing ride notification: $e');
 		}
 		
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
@@ -363,7 +355,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
-		try { await SoundService.instance.playCall(); } catch (_) {}
+		try { 
+			final success = await SimpleSoundService.instance.playDriverNotification(); 
+			print(success ? '✅ Order notification SUCCESS' : '❌ Order notification FAILED');
+		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('💼 New Job Request'),
 			content: Column(
@@ -390,7 +385,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	Future<void> _showDeliveryDialog(String id, Map<String, dynamic> m) async {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
-		try { await SoundService.instance.playChirp(); } catch (_) {}
+		try { 
+			final success = await SimpleSoundService.instance.playCustomerNotification(); 
+			print(success ? '✅ Delivery notification SUCCESS' : '❌ Delivery notification FAILED');
+		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('🚚 New Delivery Assigned'),
 			content: Text('Order ${id.substring(0,6)} • ${(m['category'] ?? '').toString()}'),
@@ -404,7 +402,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	Future<void> _showMovingDialog(String id, Map<String, dynamic> m) async {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
-		try { await SoundService.instance.playCall(); } catch (_) {}
+		try { 
+			final success = await SimpleSoundService.instance.playDriverNotification(); 
+			print(success ? '✅ Moving notification SUCCESS' : '❌ Moving notification FAILED');
+		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
 			title: const Text('📦 New Moving Request'),
 			content: Text('${(m['subcategory'] ?? 'moving').toString().toUpperCase()}\nFrom: ${(m['pickupAddress'] ?? '').toString()}'),
@@ -525,7 +526,8 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		
 		// Play notification sound
 		try { 
-			await SoundService.instance.playCall(); 
+			final success = await SimpleSoundService.instance.playDriverNotification(); 
+			print(success ? '✅ Service notification SUCCESS' : '❌ Service notification FAILED');
 		} catch (_) {}
 		
 		// Show dialog based on service type

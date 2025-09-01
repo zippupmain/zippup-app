@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:zippup/services/notifications/sound_service.dart';
+import 'package:zippup/services/notifications/simple_sound_service.dart';
 
 class NotificationTestScreen extends StatefulWidget {
   const NotificationTestScreen({super.key});
@@ -19,9 +19,11 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     });
 
     try {
-      await SoundService.instance.playChirp();
+      final success = await SimpleSoundService.instance.playCustomerNotification();
       setState(() {
-        _testResult = '✅ Customer notification test completed! Check console for details.';
+        _testResult = success 
+          ? '✅ Customer notification SUCCESS! Check console for details.'
+          : '❌ Customer notification FAILED. Check console for details.';
         _isLoading = false;
       });
     } catch (e) {
@@ -39,9 +41,11 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     });
 
     try {
-      await SoundService.instance.playCall();
+      final success = await SimpleSoundService.instance.playDriverNotification();
       setState(() {
-        _testResult = '✅ Driver notification test completed! Check console for details.';
+        _testResult = success 
+          ? '✅ Driver notification SUCCESS! Check console for details.'
+          : '❌ Driver notification FAILED. Check console for details.';
         _isLoading = false;
       });
     } catch (e) {
@@ -59,9 +63,11 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     });
 
     try {
-      await SoundService.instance.playTrill();
+      final success = await SimpleSoundService.instance.playCompletionNotification();
       setState(() {
-        _testResult = '✅ Completion notification test completed! Check console for details.';
+        _testResult = success 
+          ? '✅ Completion notification SUCCESS! Check console for details.'
+          : '❌ Completion notification FAILED. Check console for details.';
         _isLoading = false;
       });
     } catch (e) {
@@ -79,11 +85,14 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     });
 
     try {
-      final result = await SoundService.instance.testSounds();
+      final results = await SimpleSoundService.instance.testAllNotifications();
+      final successCount = results.values.where((success) => success).length;
       setState(() {
-        _testResult = result 
-          ? '✅ All notification sounds test completed! Check console for details.'
-          : '❌ Some notification sounds failed. Check console for details.';
+        _testResult = '📊 Test Results: $successCount/3 notifications working\n'
+          'Customer: ${results['customer'] == true ? '✅' : '❌'}\n'
+          'Driver: ${results['driver'] == true ? '✅' : '❌'}\n'
+          'Completion: ${results['completion'] == true ? '✅' : '❌'}\n'
+          'Check console for detailed logs.';
         _isLoading = false;
       });
     } catch (e) {
@@ -164,6 +173,38 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
+            const SizedBox(height: 12),
+            
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Testing emergency sound fallback...';
+                });
+                try {
+                  final success = await SimpleSoundService.instance.forcePlayAnySound();
+                  setState(() {
+                    _testResult = success 
+                      ? '✅ EMERGENCY sound test SUCCESS! At least one method worked.'
+                      : '❌ EMERGENCY sound test FAILED! All methods failed.';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Emergency sound test failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
+              icon: const Icon(Icons.emergency),
+              label: const Text('Emergency Sound Test'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
             const SizedBox(height: 24),
             
             ElevatedButton.icon(

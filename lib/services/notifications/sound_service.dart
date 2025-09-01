@@ -6,6 +6,7 @@ class SoundService {
 	SoundService._internal();
 	static final SoundService instance = SoundService._internal();
 	final AudioPlayer _player = AudioPlayer();
+	bool _soundsEnabled = true;
 
 	Future<void> playChirp() async {
 		try {
