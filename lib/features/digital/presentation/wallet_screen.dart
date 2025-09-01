@@ -254,12 +254,12 @@ class _WalletScreenState extends State<WalletScreen> {
 											child: InkWell(
 												onTap: () => context.push('/wallet/add-funds'),
 												borderRadius: BorderRadius.circular(12),
-												child: const Padding(
-													padding: EdgeInsets.all(16),
+												child: Padding(
+													padding: const EdgeInsets.all(16),
 													child: Column(
 														children: [
-															Icon(Icons.add_circle, color: Colors.green, size: 32),
-															SizedBox(height: 8),
+															const Icon(Icons.add_circle, color: Colors.green, size: 32),
+															const SizedBox(height: 8),
 															Text(AppLocalizations.of(context)?.addFunds ?? 'Add Funds', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
 														],
 													),
@@ -273,12 +273,12 @@ class _WalletScreenState extends State<WalletScreen> {
 											child: InkWell(
 												onTap: () => context.push('/wallet/withdraw'),
 												borderRadius: BorderRadius.circular(12),
-												child: const Padding(
-													padding: EdgeInsets.all(16),
+												child: Padding(
+													padding: const EdgeInsets.all(16),
 													child: Column(
 														children: [
-															Icon(Icons.remove_circle, color: Colors.blue, size: 32),
-															SizedBox(height: 8),
+															const Icon(Icons.remove_circle, color: Colors.blue, size: 32),
+															const SizedBox(height: 8),
 															Text(AppLocalizations.of(context)?.withdraw ?? 'Withdraw', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
 														],
 													),
