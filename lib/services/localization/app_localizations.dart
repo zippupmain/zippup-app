@@ -12,37 +12,15 @@ class AppLocalizations {
 
   static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
-  // Supported locales
+  // Supported locales - ONLY languages with actual translations
   static const List<Locale> supportedLocales = [
     Locale('en', 'US'), // English
-    Locale('es', 'ES'), // Spanish
+    Locale('es', 'ES'), // Spanish  
     Locale('fr', 'FR'), // French
     Locale('de', 'DE'), // German
-    Locale('pt', 'BR'), // Portuguese (Brazil)
     Locale('ar', 'SA'), // Arabic
     Locale('zh', 'CN'), // Chinese (Simplified)
     Locale('hi', 'IN'), // Hindi
-    Locale('ja', 'JP'), // Japanese
-    Locale('ko', 'KR'), // Korean
-    Locale('ru', 'RU'), // Russian
-    Locale('it', 'IT'), // Italian
-    Locale('nl', 'NL'), // Dutch
-    Locale('sv', 'SE'), // Swedish
-    Locale('da', 'DK'), // Danish
-    Locale('no', 'NO'), // Norwegian
-    Locale('fi', 'FI'), // Finnish
-    Locale('pl', 'PL'), // Polish
-    Locale('tr', 'TR'), // Turkish
-    Locale('th', 'TH'), // Thai
-    Locale('vi', 'VN'), // Vietnamese
-    Locale('id', 'ID'), // Indonesian
-    Locale('ms', 'MY'), // Malay
-    Locale('tl', 'PH'), // Filipino
-    Locale('sw', 'KE'), // Swahili
-    Locale('am', 'ET'), // Amharic
-    Locale('ha', 'NG'), // Hausa
-    Locale('yo', 'NG'), // Yoruba
-    Locale('ig', 'NG'), // Igbo
   ];
 
   // Common translations
@@ -58,7 +36,7 @@ class AppLocalizations {
       'moving': 'Moving',
       'personal': 'Personal',
       'rentals': 'Rentals',
-      'marketplace': 'Marketplace',
+      'marketplace': 'Market',
       'digital': 'Digital',
       'others': 'Others',
       'wallet': 'My Wallet',

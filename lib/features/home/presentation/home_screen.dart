@@ -374,7 +374,7 @@ class _QuickActions extends StatelessWidget {
 			_QuickAction(l?.personal ?? 'Personal', Icons.spa, 'personal', 
 				const LinearGradient(colors: [Color(0xFF673AB7), Color(0xFF9575CD)]), 
 				Colors.white, '💆'),
-			_QuickAction(l?.marketplace ?? 'Market(P)', Icons.shopping_bag, 'marketplace', 
+			_QuickAction(l?.marketplace ?? 'Market', Icons.shopping_bag, 'marketplace', 
 				const LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF06292)]), 
 				Colors.white, '🛒'),
 			_QuickAction(l?.rentals ?? 'Rentals', Icons.key, 'rentals', 

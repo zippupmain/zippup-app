@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
+import 'package:zippup/services/notifications/web_beep_service.dart';
 
 class SimpleSoundService {
   SimpleSoundService._internal();
   static final SimpleSoundService instance = SimpleSoundService._internal();
+  
+  // Force enable verbose logging for debugging
+  static const bool _debugMode = true;
 
   /// Play customer notification sound
   Future<bool> playCustomerNotification() async {
@@ -21,13 +25,30 @@ class SimpleSoundService {
       }
     }
 
+    // Try web beep first (most reliable on web)
+    if (kIsWeb) {
+      try {
+        final webSuccess = await WebBeepService.playNotificationBeep();
+        if (webSuccess) {
+          print('✅ [CUSTOMER] Web beep SUCCESS');
+          success = true;
+        } else {
+          print('❌ [CUSTOMER] Web beep failed');
+        }
+      } catch (e) {
+        print('❌ [CUSTOMER] Web beep error: $e');
+      }
+    }
+
     // Try system alert sound
-    try {
-      await SystemSound.play(SystemSoundType.alert);
-      print('✅ [CUSTOMER] System alert sound SUCCESS');
-      success = true;
-    } catch (e) {
-      print('❌ [CUSTOMER] System alert failed: $e');
+    if (!success) {
+      try {
+        await SystemSound.play(SystemSoundType.alert);
+        print('✅ [CUSTOMER] System alert sound SUCCESS');
+        success = true;
+      } catch (e) {
+        print('❌ [CUSTOMER] System alert failed: $e');
+      }
     }
 
     // Try system click as backup
@@ -72,15 +93,32 @@ class SimpleSoundService {
       }
     }
 
+    // Try web urgent beep first (most reliable on web)
+    if (kIsWeb) {
+      try {
+        final webSuccess = await WebBeepService.playUrgentBeep();
+        if (webSuccess) {
+          print('✅ [DRIVER] Web urgent beep SUCCESS');
+          success = true;
+        } else {
+          print('❌ [DRIVER] Web urgent beep failed');
+        }
+      } catch (e) {
+        print('❌ [DRIVER] Web urgent beep error: $e');
+      }
+    }
+
     // Double click for urgency
-    try {
-      await SystemSound.play(SystemSoundType.click);
-      await Future.delayed(const Duration(milliseconds: 200));
-      await SystemSound.play(SystemSoundType.click);
-      print('✅ [DRIVER] Double click SUCCESS');
-      success = true;
-    } catch (e) {
-      print('❌ [DRIVER] Double click failed: $e');
+    if (!success) {
+      try {
+        await SystemSound.play(SystemSoundType.click);
+        await Future.delayed(const Duration(milliseconds: 200));
+        await SystemSound.play(SystemSoundType.click);
+        print('✅ [DRIVER] Double click SUCCESS');
+        success = true;
+      } catch (e) {
+        print('❌ [DRIVER] Double click failed: $e');
+      }
     }
 
     // Try alert sound as backup
@@ -164,6 +202,22 @@ class SimpleSoundService {
     print('🚨 [EMERGENCY] Attempting to play ANY available sound...');
     
     final methods = [
+      () async {
+        if (kIsWeb) {
+          final success = await WebBeepService.playNotificationBeep();
+          if (success) return 'WebBeepService.notification';
+          throw Exception('Web beep failed');
+        }
+        throw Exception('Not web platform');
+      },
+      () async {
+        if (kIsWeb) {
+          final success = await WebBeepService.playUrgentBeep();
+          if (success) return 'WebBeepService.urgent';
+          throw Exception('Web urgent beep failed');
+        }
+        throw Exception('Not web platform');
+      },
       () async {
         await SystemSound.play(SystemSoundType.alert);
         return 'SystemSound.alert';
