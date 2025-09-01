@@ -18,26 +18,23 @@ class AudibleNotificationService {
       
       // Set audio context for mobile to ensure notifications are audible
       if (!kIsWeb) {
-        await _player.setAudioContext(
-          AudioContext(
-            iOS: AudioContextIOS(
-              defaultToSpeaker: true,
-              category: AVAudioSessionCategory.playback,
-              options: [
-                AVAudioSessionOptions.defaultToSpeaker,
-                AVAudioSessionOptions.duckOthers,
-              ],
+        try {
+          await _player.setAudioContext(
+            AudioContext(
+              iOS: AudioContextIOS(
+                category: AVAudioSessionCategory.playback,
+              ),
+              android: AudioContextAndroid(
+                contentType: AndroidContentType.sonification,
+                usageType: AndroidUsageType.notification,
+                audioFocus: AndroidAudioFocus.gain,
+              ),
             ),
-            android: AudioContextAndroid(
-              isSpeakerphoneOn: true,
-              stayAwake: true,
-              contentType: AndroidContentType.sonification,
-              usageType: AndroidUsageType.notification,
-              audioFocus: AndroidAudioFocus.gainTransientMayDuck,
-            ),
-          ),
-        );
-        print('✅ Mobile audio context configured for audible notifications');
+          );
+          print('✅ Mobile audio context configured for audible notifications');
+        } catch (e) {
+          print('⚠️ Audio context setup failed, using defaults: $e');
+        }
       }
       
       // Set volume to maximum to ensure audibility
