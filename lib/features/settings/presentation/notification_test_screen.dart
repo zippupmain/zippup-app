@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:zippup/services/notifications/reliable_sound_service.dart';
 import 'package:zippup/services/notifications/audible_notification_service.dart';
 import 'package:zippup/services/notifications/working_sound_service.dart';
+import 'package:zippup/services/notifications/simple_beep_service.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NotificationTestScreen extends StatefulWidget {
@@ -408,6 +409,43 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
               label: const Text('Test WORKING Methods Only'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Testing SIMPLE beep methods (like voice search)...';
+                });
+                try {
+                  final results = await SimpleBeepService.instance.testIndividualMethods();
+                  final successCount = results.values.where((s) => s).length;
+                  setState(() {
+                    _testResult = '🔊 SIMPLE Beep Test: $successCount/5 methods worked\n'
+                      'System Alert: ${results['system_alert'] == true ? '✅' : '❌'}\n'
+                      'Urgent Alert: ${results['urgent_alert'] == true ? '✅' : '❌'}\n'
+                      'Haptic Only: ${results['haptic_only'] == true ? '✅' : '❌'}\n'
+                      'Customer: ${results['customer'] == true ? '✅' : '❌'}\n'
+                      'Driver: ${results['driver'] == true ? '✅' : '❌'}\n'
+                      'Uses same methods as voice search!';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Simple beep test failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
+              icon: const Icon(Icons.volume_down),
+              label: const Text('Test SIMPLE Beeps (Like Voice)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
