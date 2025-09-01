@@ -104,8 +104,17 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						
 						final providerSubcategory = providerData['subcategory']?.toString(); // e.g., 'Taxi', 'Bike', 'Bus'
 						
-						// Map ride types to provider subcategories
-						bool typeMatches = _doesTransportTypeMatch(rideType, providerSubcategory);
+						// Check granular matching: subcategory + serviceType + serviceSubtype
+						final providerServiceType = providerData['serviceType']?.toString();
+						final providerServiceSubtype = providerData['serviceSubtype']?.toString();
+						
+						bool typeMatches = _doesTransportTypeMatchGranular(
+							rideType, 
+							providerSubcategory, 
+							providerServiceType, 
+							providerServiceSubtype,
+							data, // Pass full ride data for detailed matching
+						);
 						
 						if (typeMatches) {
 							shouldShow = true;
@@ -859,39 +868,133 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		}
 	}
 
-	/// Check if transport ride type matches provider subcategory
+	/// Check if transport ride type matches provider subcategory (legacy method)
 	bool _doesTransportTypeMatch(String? rideType, String? providerSubcategory) {
+		return _doesTransportTypeMatchGranular(rideType, providerSubcategory, null, null, {});
+	}
+
+	/// Granular transport type matching with passenger count and vehicle specifications
+	bool _doesTransportTypeMatchGranular(
+		String? rideType, 
+		String? providerSubcategory, 
+		String? providerServiceType,
+		String? providerServiceSubtype,
+		Map<String, dynamic> rideData,
+	) {
 		if (rideType == null || providerSubcategory == null) return false;
 		
-		// Map ride types to provider subcategories
-		final typeMapping = {
-			// Car rides
+		print('🔍 GRANULAR Transport matching:');
+		print('   Ride Type: $rideType');
+		print('   Provider Subcategory: $providerSubcategory');
+		print('   Provider Service Type: $providerServiceType');
+		print('   Provider Service Subtype: $providerServiceSubtype');
+		
+		// First check basic category matching
+		final basicCategoryMapping = {
 			'car': ['Taxi'],
 			'sedan': ['Taxi'],
 			'suv': ['Taxi'],
-			
-			// Motorbike rides
 			'motorbike': ['Bike'],
 			'bike': ['Bike'],
 			'motorcycle': ['Bike'],
-			
-			// Bus rides
 			'bus': ['Bus'],
 			'charter': ['Bus'],
-			
-			// Tricycle rides
 			'tricycle': ['Tricycle'],
-			'keke': ['Tricycle'],
-			
-			// Courier/delivery
 			'courier': ['Courier'],
-			'delivery': ['Courier'],
 		};
 		
-		final matchingProviderTypes = typeMapping[rideType.toLowerCase()] ?? [];
-		final matches = matchingProviderTypes.contains(providerSubcategory);
+		final matchingCategories = basicCategoryMapping[rideType.toLowerCase()] ?? [];
+		if (!matchingCategories.contains(providerSubcategory)) {
+			print('❌ Basic category mismatch');
+			return false;
+		}
 		
-		print('🔍 Transport type match check: Ride=$rideType, Provider=$providerSubcategory, Matches=$matches');
+		// If no specific service type, allow basic category match
+		if (providerServiceType == null) {
+			print('✅ Basic category match (no specific service type)');
+			return true;
+		}
+		
+		// Granular matching based on specific requirements
+		final passengerCount = rideData['passengerCount'] as int? ?? 1;
+		
+		switch (providerSubcategory) {
+			case 'Taxi':
+				return _matchTaxiType(rideType, providerServiceType, passengerCount);
+			case 'Bike':
+				return _matchBikeType(rideType, providerServiceType);
+			case 'Bus':
+				return _matchBusType(rideType, providerServiceType, passengerCount);
+			case 'Courier':
+				return _matchCourierType(rideType, providerServiceType);
+			default:
+				print('✅ Default category match');
+				return true;
+		}
+	}
+
+	/// Match taxi service types based on passenger count
+	bool _matchTaxiType(String rideType, String providerServiceType, int passengerCount) {
+		final taxiCapacity = {
+			'2 Seater Car': 2,
+			'4 Seater Car': 4,
+			'6 Seater Car': 6,
+			'8+ Seater Car': 8,
+			'Luxury Car': 4, // Assume 4 seats unless specified
+			'Economy Car': 4,
+		};
+		
+		final providerCapacity = taxiCapacity[providerServiceType] ?? 4;
+		final matches = passengerCount <= providerCapacity;
+		
+		print('🚗 Taxi match: Passengers=$passengerCount, Provider Capacity=$providerCapacity, Matches=$matches');
+		return matches;
+	}
+
+	/// Match bike service types
+	bool _matchBikeType(String rideType, String providerServiceType) {
+		final bikeTypeMapping = {
+			'motorbike': ['Standard Motorbike', 'Power Bike'],
+			'bike': ['Standard Motorbike', 'Power Bike', 'Scooter'],
+			'scooter': ['Scooter'],
+			'power_bike': ['Power Bike'],
+		};
+		
+		final matchingTypes = bikeTypeMapping[rideType.toLowerCase()] ?? [];
+		final matches = matchingTypes.contains(providerServiceType);
+		
+		print('🏍️ Bike match: Ride=$rideType, Provider=$providerServiceType, Matches=$matches');
+		return matches;
+	}
+
+	/// Match bus service types based on passenger count
+	bool _matchBusType(String rideType, String providerServiceType, int passengerCount) {
+		final busCapacity = {
+			'Mini Bus (14 seats)': 14,
+			'Standard Bus (25 seats)': 25,
+			'Large Bus (40+ seats)': 40,
+			'Charter Bus': 50,
+		};
+		
+		final providerCapacity = busCapacity[providerServiceType] ?? 25;
+		final matches = passengerCount <= providerCapacity;
+		
+		print('🚌 Bus match: Passengers=$passengerCount, Provider Capacity=$providerCapacity, Matches=$matches');
+		return matches;
+	}
+
+	/// Match courier service types
+	bool _matchCourierType(String rideType, String providerServiceType) {
+		final courierTypeMapping = {
+			'courier': ['Motorbike Courier', 'Car Courier', 'Bicycle Courier'],
+			'delivery': ['Motorbike Courier', 'Car Courier'],
+			'express': ['Motorbike Courier'],
+		};
+		
+		final matchingTypes = courierTypeMapping[rideType.toLowerCase()] ?? [];
+		final matches = matchingTypes.contains(providerServiceType);
+		
+		print('📦 Courier match: Ride=$rideType, Provider=$providerServiceType, Matches=$matches');
 		return matches;
 	}
 

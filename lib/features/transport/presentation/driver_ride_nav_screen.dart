@@ -194,6 +194,43 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 					final driverLat = (data['driverLat'] as num?)?.toDouble();
 					final driverLng = (data['driverLng'] as num?)?.toDouble();
 
+					// Handle cancelled rides
+					if (ride.status == RideStatus.cancelled) {
+						WidgetsBinding.instance.addPostFrameCallback((_) {
+							if (mounted) {
+								showDialog(
+									context: context,
+									barrierDismissible: false,
+									builder: (context) => AlertDialog(
+										title: const Text('🚫 Ride Cancelled'),
+										content: const Text('This ride has been cancelled by the customer.'),
+										actions: [
+											FilledButton(
+												onPressed: () {
+													Navigator.pop(context);
+													Navigator.pop(context); // Go back to dashboard
+												},
+												child: const Text('OK'),
+											),
+										],
+									),
+								);
+							}
+						});
+						return const Center(
+							child: Column(
+								mainAxisAlignment: MainAxisAlignment.center,
+								children: [
+									Icon(Icons.cancel, size: 64, color: Colors.red),
+									SizedBox(height: 16),
+									Text('Ride Cancelled', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+									SizedBox(height: 8),
+									Text('This ride has been cancelled by the customer.'),
+								],
+							),
+						);
+					}
+
 					// Show driver completion summary
 					if (ride.status == RideStatus.completed && !_shownDriverSummary) {
 						_shownDriverSummary = true;

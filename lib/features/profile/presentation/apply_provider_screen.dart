@@ -21,6 +21,8 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 	String _category = 'transport';
 	String? _subcategory;
 	String _type = 'individual';
+	String? _serviceType; // New: Specific service type (e.g., '4 Seater Car', 'Plumber', 'Ambulance')
+	String? _serviceSubtype; // New: Specific service subtype (e.g., 'High Priority', 'Large Courier')
 	Uint8List? _idBytes;
 	Uint8List? _bizBytes;
 	bool _saving = false;
@@ -50,6 +52,63 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Roadside'],
 		'personal': ['Beauty Services', 'Wellness Services', 'Fitness Services', 'Tutoring Services', 'Cleaning Services', 'Childcare Services'],
 		'others': ['Events Planning', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Event Ticketing'],
+	};
+
+	// Service Types (more specific than subcategory)
+	final Map<String, Map<String, List<String>>> _serviceTypes = const {
+		'transport': {
+			'Taxi': ['2 Seater Car', '4 Seater Car', '6 Seater Car', '8+ Seater Car', 'Luxury Car', 'Economy Car'],
+			'Bike': ['Standard Motorbike', 'Power Bike', 'Scooter', 'Electric Bike'],
+			'Bus': ['Mini Bus (14 seats)', 'Standard Bus (25 seats)', 'Large Bus (40+ seats)', 'Charter Bus'],
+			'Tricycle': ['Standard Tricycle', 'Cargo Tricycle'],
+			'Courier': ['Motorbike Courier', 'Car Courier', 'Bicycle Courier'],
+		},
+		'hire': {
+			'Home Services': ['Plumber', 'Electrician', 'Carpenter', 'Painter', 'Cleaner', 'Gardener'],
+			'Tech Services': ['Phone Repair', 'Computer Repair', 'TV Repair', 'Appliance Repair', 'CCTV Install'],
+			'Construction': ['Builder', 'Mason', 'Welder', 'Roofer', 'Tiler'],
+			'Auto Services': ['Mechanic', 'Auto Electrician', 'Panel Beater', 'Tyre Service'],
+			'Personal Care': ['Barber', 'Hairdresser', 'Makeup Artist', 'Nail Technician'],
+		},
+		'emergency': {
+			'Ambulance': ['Basic Life Support', 'Advanced Life Support', 'Critical Care', 'Patient Transport'],
+			'Fire Service': ['Fire Fighting', 'Rescue Operations', 'Hazmat Response'],
+			'Security': ['Armed Response', 'Patrol Service', 'Alarm Response', 'VIP Protection'],
+			'Towing': ['Light Vehicle Towing', 'Heavy Vehicle Towing', 'Motorcycle Towing'],
+			'Roadside': ['Battery Jump', 'Tire Change', 'Fuel Delivery', 'Lockout Service'],
+		},
+		'moving': {
+			'Truck': ['Small Truck (1-2 rooms)', 'Medium Truck (3-4 rooms)', 'Large Truck (5+ rooms)', 'Specialized Moving'],
+			'Backie/Pickup': ['Single Item', 'Small Load', 'Appliance Moving'],
+			'Courier': ['Document Delivery', 'Small Package', 'Medium Package', 'Express Delivery'],
+		},
+		'personal': {
+			'Beauty Services': ['Hair Styling', 'Hair Cutting', 'Hair Coloring', 'Manicure', 'Pedicure', 'Facial', 'Makeup'],
+			'Wellness Services': ['Massage Therapy', 'Spa Treatment', 'Aromatherapy', 'Reflexology'],
+			'Fitness Services': ['Personal Training', 'Yoga Instruction', 'Pilates', 'Nutrition Coaching'],
+			'Tutoring Services': ['Academic Tutoring', 'Language Teaching', 'Music Lessons', 'Art Lessons'],
+			'Cleaning Services': ['House Cleaning', 'Office Cleaning', 'Deep Cleaning', 'Post-Construction Cleaning'],
+			'Childcare Services': ['Babysitting', 'Nanny Service', 'Daycare', 'After-School Care'],
+		},
+	};
+
+	// Service Sub-types (most specific level)
+	final Map<String, Map<String, Map<String, List<String>>>> _serviceSubtypes = const {
+		'emergency': {
+			'Ambulance': {
+				'Basic Life Support': ['Standard Priority', 'High Priority', 'Critical Priority'],
+				'Advanced Life Support': ['Standard Priority', 'High Priority', 'Critical Priority'],
+				'Critical Care': ['High Priority', 'Critical Priority'],
+				'Patient Transport': ['Standard Priority', 'Scheduled Transport'],
+			},
+		},
+		'moving': {
+			'Courier': {
+				'Document Delivery': ['Same Day', 'Next Day', 'Express (2 hours)'],
+				'Small Package': ['Standard', 'Fragile', 'Express'],
+				'Express Delivery': ['1 Hour', '2 Hours', '4 Hours'],
+			},
+		},
 	};
 
 	Future<void> _pickVehiclePhotos() async {
@@ -112,6 +171,8 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'address': _address.text.trim(),
 				'category': _category,
 				'subcategory': _subcategory,
+				'serviceType': _serviceType, // New: Specific service type
+				'serviceSubtype': _serviceSubtype, // New: Specific service subtype
 				'rentalSubtype': _rentalSubtype,
 				'type': _type,
 				'title': _title.text.trim(),
@@ -173,7 +234,43 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 							value: _subcategory,
 							items: subs.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
 							decoration: const InputDecoration(labelText: 'Sub category'),
-							onChanged: (v) => setState(() => _subcategory = v),
+							onChanged: (v) => setState(() { 
+								_subcategory = v; 
+								_serviceType = null; // Reset when subcategory changes
+								_serviceSubtype = null;
+							}),
+						),
+					
+					// Service Type dropdown (more specific)
+					if (_subcategory != null && _serviceTypes[_category]?[_subcategory] != null)
+						DropdownButtonFormField<String>(
+							value: _serviceType,
+							items: _serviceTypes[_category]![_subcategory]!
+								.map((type) => DropdownMenuItem(value: type, child: Text(type)))
+								.toList(),
+							decoration: const InputDecoration(
+								labelText: 'Service Type',
+								helperText: 'Specific service you provide',
+							),
+							onChanged: (v) => setState(() { 
+								_serviceType = v; 
+								_serviceSubtype = null; // Reset when service type changes
+							}),
+						),
+					
+					// Service Sub-type dropdown (most specific)
+					if (_serviceType != null && 
+						_serviceSubtypes[_category]?[_subcategory]?[_serviceType] != null)
+						DropdownButtonFormField<String>(
+							value: _serviceSubtype,
+							items: _serviceSubtypes[_category]![_subcategory]![_serviceType]!
+								.map((subtype) => DropdownMenuItem(value: subtype, child: Text(subtype)))
+								.toList(),
+							decoration: const InputDecoration(
+								labelText: 'Service Sub-type',
+								helperText: 'Priority level or specialization',
+							),
+							onChanged: (v) => setState(() => _serviceSubtype = v),
 						),
 					DropdownButtonFormField(value: _type, items: const [
 						DropdownMenuItem(value: 'individual', child: Text('Individual')),
