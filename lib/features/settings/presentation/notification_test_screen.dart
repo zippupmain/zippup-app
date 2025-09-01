@@ -3,6 +3,7 @@ import 'package:zippup/services/notifications/reliable_sound_service.dart';
 import 'package:zippup/services/notifications/audible_notification_service.dart';
 import 'package:zippup/services/notifications/working_sound_service.dart';
 import 'package:zippup/services/notifications/simple_beep_service.dart';
+import 'package:zippup/services/notifications/voice_hijack_service.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NotificationTestScreen extends StatefulWidget {
@@ -446,6 +447,70 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
               label: const Text('Test SIMPLE Beeps (Like Voice)'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.indigo,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Testing VOICE HIJACK method (uses voice search audio)...';
+                });
+                try {
+                  final success = await VoiceHijackService.instance.testVoiceHijack();
+                  setState(() {
+                    _testResult = success 
+                      ? '🎤 VOICE HIJACK SUCCESS! Uses same audio system as voice search'
+                      : '❌ VOICE HIJACK FAILED. Even voice audio system not working';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Voice hijack test failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
+              icon: const Icon(Icons.record_voice_over),
+              label: const Text('Test VOICE HIJACK Method'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Trying EVERY possible sound method...';
+                });
+                try {
+                  final success = await VoiceHijackService.instance.playAnySoundPossible();
+                  setState(() {
+                    _testResult = success 
+                      ? '🚨 EMERGENCY SUCCESS! At least one sound method worked'
+                      : '💥 TOTAL FAILURE! No sound methods work on this device';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Emergency sound test failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
+              icon: const Icon(Icons.warning),
+              label: const Text('EMERGENCY: Try ANY Sound'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
