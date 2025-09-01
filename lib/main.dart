@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:zippup/core/config/firebase_options.dart';
@@ -7,6 +8,7 @@ import 'package:zippup/core/routing/app_router.dart';
 import 'package:zippup/core/theme/app_theme.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:zippup/services/notifications/notifications_service.dart';
+import 'package:zippup/services/localization/app_localizations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:zippup/core/config/payments_config.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -71,6 +73,27 @@ class ZippUpApp extends ConsumerWidget {
 			themeMode: ThemeMode.light, // Force light theme on all devices
 			routerConfig: router,
 			debugShowCheckedModeBanner: false,
+			// Internationalization support
+			localizationsDelegates: const [
+				AppLocalizations.delegate,
+				GlobalMaterialLocalizations.delegate,
+				GlobalWidgetsLocalizations.delegate,
+				GlobalCupertinoLocalizations.delegate,
+			],
+			supportedLocales: AppLocalizations.supportedLocales,
+			// Auto-detect user's language or fallback to English
+			localeResolutionCallback: (locale, supportedLocales) {
+				// If device locale is supported, use it
+				if (locale != null) {
+					for (final supportedLocale in supportedLocales) {
+						if (supportedLocale.languageCode == locale.languageCode) {
+							return supportedLocale;
+						}
+					}
+				}
+				// Fallback to English
+				return const Locale('en', 'US');
+			},
 		);
 	}
 }

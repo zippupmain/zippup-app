@@ -299,32 +299,83 @@ class _WalletScreenState extends State<WalletScreen> {
 										children: [
 											const Text('Quick Services', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 											const SizedBox(height: 12),
-											Row(
-												children: [
-													Expanded(
-														child: OutlinedButton.icon(
-															onPressed: () => context.push('/digital/global-airtime'),
-															icon: const Icon(Icons.phone, color: Colors.blue),
-															label: const Text('Airtime', style: TextStyle(color: Colors.blue)),
-														),
-													),
-													const SizedBox(width: 8),
-													Expanded(
-														child: OutlinedButton.icon(
-															onPressed: () => context.push('/digital/global-data'),
-															icon: const Icon(Icons.network_cell, color: Colors.purple),
-															label: const Text('Data', style: TextStyle(color: Colors.purple)),
-														),
-													),
-													const SizedBox(width: 8),
-													Expanded(
-														child: OutlinedButton.icon(
-															onPressed: () => context.push('/digital/global-bills'),
-															icon: const Icon(Icons.receipt_long, color: Colors.orange),
-															label: const Text('Bills', style: TextStyle(color: Colors.orange)),
-														),
-													),
-												],
+											// Mobile-optimized quick services
+											LayoutBuilder(
+												builder: (context, constraints) {
+													// If screen is narrow (mobile), use vertical layout
+													if (constraints.maxWidth < 600) {
+														return Column(
+															children: [
+																Row(
+																	children: [
+																		Expanded(
+																			child: OutlinedButton.icon(
+																				onPressed: () => context.push('/digital/global-airtime'),
+																				icon: const Icon(Icons.phone, color: Colors.blue, size: 18),
+																				label: const Text('Airtime', style: TextStyle(color: Colors.blue, fontSize: 12)),
+																				style: OutlinedButton.styleFrom(
+																					padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+																				),
+																			),
+																		),
+																		const SizedBox(width: 6),
+																		Expanded(
+																			child: OutlinedButton.icon(
+																				onPressed: () => context.push('/digital/global-data'),
+																				icon: const Icon(Icons.network_cell, color: Colors.purple, size: 18),
+																				label: const Text('Data', style: TextStyle(color: Colors.purple, fontSize: 12)),
+																				style: OutlinedButton.styleFrom(
+																					padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+																				),
+																			),
+																		),
+																	],
+																),
+																const SizedBox(height: 8),
+																SizedBox(
+																	width: double.infinity,
+																	child: OutlinedButton.icon(
+																		onPressed: () => context.push('/digital/global-bills'),
+																		icon: const Icon(Icons.receipt_long, color: Colors.orange, size: 18),
+																		label: const Text('Pay Bills', style: TextStyle(color: Colors.orange, fontSize: 12)),
+																		style: OutlinedButton.styleFrom(
+																			padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+																		),
+																	),
+																),
+															],
+														);
+													} else {
+														// Desktop/tablet - use horizontal layout
+														return Row(
+															children: [
+																Expanded(
+																	child: OutlinedButton.icon(
+																		onPressed: () => context.push('/digital/global-airtime'),
+																		icon: const Icon(Icons.phone, color: Colors.blue),
+																		label: const Text('Airtime', style: TextStyle(color: Colors.blue)),
+																	),
+																),
+																const SizedBox(width: 8),
+																Expanded(
+																	child: OutlinedButton.icon(
+																		onPressed: () => context.push('/digital/global-data'),
+																		icon: const Icon(Icons.network_cell, color: Colors.purple),
+																		label: const Text('Data', style: TextStyle(color: Colors.purple)),
+																	),
+																),
+																const SizedBox(width: 8),
+																Expanded(
+																	child: OutlinedButton.icon(
+																		onPressed: () => context.push('/digital/global-bills'),
+																		icon: const Icon(Icons.receipt_long, color: Colors.orange),
+																		label: const Text('Bills', style: TextStyle(color: Colors.orange)),
+																	),
+																),
+															],
+														);
+													}
+												},
 											),
 										],
 									),
