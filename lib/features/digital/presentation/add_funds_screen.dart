@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/payments/payments_service.dart';
+import 'package:zippup/services/payments/global_payment_router.dart';
+import 'package:zippup/services/location/country_detection_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AddFundsScreen extends StatefulWidget {
@@ -17,13 +19,47 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 	String _paymentMethod = 'card';
 	bool _isProcessing = false;
 	double _currentBalance = 0.0;
+	String _detectedCountry = 'NG';
+	String _currencySymbol = '₦';
+	String _currencyCode = 'NGN';
 
 	final List<double> _quickAmounts = [500, 1000, 2000, 5000, 10000, 20000];
 
 	@override
 	void initState() {
 		super.initState();
-		_loadCurrentBalance();
+		_detectCountryAndLoadData();
+	}
+
+	Future<void> _detectCountryAndLoadData() async {
+		try {
+			final detectedCountry = await CountryDetectionService.detectUserCountry();
+			final currencyInfo = CountryDetectionService.getCurrencyInfo(detectedCountry);
+			
+			setState(() {
+				_detectedCountry = detectedCountry;
+				_currencySymbol = currencyInfo['symbol']!;
+				_currencyCode = currencyInfo['code']!;
+				
+				// Update quick amounts based on currency
+				if (_currencyCode == 'USD') {
+					_quickAmounts.clear();
+					_quickAmounts.addAll([5, 10, 25, 50, 100, 200]);
+				} else if (_currencyCode == 'GBP') {
+					_quickAmounts.clear();
+					_quickAmounts.addAll([5, 10, 20, 50, 100, 200]);
+				} else if (_currencyCode == 'EUR') {
+					_quickAmounts.clear();
+					_quickAmounts.addAll([5, 10, 25, 50, 100, 200]);
+				}
+				// Keep NGN amounts for African currencies
+			});
+			
+			await _loadCurrentBalance();
+		} catch (e) {
+			print('Error detecting country: $e');
+			await _loadCurrentBalance();
+		}
 	}
 
 	Future<void> _loadCurrentBalance() async {
@@ -95,36 +131,21 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 
 	Future<void> _processPayment(String uid, double amount) async {
 		try {
-			final paymentsService = PaymentsService();
-			String checkoutUrl;
-
-			if (_paymentMethod == 'flutterwave') {
-				checkoutUrl = await paymentsService.createFlutterwaveCheckout(
-					amount: amount,
-					currency: 'NGN',
-					items: [
-						{
-							'title': 'ZippUp Wallet Top-up',
-							'description': 'Add funds to your ZippUp wallet',
-							'price': amount,
-							'quantity': 1,
-						}
-					],
-				);
-			} else {
-				// Use Stripe for card payments
-				checkoutUrl = await paymentsService.createStripeCheckout(
-					amount: amount,
-					currency: 'NGN',
-					items: [
-						{
-							'title': 'ZippUp Wallet Top-up',
-							'price': amount,
-							'quantity': 1,
-						}
-					],
-				);
-			}
+			// Use smart gateway routing based on country
+			final checkoutUrl = await GlobalPaymentRouter.createCheckout(
+				amount: amount,
+				currency: _currencyCode,
+				countryCode: _detectedCountry,
+				items: [
+					{
+						'title': 'ZippUp Wallet Top-up',
+						'description': 'Add funds to your ZippUp wallet',
+						'price': amount,
+						'quantity': 1,
+					}
+				],
+				preferredGateway: _paymentMethod == 'flutterwave' ? 'flutterwave' : null,
+			);
 
 			// Create pending transaction record
 			await FirebaseFirestore.instance.collection('wallet_transactions').add({
@@ -212,7 +233,7 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(
-				title: const Text('💰 Add Funds'),
+				title: Text('💰 Add Funds - ${CountryDetectionService.getCountryName(_detectedCountry)}'),
 				backgroundColor: Colors.green.shade50,
 				iconTheme: const IconThemeData(color: Colors.black),
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
@@ -247,7 +268,7 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 											),
 											const SizedBox(height: 8),
 											Text(
-												'₦${_currentBalance.toStringAsFixed(2)}',
+												'$_currencySymbol${_currentBalance.toStringAsFixed(2)}',
 												style: const TextStyle(
 													color: Colors.white,
 													fontSize: 36,
@@ -278,7 +299,7 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 													style: OutlinedButton.styleFrom(
 														side: const BorderSide(color: Colors.green),
 													),
-													child: Text('₦${amount.toStringAsFixed(0)}', style: const TextStyle(color: Colors.green)),
+													child: Text('$_currencySymbol${amount.toStringAsFixed(0)}', style: const TextStyle(color: Colors.green)),
 												)).toList(),
 											),
 										],

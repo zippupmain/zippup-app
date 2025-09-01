@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/digital/reloadly_service.dart';
 import 'package:zippup/services/payments/payments_service.dart';
+import 'package:zippup/services/payments/global_payment_router.dart';
 import 'package:zippup/services/location/country_detection_service.dart';
 
 class GlobalAirtimeScreen extends StatefulWidget {
@@ -236,10 +237,10 @@ class _GlobalAirtimeScreenState extends State<GlobalAirtimeScreen> {
 
 	Future<void> _processGatewayPayment(double amount, String phoneNumber) async {
 		try {
-			final paymentsService = PaymentsService();
-			final checkoutUrl = await paymentsService.createFlutterwaveCheckout(
+			final checkoutUrl = await GlobalPaymentRouter.createCheckout(
 				amount: amount,
 				currency: _currencyCode,
+				countryCode: _detectedCountry,
 				items: [
 					{
 						'title': '${_selectedOperator!['name']} Airtime',
@@ -546,12 +547,22 @@ class _GlobalAirtimeScreenState extends State<GlobalAirtimeScreen> {
 											),
 											
 											RadioListTile<String>(
-												title: const Row(
+												title: Row(
 													children: [
-														Icon(Icons.credit_card, color: Colors.blue),
-														SizedBox(width: 8),
-														Text('Card/Bank Transfer', style: TextStyle(color: Colors.black)),
+														const Icon(Icons.credit_card, color: Colors.blue),
+														const SizedBox(width: 8),
+														Text(
+															'${GlobalPaymentRouter.getGatewayDisplayName(GlobalPaymentRouter.getPrimaryGateway(_detectedCountry))} Payment',
+															style: const TextStyle(color: Colors.black),
+														),
 													],
+												),
+												subtitle: Text(
+													GlobalPaymentRouter.getGatewayDescription(
+														GlobalPaymentRouter.getPrimaryGateway(_detectedCountry),
+														_detectedCountry,
+													),
+													style: const TextStyle(color: Colors.black54, fontSize: 12),
 												),
 												value: 'gateway',
 												groupValue: _paymentMethod,
