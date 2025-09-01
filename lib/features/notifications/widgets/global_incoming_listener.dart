@@ -93,8 +93,26 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						shouldShow = true; // Directly assigned to this driver
 						print('✅ Ride ${d.id} assigned to this driver');
 					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && isActiveTransportProvider && isOnline) {
-						shouldShow = true; // Available for online transport providers
-						print('✅ Ride ${d.id} available for online transport provider');
+						// Check if provider's transport type matches the requested ride type
+						final rideType = data['type']?.toString(); // e.g., 'car', 'motorbike', 'bus'
+						final providerData = (await db.collection('provider_profiles')
+							.where('userId', isEqualTo: uid)
+							.where('service', isEqualTo: 'transport')
+							.where('status', isEqualTo: 'active')
+							.limit(1)
+							.get()).docs.first.data();
+						
+						final providerSubcategory = providerData['subcategory']?.toString(); // e.g., 'Taxi', 'Bike', 'Bus'
+						
+						// Map ride types to provider subcategories
+						bool typeMatches = _doesTransportTypeMatch(rideType, providerSubcategory);
+						
+						if (typeMatches) {
+							shouldShow = true;
+							print('✅ Ride ${d.id} matches provider type - Ride: $rideType, Provider: $providerSubcategory');
+						} else {
+							print('🚫 Ride ${d.id} type mismatch - Ride: $rideType, Provider: $providerSubcategory');
+						}
 					} else {
 						print('🚫 Ride ${d.id} not for this user - Provider: $isActiveTransportProvider, Online: $isOnline, Assigned: $assignedDriverId');
 					}
@@ -505,8 +523,19 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 							shouldShow = true; // Directly assigned
 							print('✅ $service request ${d.id} assigned to this provider');
 						} else if ((assignedProviderId == null || assignedProviderId.isEmpty) && currentlyOnline) {
-							shouldShow = true; // Available for online providers
-							print('✅ $service request ${d.id} available for online $service provider');
+							// Check if provider's service type matches the requested service type
+							final requestType = data['type']?.toString() ?? data['subcategory']?.toString();
+							final providerData = currentProviderSnap.docs.first.data();
+							final providerSubcategory = providerData['subcategory']?.toString();
+							
+							bool typeMatches = _doesServiceTypeMatch(service, requestType, providerSubcategory);
+							
+							if (typeMatches) {
+								shouldShow = true;
+								print('✅ $service request ${d.id} matches provider type - Request: $requestType, Provider: $providerSubcategory');
+							} else {
+								print('🚫 $service request ${d.id} type mismatch - Request: $requestType, Provider: $providerSubcategory');
+							}
 						} else {
 							print('🚫 $service request ${d.id} not for this user - Online: $currentlyOnline, Assigned: $assignedProviderId');
 						}
@@ -828,6 +857,215 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			print('❌ Number format error: $e');
 			return '0.00';
 		}
+	}
+
+	/// Check if transport ride type matches provider subcategory
+	bool _doesTransportTypeMatch(String? rideType, String? providerSubcategory) {
+		if (rideType == null || providerSubcategory == null) return false;
+		
+		// Map ride types to provider subcategories
+		final typeMapping = {
+			// Car rides
+			'car': ['Taxi'],
+			'sedan': ['Taxi'],
+			'suv': ['Taxi'],
+			
+			// Motorbike rides
+			'motorbike': ['Bike'],
+			'bike': ['Bike'],
+			'motorcycle': ['Bike'],
+			
+			// Bus rides
+			'bus': ['Bus'],
+			'charter': ['Bus'],
+			
+			// Tricycle rides
+			'tricycle': ['Tricycle'],
+			'keke': ['Tricycle'],
+			
+			// Courier/delivery
+			'courier': ['Courier'],
+			'delivery': ['Courier'],
+		};
+		
+		final matchingProviderTypes = typeMapping[rideType.toLowerCase()] ?? [];
+		final matches = matchingProviderTypes.contains(providerSubcategory);
+		
+		print('🔍 Transport type match check: Ride=$rideType, Provider=$providerSubcategory, Matches=$matches');
+		return matches;
+	}
+
+	/// Check if service request type matches provider subcategory for any service
+	bool _doesServiceTypeMatch(String service, String? requestType, String? providerSubcategory) {
+		if (requestType == null || providerSubcategory == null) return false;
+		
+		switch (service) {
+			case 'transport':
+				return _doesTransportTypeMatch(requestType, providerSubcategory);
+				
+			case 'hire':
+				return _doesHireTypeMatch(requestType, providerSubcategory);
+				
+			case 'emergency':
+				return _doesEmergencyTypeMatch(requestType, providerSubcategory);
+				
+			case 'moving':
+				return _doesMovingTypeMatch(requestType, providerSubcategory);
+				
+			case 'personal':
+				return _doesPersonalTypeMatch(requestType, providerSubcategory);
+				
+			default:
+				// For other services, match exact subcategory
+				final matches = requestType.toLowerCase() == providerSubcategory.toLowerCase();
+				print('🔍 $service type match check: Request=$requestType, Provider=$providerSubcategory, Matches=$matches');
+				return matches;
+		}
+	}
+
+	/// Check hire service type matching
+	bool _doesHireTypeMatch(String? requestType, String? providerSubcategory) {
+		if (requestType == null || providerSubcategory == null) return false;
+		
+		final typeMapping = {
+			// Home services
+			'plumber': ['Home Services'],
+			'electrician': ['Home Services'],
+			'carpenter': ['Home Services'],
+			'painter': ['Home Services'],
+			'cleaner': ['Home Services'],
+			
+			// Tech services
+			'phone_repair': ['Tech Services'],
+			'computer_repair': ['Tech Services'],
+			'tv_repair': ['Tech Services'],
+			'appliance_repair': ['Tech Services'],
+			
+			// Construction
+			'builder': ['Construction'],
+			'mason': ['Construction'],
+			'welder': ['Construction'],
+			
+			// Auto services
+			'mechanic': ['Auto Services'],
+			'auto_electrician': ['Auto Services'],
+			'panel_beater': ['Auto Services'],
+			
+			// Personal care
+			'barber': ['Personal Care'],
+			'hairdresser': ['Personal Care'],
+			'makeup_artist': ['Personal Care'],
+		};
+		
+		final matchingProviderTypes = typeMapping[requestType.toLowerCase()] ?? [];
+		final matches = matchingProviderTypes.contains(providerSubcategory);
+		
+		print('🔍 Hire type match check: Request=$requestType, Provider=$providerSubcategory, Matches=$matches');
+		return matches;
+	}
+
+	/// Check emergency service type matching
+	bool _doesEmergencyTypeMatch(String? requestType, String? providerSubcategory) {
+		if (requestType == null || providerSubcategory == null) return false;
+		
+		final typeMapping = {
+			// Medical emergencies
+			'medical': ['Ambulance'],
+			'ambulance': ['Ambulance'],
+			'health_emergency': ['Ambulance'],
+			
+			// Fire emergencies
+			'fire': ['Fire Service'],
+			'fire_emergency': ['Fire Service'],
+			
+			// Security emergencies
+			'security': ['Security'],
+			'theft': ['Security'],
+			'break_in': ['Security'],
+			
+			// Vehicle emergencies
+			'breakdown': ['Towing', 'Roadside'],
+			'accident': ['Towing'],
+			'flat_tire': ['Roadside'],
+			'battery': ['Roadside'],
+		};
+		
+		final matchingProviderTypes = typeMapping[requestType.toLowerCase()] ?? [];
+		final matches = matchingProviderTypes.contains(providerSubcategory);
+		
+		print('🔍 Emergency type match check: Request=$requestType, Provider=$providerSubcategory, Matches=$matches');
+		return matches;
+	}
+
+	/// Check moving service type matching
+	bool _doesMovingTypeMatch(String? requestType, String? providerSubcategory) {
+		if (requestType == null || providerSubcategory == null) return false;
+		
+		final typeMapping = {
+			// Large moves
+			'house_moving': ['Truck'],
+			'office_moving': ['Truck'],
+			'furniture': ['Truck'],
+			
+			// Small moves
+			'small_items': ['Backie/Pickup', 'Courier'],
+			'appliances': ['Backie/Pickup'],
+			'boxes': ['Courier'],
+			
+			// Delivery
+			'delivery': ['Courier'],
+			'pickup': ['Backie/Pickup'],
+		};
+		
+		final matchingProviderTypes = typeMapping[requestType.toLowerCase()] ?? [];
+		final matches = matchingProviderTypes.contains(providerSubcategory);
+		
+		print('🔍 Moving type match check: Request=$requestType, Provider=$providerSubcategory, Matches=$matches');
+		return matches;
+	}
+
+	/// Check personal service type matching
+	bool _doesPersonalTypeMatch(String? requestType, String? providerSubcategory) {
+		if (requestType == null || providerSubcategory == null) return false;
+		
+		final typeMapping = {
+			// Beauty services
+			'haircut': ['Beauty Services'],
+			'manicure': ['Beauty Services'],
+			'facial': ['Beauty Services'],
+			'makeup': ['Beauty Services'],
+			
+			// Wellness services
+			'massage': ['Wellness Services'],
+			'spa': ['Wellness Services'],
+			'therapy': ['Wellness Services'],
+			
+			// Fitness services
+			'personal_trainer': ['Fitness Services'],
+			'yoga': ['Fitness Services'],
+			'gym': ['Fitness Services'],
+			
+			// Tutoring services
+			'tutoring': ['Tutoring Services'],
+			'lessons': ['Tutoring Services'],
+			'teaching': ['Tutoring Services'],
+			
+			// Cleaning services
+			'house_cleaning': ['Cleaning Services'],
+			'office_cleaning': ['Cleaning Services'],
+			'deep_cleaning': ['Cleaning Services'],
+			
+			// Childcare services
+			'babysitting': ['Childcare Services'],
+			'nanny': ['Childcare Services'],
+			'childcare': ['Childcare Services'],
+		};
+		
+		final matchingProviderTypes = typeMapping[requestType.toLowerCase()] ?? [];
+		final matches = matchingProviderTypes.contains(providerSubcategory);
+		
+		print('🔍 Personal type match check: Request=$requestType, Provider=$providerSubcategory, Matches=$matches');
+		return matches;
 	}
 
 	@override
