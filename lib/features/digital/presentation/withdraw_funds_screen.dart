@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:zippup/services/location/country_detection_service.dart';
 
 class WithdrawFundsScreen extends StatefulWidget {
 	const WithdrawFundsScreen({super.key});
@@ -17,29 +18,102 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 	String _selectedBank = 'gtbank';
 	bool _isProcessing = false;
 	double _currentBalance = 0.0;
+	String _detectedCountry = 'NG';
+	String _currencySymbol = '₦';
+	String _currencyCode = 'NGN';
+	Map<String, Map<String, dynamic>> _availableBanks = {};
 
-	final Map<String, Map<String, dynamic>> _banks = {
-		'gtbank': {'name': 'GTBank', 'code': '058', 'ussd': '*737#'},
-		'access': {'name': 'Access Bank', 'code': '044', 'ussd': '*901#'},
-		'zenith': {'name': 'Zenith Bank', 'code': '057', 'ussd': '*966#'},
-		'uba': {'name': 'UBA', 'code': '033', 'ussd': '*919#'},
-		'firstbank': {'name': 'First Bank', 'code': '011', 'ussd': '*894#'},
-		'union': {'name': 'Union Bank', 'code': '032', 'ussd': '*826#'},
-		'sterling': {'name': 'Sterling Bank', 'code': '232', 'ussd': '*822#'},
-		'fidelity': {'name': 'Fidelity Bank', 'code': '070', 'ussd': '*770#'},
-		'fcmb': {'name': 'FCMB', 'code': '214', 'ussd': '*329#'},
-		'unity': {'name': 'Unity Bank', 'code': '215', 'ussd': '*7799#'},
-		'stanbic': {'name': 'Stanbic IBTC', 'code': '221', 'ussd': '*909#'},
-		'wema': {'name': 'Wema Bank', 'code': '035', 'ussd': '*945#'},
-		'kuda': {'name': 'Kuda Bank', 'code': '50211', 'ussd': 'App only'},
-		'opay': {'name': 'OPay', 'code': '999992', 'ussd': 'App only'},
-		'palmpay': {'name': 'PalmPay', 'code': '999991', 'ussd': 'App only'},
+	final Map<String, Map<String, Map<String, dynamic>>> _globalBanks = {
+		'NG': { // Nigeria
+			'gtbank': {'name': 'GTBank', 'code': '058', 'ussd': '*737#'},
+			'access': {'name': 'Access Bank', 'code': '044', 'ussd': '*901#'},
+			'zenith': {'name': 'Zenith Bank', 'code': '057', 'ussd': '*966#'},
+			'uba': {'name': 'UBA', 'code': '033', 'ussd': '*919#'},
+			'firstbank': {'name': 'First Bank', 'code': '011', 'ussd': '*894#'},
+			'union': {'name': 'Union Bank', 'code': '032', 'ussd': '*826#'},
+			'sterling': {'name': 'Sterling Bank', 'code': '232', 'ussd': '*822#'},
+			'fidelity': {'name': 'Fidelity Bank', 'code': '070', 'ussd': '*770#'},
+			'fcmb': {'name': 'FCMB', 'code': '214', 'ussd': '*329#'},
+			'kuda': {'name': 'Kuda Bank', 'code': '50211', 'ussd': 'App only'},
+			'opay': {'name': 'OPay', 'code': '999992', 'ussd': 'App only'},
+			'palmpay': {'name': 'PalmPay', 'code': '999991', 'ussd': 'App only'},
+		},
+		'KE': { // Kenya
+			'equity': {'name': 'Equity Bank', 'code': '68000', 'ussd': '*247#'},
+			'kcb': {'name': 'KCB Bank', 'code': '01000', 'ussd': '*522#'},
+			'coop': {'name': 'Co-operative Bank', 'code': '11000', 'ussd': '*667#'},
+			'absa': {'name': 'Absa Bank Kenya', 'code': '03000', 'ussd': '*329#'},
+			'standard': {'name': 'Standard Chartered', 'code': '02000', 'ussd': '*329#'},
+			'dtb': {'name': 'Diamond Trust Bank', 'code': '63000', 'ussd': '*444#'},
+		},
+		'GH': { // Ghana
+			'gcb': {'name': 'GCB Bank', 'code': 'GH001', 'ussd': '*422#'},
+			'ecobank': {'name': 'Ecobank Ghana', 'code': 'GH002', 'ussd': '*326#'},
+			'absa_gh': {'name': 'Absa Bank Ghana', 'code': 'GH003', 'ussd': '*329#'},
+			'cal_bank': {'name': 'CAL Bank', 'code': 'GH004', 'ussd': '*588#'},
+			'fidelity_gh': {'name': 'Fidelity Bank Ghana', 'code': 'GH005', 'ussd': '*770#'},
+		},
+		'ZA': { // South Africa
+			'fnb': {'name': 'FNB', 'code': '250655', 'ussd': '*120*321#'},
+			'absa_za': {'name': 'Absa', 'code': '632005', 'ussd': '*120*2272#'},
+			'standard_za': {'name': 'Standard Bank', 'code': '051001', 'ussd': '*120*3279#'},
+			'nedbank': {'name': 'Nedbank', 'code': '198765', 'ussd': '*120*321#'},
+			'capitec': {'name': 'Capitec Bank', 'code': '470010', 'ussd': '*120*3279#'},
+		},
+		'US': { // United States
+			'chase': {'name': 'Chase Bank', 'code': 'US_CHASE', 'routing': '021000021'},
+			'bofa': {'name': 'Bank of America', 'code': 'US_BOFA', 'routing': '026009593'},
+			'wells': {'name': 'Wells Fargo', 'code': 'US_WELLS', 'routing': '121000248'},
+			'citi': {'name': 'Citibank', 'code': 'US_CITI', 'routing': '021000089'},
+			'pnc': {'name': 'PNC Bank', 'code': 'US_PNC', 'routing': '043000096'},
+		},
+		'GB': { // United Kingdom
+			'hsbc': {'name': 'HSBC UK', 'code': 'GB_HSBC', 'sort': '40-02-50'},
+			'barclays': {'name': 'Barclays', 'code': 'GB_BARC', 'sort': '20-00-00'},
+			'lloyds': {'name': 'Lloyds Bank', 'code': 'GB_LLOY', 'sort': '30-00-00'},
+			'natwest': {'name': 'NatWest', 'code': 'GB_NATW', 'sort': '60-00-00'},
+			'santander': {'name': 'Santander UK', 'code': 'GB_SANT', 'sort': '09-01-26'},
+		},
+		'CA': { // Canada
+			'rbc': {'name': 'RBC', 'code': 'CA_RBC', 'transit': '00003'},
+			'td': {'name': 'TD Canada Trust', 'code': 'CA_TD', 'transit': '00004'},
+			'scotia': {'name': 'Scotiabank', 'code': 'CA_SCOT', 'transit': '00002'},
+			'bmo': {'name': 'BMO', 'code': 'CA_BMO', 'transit': '00001'},
+		},
 	};
 
 	@override
 	void initState() {
 		super.initState();
-		_loadCurrentBalance();
+		_detectCountryAndLoadData();
+	}
+
+	Future<void> _detectCountryAndLoadData() async {
+		try {
+			final detectedCountry = await CountryDetectionService.detectUserCountry();
+			final currencyInfo = CountryDetectionService.getCurrencyInfo(detectedCountry);
+			
+			setState(() {
+				_detectedCountry = detectedCountry;
+				_currencySymbol = currencyInfo['symbol']!;
+				_currencyCode = currencyInfo['code']!;
+				
+				// Load banks for detected country
+				_availableBanks = _globalBanks[detectedCountry] ?? _globalBanks['NG']!;
+				
+				// Set default bank
+				if (_availableBanks.isNotEmpty) {
+					_selectedBank = _availableBanks.keys.first;
+				}
+			});
+			
+			await _loadCurrentBalance();
+		} catch (e) {
+			print('Error detecting country: $e');
+			// Fallback to Nigeria
+			_availableBanks = _globalBanks['NG']!;
+			await _loadCurrentBalance();
+		}
 	}
 
 	Future<void> _loadCurrentBalance() async {
@@ -90,9 +164,10 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 		}
 
 		final amount = double.tryParse(amountText);
-		if (amount == null || amount < 100) {
+		final minAmount = _currencyCode == 'USD' ? 5 : _currencyCode == 'GBP' ? 5 : _currencyCode == 'EUR' ? 5 : 100;
+		if (amount == null || amount < minAmount) {
 			ScaffoldMessenger.of(context).showSnackBar(
-				const SnackBar(content: Text('Minimum withdrawal is ₦100'))
+				SnackBar(content: Text('Minimum withdrawal is $_currencySymbol$minAmount'))
 			);
 			return;
 		}
@@ -144,8 +219,10 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 			await FirebaseFirestore.instance.collection('withdrawal_requests').add({
 				'userId': uid,
 				'amount': amount,
-				'bankCode': _banks[_selectedBank]!['code'],
-				'bankName': _banks[_selectedBank]!['name'],
+				'currency': _currencyCode,
+				'countryCode': _detectedCountry,
+				'bankCode': _availableBanks[_selectedBank]!['code'],
+				'bankName': _availableBanks[_selectedBank]!['name'],
 				'accountNumber': accountNumber,
 				'accountName': accountName,
 				'status': 'processing',
@@ -179,7 +256,7 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 								const SizedBox(height: 16),
 								Text('₦${amount.toStringAsFixed(2)} withdrawal request submitted'),
 								const SizedBox(height: 8),
-								Text('To: ${_banks[_selectedBank]!['name']}'),
+								Text('To: ${_availableBanks[_selectedBank]!['name']}'),
 								Text('Account: $accountNumber'),
 								Text('Name: $accountName'),
 								const SizedBox(height: 12),
@@ -228,11 +305,50 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 
 	@override
 	Widget build(BuildContext context) {
-		final selectedBankData = _banks[_selectedBank]!;
+		if (_availableBanks.isEmpty) {
+			return Scaffold(
+				appBar: AppBar(
+					title: Text('💸 Withdraw - ${CountryDetectionService.getCountryName(_detectedCountry)}'),
+					backgroundColor: Colors.blue.shade50,
+					iconTheme: const IconThemeData(color: Colors.black),
+				),
+				body: Container(
+					color: Colors.white,
+					child: Center(
+						child: Column(
+							mainAxisAlignment: MainAxisAlignment.center,
+							children: [
+								Icon(Icons.construction, size: 64, color: Colors.grey.shade400),
+								const SizedBox(height: 16),
+								Text(
+									'Bank withdrawals not yet available in ${CountryDetectionService.getCountryName(_detectedCountry)}',
+									style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+									textAlign: TextAlign.center,
+								),
+								const SizedBox(height: 8),
+								const Text(
+									'Coming soon! We\'re working to add bank transfer services for your country.',
+									style: TextStyle(color: Colors.grey),
+									textAlign: TextAlign.center,
+								),
+								const SizedBox(height: 24),
+								OutlinedButton.icon(
+									onPressed: () => context.push('/digital/country-selection'),
+									icon: const Icon(Icons.public),
+									label: const Text('Change Country'),
+								),
+							],
+						),
+					),
+				),
+			);
+		}
+
+		final selectedBankData = _availableBanks[_selectedBank]!;
 
 		return Scaffold(
 			appBar: AppBar(
-				title: const Text('💸 Withdraw Funds'),
+				title: Text('💸 Withdraw - ${CountryDetectionService.getCountryName(_detectedCountry)}'),
 				backgroundColor: Colors.blue.shade50,
 				iconTheme: const IconThemeData(color: Colors.black),
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
@@ -267,7 +383,7 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 											),
 											const SizedBox(height: 8),
 											Text(
-												'₦${_currentBalance.toStringAsFixed(2)}',
+												'$_currencySymbol${_currentBalance.toStringAsFixed(2)}',
 												style: const TextStyle(
 													color: Colors.white,
 													fontSize: 36,
@@ -296,7 +412,7 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 													border: OutlineInputBorder(),
 													prefixIcon: Icon(Icons.account_balance, color: Colors.blue),
 												),
-												items: _banks.entries.map((entry) {
+												items: _availableBanks.entries.map((entry) {
 													final bank = entry.value;
 													return DropdownMenuItem(
 														value: entry.key,
@@ -304,7 +420,7 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 															children: [
 																Text(bank['name'], style: const TextStyle(color: Colors.black)),
 																const Spacer(),
-																Text(bank['ussd'], style: const TextStyle(color: Colors.black54, fontSize: 12)),
+																Text(bank['ussd'] ?? bank['routing'] ?? bank['sort'] ?? '', style: const TextStyle(color: Colors.black54, fontSize: 12)),
 															],
 														),
 													);
