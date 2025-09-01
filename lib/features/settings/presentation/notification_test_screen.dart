@@ -6,6 +6,7 @@ import 'package:zippup/services/notifications/simple_beep_service.dart';
 import 'package:zippup/services/notifications/voice_hijack_service.dart';
 import 'package:zippup/services/notifications/flutter_feedback_service.dart';
 import 'package:zippup/services/notifications/sound_detective_service.dart';
+import 'package:zippup/services/notifications/system_only_service.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NotificationTestScreen extends StatefulWidget {
@@ -233,6 +234,42 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
               ),
             ),
             const SizedBox(height: 24),
+            
+            // PRIORITY TEST: SystemSound only (most likely to work)
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Testing SYSTEM-ONLY sounds (no external URLs)...';
+                });
+                try {
+                  final results = await SystemOnlyService.instance.testSystemSoundTypes();
+                  final workingCount = results.values.where((s) => s).length;
+                  setState(() {
+                    _testResult = '🔊 SYSTEM-ONLY Test: $workingCount/2 SystemSound types work\n'
+                      'Alert Sound: ${results['alert'] == true ? '✅ WORKS' : '❌ SILENT'}\n'
+                      'Click Sound: ${results['click'] == true ? '✅ WORKS' : '❌ SILENT'}\n'
+                      '\n💡 This test uses ONLY SystemSound (no CORS issues)\n'
+                      'If you don\'t hear anything, check device system sound settings';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ System-only test failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
+              icon: const Icon(Icons.volume_up),
+              label: const Text('🔊 SYSTEM-ONLY Test (Priority)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade700,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
             
             ElevatedButton.icon(
               onPressed: _isLoading ? null : _testCustomerSound,

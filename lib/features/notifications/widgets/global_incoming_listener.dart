@@ -597,12 +597,18 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						subtitle: Text('${service.toUpperCase()} request'),
 					),
 					const SizedBox(height: 8),
-					if (data['description'] != null) Text('Service: ${data['description']}'),
-					if (data['serviceAddress'] != null) Text('Location: ${data['serviceAddress']}'),
-					if (data['pickupAddress'] != null) Text('From: ${data['pickupAddress']}'),
-					if (data['destinationAddress'] != null) Text('To: ${data['destinationAddress']}'),
-					if (data['emergencyAddress'] != null) Text('Emergency at: ${data['emergencyAddress']}'),
-					if (data['feeEstimate'] != null) Text('Fee: ${data['currency'] ?? 'NGN'} ${(data['feeEstimate'] as num).toStringAsFixed(2)}'),
+					if (data['description'] != null && data['description'].toString().isNotEmpty) 
+						Text('Service: ${data['description'].toString()}'),
+					if (data['serviceAddress'] != null && data['serviceAddress'].toString().isNotEmpty) 
+						Text('Location: ${data['serviceAddress'].toString()}'),
+					if (data['pickupAddress'] != null && data['pickupAddress'].toString().isNotEmpty) 
+						Text('From: ${data['pickupAddress'].toString()}'),
+					if (data['destinationAddress'] != null && data['destinationAddress'].toString().isNotEmpty) 
+						Text('To: ${data['destinationAddress'].toString()}'),
+					if (data['emergencyAddress'] != null && data['emergencyAddress'].toString().isNotEmpty) 
+						Text('Emergency at: ${data['emergencyAddress'].toString()}'),
+					if (data['feeEstimate'] != null) 
+						Text('Fee: ${data['currency']?.toString() ?? 'NGN'} ${_safeNumberFormat(data['feeEstimate'])}'),
 				],
 			),
 			actions: [
@@ -738,6 +744,22 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	void _go(String route) {
 		if (!mounted) return;
 		context.push(route);
+	}
+
+	/// Safe number formatting to prevent null errors
+	String _safeNumberFormat(dynamic value) {
+		try {
+			if (value == null) return '0.00';
+			if (value is num) return value.toStringAsFixed(2);
+			if (value is String) {
+				final parsed = double.tryParse(value);
+				return parsed?.toStringAsFixed(2) ?? '0.00';
+			}
+			return '0.00';
+		} catch (e) {
+			print('❌ Number format error: $e');
+			return '0.00';
+		}
 	}
 
 	@override
