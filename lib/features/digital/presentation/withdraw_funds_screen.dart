@@ -236,7 +236,7 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 				'userId': uid,
 				'type': 'debit',
 				'amount': amount,
-				'description': 'Withdrawal to ${_banks[_selectedBank]!['name']} ($accountNumber)',
+				'description': 'Withdrawal to ${_availableBanks[_selectedBank]!['name']} ($accountNumber)',
 				'status': 'processing',
 				'createdAt': DateTime.now().toIso8601String(),
 			});
@@ -254,7 +254,7 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 							children: [
 								const Icon(Icons.check_circle, color: Colors.green, size: 64),
 								const SizedBox(height: 16),
-								Text('₦${amount.toStringAsFixed(2)} withdrawal request submitted'),
+								Text('$_currencySymbol${amount.toStringAsFixed(2)} withdrawal request submitted'),
 								const SizedBox(height: 8),
 								Text('To: ${_availableBanks[_selectedBank]!['name']}'),
 								Text('Account: $accountNumber'),
@@ -492,21 +492,21 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 												controller: _amountController,
 												keyboardType: TextInputType.number,
 												style: const TextStyle(color: Colors.black),
-												decoration: const InputDecoration(
+												decoration: InputDecoration(
 													labelText: 'Enter amount',
-													labelStyle: TextStyle(color: Colors.black),
-													hintText: 'Minimum ₦100',
-													hintStyle: TextStyle(color: Colors.black38),
-													prefixIcon: Icon(Icons.attach_money, color: Colors.red),
-													border: OutlineInputBorder(),
-													focusedBorder: OutlineInputBorder(
+													labelStyle: const TextStyle(color: Colors.black),
+													hintText: 'Minimum $_currencySymbol${_currencyCode == 'USD' ? '5' : _currencyCode == 'GBP' ? '5' : _currencyCode == 'EUR' ? '5' : '100'}',
+													hintStyle: const TextStyle(color: Colors.black38),
+													prefixIcon: const Icon(Icons.attach_money, color: Colors.red),
+													border: const OutlineInputBorder(),
+													focusedBorder: const OutlineInputBorder(
 														borderSide: BorderSide(color: Colors.red, width: 2),
 													),
 												),
 											),
 											const SizedBox(height: 8),
 											Text(
-												'Available: ₦${_currentBalance.toStringAsFixed(2)}',
+												'Available: $_currencySymbol${_currentBalance.toStringAsFixed(2)}',
 												style: const TextStyle(color: Colors.black54, fontSize: 12),
 											),
 										],
@@ -535,28 +535,28 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 											if (_amountController.text.isNotEmpty && double.tryParse(_amountController.text) != null) ...[
 												const Text('Fee Breakdown:', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
 												const SizedBox(height: 4),
-												Row(
-													mainAxisAlignment: MainAxisAlignment.spaceBetween,
-													children: [
-														const Text('Withdrawal Amount:', style: TextStyle(color: Colors.black)),
-														Text('₦${double.parse(_amountController.text).toStringAsFixed(2)}', style: const TextStyle(color: Colors.black)),
-													],
-												),
-												Row(
-													mainAxisAlignment: MainAxisAlignment.spaceBetween,
-													children: [
-														const Text('Processing Fee (1%):', style: TextStyle(color: Colors.black)),
-														Text('-₦${(double.parse(_amountController.text) * 0.01).toStringAsFixed(2)}', style: const TextStyle(color: Colors.red)),
-													],
-												),
-												const Divider(),
-												Row(
-													mainAxisAlignment: MainAxisAlignment.spaceBetween,
-													children: [
-														const Text('You will receive:', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-														Text('₦${(double.parse(_amountController.text) * 0.99).toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-													],
-												),
+																									Row(
+														mainAxisAlignment: MainAxisAlignment.spaceBetween,
+														children: [
+															const Text('Withdrawal Amount:', style: TextStyle(color: Colors.black)),
+															Text('$_currencySymbol${double.parse(_amountController.text).toStringAsFixed(2)}', style: const TextStyle(color: Colors.black)),
+														],
+													),
+													Row(
+														mainAxisAlignment: MainAxisAlignment.spaceBetween,
+														children: [
+															const Text('Processing Fee (1%):', style: TextStyle(color: Colors.black)),
+															Text('-$_currencySymbol${(double.parse(_amountController.text) * 0.01).toStringAsFixed(2)}', style: const TextStyle(color: Colors.red)),
+														],
+													),
+													const Divider(),
+													Row(
+														mainAxisAlignment: MainAxisAlignment.spaceBetween,
+														children: [
+															const Text('You will receive:', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+															Text('$_currencySymbol${(double.parse(_amountController.text) * 0.99).toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+														],
+													),
 											] else
 												const Text(
 													'• Processing fee: 1% of withdrawal amount\n• Minimum withdrawal: ₦100\n• Maximum withdrawal: ₦500,000 per transaction\n• Processing time: 1-24 hours',
@@ -631,7 +631,7 @@ class _WithdrawFundsScreenState extends State<WithdrawFundsScreen> {
 											),
 											const SizedBox(height: 8),
 											Text(
-												'Bank Code: ${selectedBankData['code']}\nUSSD: ${selectedBankData['ussd']}\n\n💡 Ensure your account name matches exactly as registered with the bank.',
+												'Bank Code: ${selectedBankData['code']}\n${selectedBankData['ussd'] != null ? 'USSD: ${selectedBankData['ussd']}' : selectedBankData['routing'] != null ? 'Routing: ${selectedBankData['routing']}' : selectedBankData['sort'] != null ? 'Sort Code: ${selectedBankData['sort']}' : ''}\n\n💡 Ensure your account name matches exactly as registered with the bank.',
 												style: const TextStyle(color: Colors.black87),
 											),
 										],
