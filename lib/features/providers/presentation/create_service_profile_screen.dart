@@ -310,35 +310,77 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 					),
 				
 				// Service Type dropdown (more specific)
-				if (_subcategory != null && _serviceTypes[_category]?[_subcategory] != null)
-					DropdownButtonFormField<String>(
-						value: _serviceType,
-						items: _serviceTypes[_category]![_subcategory]!
-							.map((type) => DropdownMenuItem(value: type, child: Text(type)))
-							.toList(),
-						decoration: const InputDecoration(
-							labelText: 'Service Type',
-							helperText: 'Specific service you provide (e.g., 4 Seater Car, Plumber)',
-						),
-						onChanged: (v) => setState(() { 
-							_serviceType = v; 
-							_serviceSubtype = null; 
-						}),
+				if (_subcategory != null)
+					Builder(
+						builder: (context) {
+							final availableTypes = _serviceTypes[_category]?[_subcategory];
+							if (availableTypes == null || availableTypes.isEmpty) {
+								return Container(
+									padding: const EdgeInsets.all(12),
+									margin: const EdgeInsets.symmetric(vertical: 8),
+									decoration: BoxDecoration(
+										color: Colors.orange.shade50,
+										borderRadius: BorderRadius.circular(8),
+										border: Border.all(color: Colors.orange.shade200),
+									),
+									child: Text(
+										'ℹ️ No specific service types available for $_category → $_subcategory',
+										style: TextStyle(color: Colors.orange.shade700),
+									),
+								);
+							}
+							
+							return DropdownButtonFormField<String>(
+								value: _serviceType,
+								items: availableTypes
+									.map((type) => DropdownMenuItem(value: type, child: Text(type)))
+									.toList(),
+								decoration: const InputDecoration(
+									labelText: '🎯 Service Type',
+									helperText: 'Specific service you provide (e.g., 4 Seater Car, Plumber)',
+									border: OutlineInputBorder(),
+								),
+								onChanged: (v) => setState(() { 
+									_serviceType = v; 
+									_serviceSubtype = null; 
+								}),
+							);
+						},
 					),
 				
 				// Service Sub-type dropdown (most specific)
-				if (_serviceType != null && 
-					_serviceSubtypes[_category]?[_subcategory]?[_serviceType] != null)
-					DropdownButtonFormField<String>(
-						value: _serviceSubtype,
-						items: _serviceSubtypes[_category]![_subcategory]![_serviceType]!
-							.map((subtype) => DropdownMenuItem(value: subtype, child: Text(subtype)))
-							.toList(),
-						decoration: const InputDecoration(
-							labelText: 'Service Sub-type',
-							helperText: 'Priority level or specialization',
-						),
-						onChanged: (v) => setState(() => _serviceSubtype = v),
+				if (_serviceType != null)
+					Builder(
+						builder: (context) {
+							final availableSubtypes = _serviceSubtypes[_category]?[_subcategory]?[_serviceType];
+							if (availableSubtypes == null || availableSubtypes.isEmpty) {
+								return Container(
+									padding: const EdgeInsets.all(12),
+									margin: const EdgeInsets.symmetric(vertical: 8),
+									decoration: BoxDecoration(
+										color: Colors.grey.shade100,
+										borderRadius: BorderRadius.circular(8),
+									),
+									child: Text(
+										'ℹ️ No sub-types available for $_serviceType',
+										style: TextStyle(color: Colors.grey.shade600),
+									),
+								);
+							}
+							
+							return DropdownButtonFormField<String>(
+								value: _serviceSubtype,
+								items: availableSubtypes
+									.map((subtype) => DropdownMenuItem(value: subtype, child: Text(subtype)))
+									.toList(),
+								decoration: const InputDecoration(
+									labelText: '⭐ Service Sub-type',
+									helperText: 'Priority level or specialization',
+									border: OutlineInputBorder(),
+								),
+								onChanged: (v) => setState(() => _serviceSubtype = v),
+							);
+						},
 					),
 				
 				DropdownButtonFormField<String>(
