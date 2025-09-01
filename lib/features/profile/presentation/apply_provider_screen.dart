@@ -116,7 +116,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'type': _type,
 				'title': _title.text.trim(),
 				'idUrl': idUrl,
-				'bizUrl': bizUrl,
+				'proofOfAddressUrl': bizUrl,
 				'vehicleBrand': _vehicleBrand.text.trim().isEmpty ? null : _vehicleBrand.text.trim(),
 				'vehicleColor': _vehicleColor.text.trim().isEmpty ? null : _vehicleColor.text.trim(),
 				'vehiclePlate': _vehiclePlate.text.trim().isEmpty ? null : _vehiclePlate.text.trim(),
@@ -236,7 +236,7 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 					],
 					const SizedBox(height: 8),
 					ListTile(title: const Text('Upload ID/Passport'), trailing: const Icon(Icons.upload_file), onTap: _pickId, subtitle: Text(_idBytes != null ? 'Selected' : 'Not uploaded')),
-					ListTile(title: const Text('Upload business document (registration/permits)'), trailing: const Icon(Icons.upload_file), onTap: _pickBiz, subtitle: Text(_bizBytes != null ? 'Selected' : 'Not uploaded')),
+					ListTile(title: const Text('Upload Proof of Address Document'), trailing: const Icon(Icons.upload_file), onTap: _pickBiz, subtitle: Text(_bizBytes != null ? 'Proof of address uploaded' : 'Utility bill, bank statement, or lease agreement')),
 					
 					// Payment options section
 					const SizedBox(height: 16),
