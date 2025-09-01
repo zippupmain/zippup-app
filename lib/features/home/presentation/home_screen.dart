@@ -12,7 +12,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 import 'package:zippup/services/notifications/sound_service.dart';
 import 'package:zippup/services/localization/app_localizations.dart';
-import 'package:zippup/services/notifications/audible_notification_service.dart';
+import 'package:zippup/services/notifications/working_sound_service.dart';
 
 // Enhanced implementations with colorful design
 Widget _PositionedUnreadDot() => const SizedBox.shrink();
@@ -255,8 +255,8 @@ class _HomeScreenState extends State<HomeScreen> {
 										'createdAt': FieldValue.serverTimestamp(),
 									});
 									
-									// Play audible notification
-									await AudibleNotificationService.instance.playDriverNotification();
+									// Play working notification
+									await WorkingSoundService.instance.playDriverNotification();
 									
 									ScaffoldMessenger.of(context).showSnackBar(
 										const SnackBar(content: Text('🔔 Test notification created! Check the bell icon.')),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zippup/services/notifications/reliable_sound_service.dart';
 import 'package:zippup/services/notifications/audible_notification_service.dart';
+import 'package:zippup/services/notifications/working_sound_service.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NotificationTestScreen extends StatefulWidget {
@@ -371,6 +372,42 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
               label: const Text('Play LOUDEST Notification'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.deepOrange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Testing WORKING notification methods...';
+                });
+                try {
+                  final results = await WorkingSoundService.instance.testWorkingNotifications();
+                  final successCount = results.values.where((s) => s).length;
+                  setState(() {
+                    _testResult = '🔧 WORKING Methods Test: $successCount/4 types successful\n'
+                      'Customer: ${results['customer'] == true ? '✅' : '❌'}\n'
+                      'Driver: ${results['driver'] == true ? '✅' : '❌'}\n'
+                      'Completion: ${results['completion'] == true ? '✅' : '❌'}\n'
+                      'Emergency: ${results['emergency'] == true ? '✅' : '❌'}\n'
+                      'Uses: SystemSound + HapticFeedback only';
+                    _isLoading = false;
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Working methods test failed: $e';
+                    _isLoading = false;
+                  });
+                }
+              },
+              icon: const Icon(Icons.build),
+              label: const Text('Test WORKING Methods Only'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),

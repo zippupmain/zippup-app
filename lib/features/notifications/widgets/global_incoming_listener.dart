@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:zippup/services/notifications/reliable_sound_service.dart';
-import 'package:zippup/services/notifications/audible_notification_service.dart';
+import 'package:zippup/services/notifications/working_sound_service.dart';
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 
 class GlobalIncomingListener extends StatefulWidget {
@@ -267,7 +267,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		// Play AUDIBLE notification sound
 		try { 
 			print('🔊 Playing AUDIBLE RIDE REQUEST notification...');
-			final success = await AudibleNotificationService.instance.playDriverNotification();
+			final success = await WorkingSoundService.instance.playDriverNotification();
 			print(success ? '🎉 AUDIBLE ride request sound SUCCESS' : '💥 AUDIBLE ride request sound FAILED');
 		} catch (e) {
 			print('❌ Critical error playing audible ride notification: $e');
@@ -364,7 +364,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			}
 		} catch (_) {}
 		try { 
-			final success = await AudibleNotificationService.instance.playDriverNotification(); 
+			final success = await WorkingSoundService.instance.playDriverNotification(); 
 			print(success ? '🎉 AUDIBLE order notification SUCCESS' : '💥 AUDIBLE order notification FAILED');
 		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
@@ -394,7 +394,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
 		try { 
-			final success = await AudibleNotificationService.instance.playCustomerNotification(); 
+			final success = await WorkingSoundService.instance.playCustomerNotification(); 
 			print(success ? '🎉 AUDIBLE delivery notification SUCCESS' : '💥 AUDIBLE delivery notification FAILED');
 		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
@@ -411,7 +411,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		if (!_shouldShowHere()) return;
 		final ctx = context;
 		try { 
-			final success = await AudibleNotificationService.instance.playDriverNotification(); 
+			final success = await WorkingSoundService.instance.playDriverNotification(); 
 			print(success ? '🎉 AUDIBLE moving notification SUCCESS' : '💥 AUDIBLE moving notification FAILED');
 		} catch (_) {}
 		await showDialog(context: ctx, builder: (_) => AlertDialog(
@@ -566,7 +566,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		
 		// Play AUDIBLE notification sound
 		try { 
-			final success = await AudibleNotificationService.instance.playDriverNotification(); 
+			final success = await WorkingSoundService.instance.playDriverNotification(); 
 			print(success ? '🎉 AUDIBLE service notification SUCCESS' : '💥 AUDIBLE service notification FAILED');
 		} catch (_) {}
 		

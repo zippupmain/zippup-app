@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:zippup/services/notifications/audible_notification_service.dart';
+import 'package:zippup/services/notifications/working_sound_service.dart';
 
 class FloatingNotification extends StatefulWidget {
   final String title;
@@ -65,7 +65,7 @@ class _FloatingNotificationState extends State<FloatingNotification>
   Future<void> _playNotificationAndShow() async {
     try {
       // Play sound first
-      final success = await AudibleNotificationService.instance.playDriverNotification();
+      final success = await WorkingSoundService.instance.playDriverNotification();
       print(success ? '✅ Floating notification sound SUCCESS' : '❌ Floating notification sound FAILED');
     } catch (e) {
       print('❌ Floating notification sound failed: $e');
