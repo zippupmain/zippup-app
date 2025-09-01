@@ -58,18 +58,46 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			.snapshots()
 			.listen((snap) async {
 				print('📡 Received ${snap.docs.length} ride requests from Firestore');
-				// TESTING MODE: Show notifications to ALL logged-in users
-				bool isActiveTransportProvider = true; // Force true for testing
-				print('🚨 TESTING MODE: Showing ALL ride requests to ANY logged-in user');
-				print('🔍 User $uid will receive ALL ride notifications for testing purposes');
+				
+				// Check if user has active transport provider profile AND is online
+				bool isActiveTransportProvider = false;
+				bool isOnline = false;
+				try {
+					print('🔍 Checking transport provider profile for user: $uid');
+					final providerSnap = await db.collection('provider_profiles')
+						.where('userId', isEqualTo: uid)
+						.where('service', isEqualTo: 'transport')
+						.where('status', isEqualTo: 'active')
+						.limit(1)
+						.get();
+					
+					if (providerSnap.docs.isNotEmpty) {
+						final providerData = providerSnap.docs.first.data();
+						isOnline = providerData['availabilityOnline'] == true;
+						isActiveTransportProvider = true;
+						print('✅ Found transport provider - Online: $isOnline');
+					} else {
+						print('❌ No active transport provider profile found');
+					}
+				} catch (e) {
+					print('❌ Error checking transport provider profile: $e');
+				}
 				
 				for (final d in snap.docs) {
 					final data = d.data();
 					final assignedDriverId = data['driverId']?.toString();
 					
-					// TESTING MODE: Show ALL ride requests to ALL users
-					bool shouldShow = true; // Force true for testing
-					print('🚨 TESTING: Will show ride ${d.id} to user $uid (assignedDriverId: $assignedDriverId)');
+					// Proper targeting: Only show to relevant online transport providers
+					bool shouldShow = false;
+					if (assignedDriverId == uid) {
+						shouldShow = true; // Directly assigned to this driver
+						print('✅ Ride ${d.id} assigned to this driver');
+					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && isActiveTransportProvider && isOnline) {
+						shouldShow = true; // Available for online transport providers
+						print('✅ Ride ${d.id} available for online transport provider');
+					} else {
+						print('🚫 Ride ${d.id} not for this user - Provider: $isActiveTransportProvider, Online: $isOnline, Assigned: $assignedDriverId');
+					}
 					
 					if (shouldShow && !_shown.contains('ride:${d.id}')) {
 						print('🚨 SHOWING RIDE NOTIFICATION for ride: ${d.id}');
@@ -426,22 +454,62 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 
 	Future<void> _setupServiceListener(FirebaseFirestore db, String uid, String collection, String service) async {
 		try {
-			print('🔗 Setting up AGGRESSIVE $service notification listener');
-			print('🚨 TESTING MODE: Will show ALL $service requests to user $uid');
+			print('🔗 Setting up $service notification listener');
+			
+			// Check if user has active provider profile for this service
+			final providerSnap = await db.collection('provider_profiles')
+				.where('userId', isEqualTo: uid)
+				.where('service', isEqualTo: service)
+				.where('status', isEqualTo: 'active')
+				.limit(1)
+				.get();
+				
+			if (providerSnap.docs.isEmpty) {
+				print('❌ No active $service provider profile found - skipping notifications');
+				return;
+			}
+			
+			final providerData = providerSnap.docs.first.data();
+			final isOnline = providerData['availabilityOnline'] == true;
+			print('✅ Found $service provider - Online: $isOnline');
 			
 			// Listen for requests
 			db.collection(collection)
 				.where('status', isEqualTo: 'requested')
 				.snapshots()
 				.listen((snap) async {
-					print('📡 Received ${snap.docs.length} $service requests');
+					print('📡 Received ${snap.docs.length} $service requests for $service provider');
+					
+					// Re-check online status for each batch of requests
+					final currentProviderSnap = await db.collection('provider_profiles')
+						.where('userId', isEqualTo: uid)
+						.where('service', isEqualTo: service)
+						.where('status', isEqualTo: 'active')
+						.limit(1)
+						.get();
+					
+					bool currentlyOnline = false;
+					if (currentProviderSnap.docs.isNotEmpty) {
+						currentlyOnline = currentProviderSnap.docs.first.data()['availabilityOnline'] == true;
+					}
+					
+					print('🔍 $service provider current online status: $currentlyOnline');
+					
 					for (final d in snap.docs) {
 						final data = d.data();
 						final assignedProviderId = data['providerId']?.toString();
 						
-						// TESTING MODE: Show ALL requests to ALL users
-						bool shouldShow = true; // Force true for testing
-						print('🚨 TESTING: Will show $service request ${d.id} to user $uid (assignedProviderId: $assignedProviderId)');
+						// Proper targeting: Only show to online providers in this service
+						bool shouldShow = false;
+						if (assignedProviderId == uid) {
+							shouldShow = true; // Directly assigned
+							print('✅ $service request ${d.id} assigned to this provider');
+						} else if ((assignedProviderId == null || assignedProviderId.isEmpty) && currentlyOnline) {
+							shouldShow = true; // Available for online providers
+							print('✅ $service request ${d.id} available for online $service provider');
+						} else {
+							print('🚫 $service request ${d.id} not for this user - Online: $currentlyOnline, Assigned: $assignedProviderId');
+						}
 						
 						if (shouldShow && !_shown.contains('$service:${d.id}')) {
 							_shown.add('$service:${d.id}');
