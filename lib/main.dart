@@ -68,7 +68,7 @@ class ZippUpApp extends ConsumerWidget {
 		return MaterialApp.router(
 			title: 'ZippUp',
 			theme: AppTheme.light(),
-			darkTheme: AppTheme.dark(),
+			themeMode: ThemeMode.light, // Force light theme on all devices
 			routerConfig: router,
 			debugShowCheckedModeBanner: false,
 		);
