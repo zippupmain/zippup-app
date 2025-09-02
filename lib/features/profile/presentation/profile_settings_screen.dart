@@ -61,10 +61,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			if (u == null) return;
 			String? url = _photoUrl;
 			if (_photoBytes != null) {
-				// TEST MODE: Use data URL to display image without CORS issues
-				final base64 = base64Encode(_photoBytes!);
-				url = 'data:image/jpeg;base64,$base64';
-				print('✅ Profile picture (test mode): data URL created');
+				// TEST MODE: Use simple placeholder URL to avoid Firestore size limits
+				url = 'placeholder://profile-${u.uid}-${DateTime.now().millisecondsSinceEpoch}';
+				print('✅ Profile picture (test mode): placeholder URL created');
+				
+				// Keep the image bytes in local state for display
+				setState(() => _photoUrl = url);
 			}
 			final name = _name.text.trim();
 			final email = _email.text.trim();
@@ -87,11 +89,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 				'photoUrl': url,
 				'updatedAt': FieldValue.serverTimestamp(),
 			});
-			await u.reload();
-			final doc = await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
-			final fresh = (doc.data() ?? const {})['photoUrl']?.toString() ?? url;
+			// Don't reload from Firestore in test mode, keep local state
 			if (!mounted) return;
-			setState(() { _photoUrl = fresh; _photoBytes = null; });
+			// Keep _photoBytes so image stays visible
+			setState(() => _photoUrl = url);
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile saved')));
 		} catch (e) {
 			if (mounted) {
