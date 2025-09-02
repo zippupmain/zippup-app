@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class ReliableSoundService {
   ReliableSoundService._internal();
   static final ReliableSoundService instance = ReliableSoundService._internal();
+  final AudioPlayer _player = AudioPlayer();
 
   /// Play notification with maximum compatibility
   Future<bool> playNotification({bool isUrgent = false}) async {
@@ -43,7 +45,27 @@ class ReliableSoundService {
       print('❌ [$type] System alert failed: $e');
     }
 
-    // 3. Try SystemSound.click (backup)
+    // 3. Try data URL audio (most reliable for actual sound)
+    try {
+      if (isUrgent) {
+        // Triple beeps for urgent notifications
+        for (int i = 0; i < 3; i++) {
+          await _player.play(UrlSource('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjmL0fPTgjMGJXTA7+ONQQ0PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OihUgwKUKXh8bllHgg2jdT0z4IyBSJ0wO/jkEEND1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BBDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy'));
+          if (i < 2) await Future.delayed(const Duration(milliseconds: 300));
+        }
+      } else {
+        // Single beep for normal notifications
+        await _player.play(UrlSource('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjmL0fPTgjMGJXTA7+ONQQ0PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OihUgwKUKXh8bllHgg2jdT0z4IyBSJ0wO/jkEEND1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BBDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy'));
+      }
+      results['data_url_audio'] = true;
+      anySuccess = true;
+      print('✅ [$type] Data URL audio SUCCESS');
+    } catch (e) {
+      results['data_url_audio'] = false;
+      print('❌ [$type] Data URL audio failed: $e');
+    }
+
+    // 4. Try SystemSound.click (backup)
     try {
       await SystemSound.play(SystemSoundType.click);
       if (isUrgent) {
@@ -58,7 +80,7 @@ class ReliableSoundService {
       print('❌ [$type] System click failed: $e');
     }
 
-    // 4. Try vibration as final fallback (mobile only)
+    // 5. Try vibration as final fallback (mobile only)
     if (!anySuccess && !kIsWeb) {
       try {
         await HapticFeedback.vibrate();

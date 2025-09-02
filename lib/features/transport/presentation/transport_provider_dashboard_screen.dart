@@ -122,7 +122,7 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 		
 		// Navigate to tracking screen when ride is accepted
 		if (status == RideStatus.accepted && mounted) {
-			context.go('/transport/ride-track/$id');
+			context.go('/track/ride?rideId=$id');
 		}
 	}
 
