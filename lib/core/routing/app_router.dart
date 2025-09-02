@@ -701,7 +701,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/hub/delivery',
         name: 'deliveryProviderDashboard',
-        builder: (context, state) => const deliverydash.DeliveryProviderDashboardScreen(),
+        builder: (context, state) => const EnhancedDeliveryDashboardScreen(),
       ),
       GoRoute(
         path: '/hub/digital',

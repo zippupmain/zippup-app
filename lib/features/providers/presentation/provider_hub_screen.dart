@@ -190,7 +190,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 						leading: const Icon(Icons.delivery_dining, color: Colors.orange),
 						title: const Text('🚚 Delivery Dashboard'),
 						subtitle: const Text('Business partnerships, delivery orders, routes'),
-						onTap: () => context.push('/delivery/dashboard'),
+						onTap: () => context.push('/hub/delivery'),
 					),
 					
 					// New Enhanced Services

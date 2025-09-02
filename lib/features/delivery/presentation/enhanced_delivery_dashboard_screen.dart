@@ -12,7 +12,7 @@ class EnhancedDeliveryDashboardScreen extends StatefulWidget {
 }
 
 class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashboardScreen> {
-  bool _online = true;
+  bool _online = true; // Default to online
   bool _loading = true;
   String _deliveryProviderId = '';
   String _userCity = '';
@@ -52,10 +52,13 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
         
         // Always default to online, update profile
         _online = true;
-        await FirebaseFirestore.instance
+        
+        // Update profile to be online (fire and forget)
+        FirebaseFirestore.instance
             .collection('provider_profiles')
             .doc(_deliveryProviderId)
-            .update({'availabilityOnline': true});
+            .update({'availabilityOnline': true})
+            .catchError((e) => print('Error updating online status: $e'));
         
         // Load business partnerships
         final selectedBusinesses = data['selectedBusinesses'] as Map<String, dynamic>? ?? {};
@@ -162,9 +165,56 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
         titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
         actions: [
           IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => context.push('/operational-settings/delivery'),
+            tooltip: 'Operational Settings',
+          ),
+          IconButton(
             icon: const Icon(Icons.business_center),
             onPressed: () => context.push('/delivery/business-partnerships'),
             tooltip: 'Manage Business Partnerships',
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              switch (value) {
+                case 'roles':
+                  context.push('/service-roles/delivery/courier');
+                  break;
+                case 'settings':
+                  context.push('/operational-settings/delivery');
+                  break;
+                case 'partnerships':
+                  context.push('/delivery/business-partnerships');
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'roles',
+                child: ListTile(
+                  leading: Icon(Icons.tune),
+                  title: Text('Service Roles'),
+                  dense: true,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'settings',
+                child: ListTile(
+                  leading: Icon(Icons.settings),
+                  title: Text('Operational Settings'),
+                  dense: true,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'partnerships',
+                child: ListTile(
+                  leading: Icon(Icons.business_center),
+                  title: Text('Business Partnerships'),
+                  dense: true,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -204,6 +254,48 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                   value: _online,
                   onChanged: _toggleOnline,
                   activeColor: Colors.green,
+                ),
+              ],
+            ),
+          ),
+
+          // Quick access features
+          Container(
+            color: Colors.orange.shade50,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const Text(
+                  '⚙️ Delivery Provider Features',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.push('/service-roles/delivery/courier'),
+                        icon: const Icon(Icons.tune),
+                        label: const Text('Service Roles'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.push('/operational-settings/delivery'),
+                        icon: const Icon(Icons.settings),
+                        label: const Text('Settings'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
