@@ -7,7 +7,7 @@ import 'package:zippup/services/notifications/voice_hijack_service.dart';
 import 'package:zippup/services/notifications/flutter_feedback_service.dart';
 import 'package:zippup/services/notifications/sound_detective_service.dart';
 import 'package:zippup/services/notifications/system_only_service.dart';
-import 'package:zippup/services/notifications/web_audio_notification_service.dart';
+
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NotificationTestScreen extends StatefulWidget {
@@ -236,32 +236,33 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
             ),
             const SizedBox(height: 24),
             
-            // NEW: Web Audio Test (should actually make sound)
+            // NEW: Data URL Audio Test (should actually make sound)
             ElevatedButton.icon(
               onPressed: _isLoading ? null : () async {
                 setState(() {
                   _isLoading = true;
-                  _testResult = 'Testing WEB AUDIO notifications (should be audible)...';
+                  _testResult = 'Testing DATA URL audio (should be audible)...';
                 });
                 try {
-                  await WebAudioNotificationService.instance.testAllSounds();
+                  final player = AudioPlayer();
+                  await player.play(UrlSource('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjmL0fPTgjMGJXTA7+ONQQ0PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OihUgwKUKXh8bllHgg2jdT0z4IyBSJ0wO/jkEEND1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BBDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy'));
+                  
                   setState(() {
-                    _testResult = '🔊 WEB AUDIO Test completed!\n'
-                      '✅ Normal beep: 400Hz tone\n'
-                      '✅ Urgent beeps: 3x 800Hz tones\n'
-                      '🎯 These should be AUDIBLE sounds (not silent)\n'
-                      '💡 If you heard beeps, web audio is working!';
+                    _testResult = '🔊 DATA URL AUDIO Test completed!\n'
+                      '✅ Played embedded WAV beep sound\n'
+                      '🎯 This should be AUDIBLE (not silent)\n'
+                      '💡 If you heard a beep, data URL audio works!';
                   });
                 } catch (e) {
                   setState(() {
-                    _testResult = '❌ Web audio test failed: $e';
+                    _testResult = '❌ Data URL audio test failed: $e';
                   });
                 } finally {
                   setState(() => _isLoading = false);
                 }
               },
               icon: const Icon(Icons.volume_up),
-              label: const Text('🔊 Test Web Audio (AUDIBLE)'),
+              label: const Text('🔊 Test Data URL Audio (AUDIBLE)'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,

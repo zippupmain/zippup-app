@@ -1,7 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
-import 'package:zippup/services/notifications/web_audio_notification_service.dart';
 
 class SoundService {
 	SoundService._internal();
@@ -20,13 +19,20 @@ class SoundService {
 				print('✅ Haptic feedback triggered');
 			}
 			
-			// Use web audio for actual audible sound
-			if (kIsWeb) {
-				await WebAudioNotificationService.instance.playNormalNotification();
-			} else {
-				// Try system sounds on mobile
-				await SystemSound.play(SystemSoundType.alert);
-				print('✅ System alert sound played');
+			// Use multiple approaches for better sound reliability
+			await SystemSound.play(SystemSoundType.alert);
+			await HapticFeedback.lightImpact();
+			
+			// Try audio player with a simple beep
+			try {
+				// Create a simple audio context for web
+				if (kIsWeb) {
+					// Use a data URL for a simple beep sound
+					await _player.play(UrlSource('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjmL0fPTgjMGJXTA7+ONQQ0PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OihUgwKUKXh8bllHgg2jdT0z4IyBSJ0wO/jkEEND1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BBDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy'));
+					print('✅ Data URL beep played');
+				}
+			} catch (e) {
+				print('❌ Audio beep failed: $e');
 			}
 			
 			print('🔔 Customer notification sound completed');
@@ -43,10 +49,6 @@ class SoundService {
 	}
 
 	Future<void> playCall() async {
-		if (kIsWeb) {
-			await WebAudioNotificationService.instance.playUrgentNotification();
-			return;
-		}
 		try {
 			print('🔔 Playing driver notification...');
 			
@@ -78,10 +80,6 @@ class SoundService {
 	}
 
 	Future<void> playTrill() async {
-		if (kIsWeb) {
-			await WebAudioNotificationService.instance.playNormalNotification();
-			return;
-		}
 		try {
 			print('🎉 Playing completion notification...');
 			
