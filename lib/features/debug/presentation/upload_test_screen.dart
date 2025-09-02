@@ -44,13 +44,14 @@ class _UploadTestScreenState extends State<UploadTestScreen> {
       print('✅ Test 2: Basic Firestore write successful');
       setState(() => _testResult += '✅ Test 2: Firestore write OK\n');
 
-      // Test 3: Profile picture simulation
+      // Test 3: Profile picture simulation (public_profiles collection)
       print('🧪 Test 3: Testing profile picture save...');
-      await FirebaseFirestore.instance.collection('test_profiles').doc(user.uid).set({
+      await FirebaseFirestore.instance.collection('public_profiles').doc(user.uid).set({
         'profilePictureUrl': 'https://via.placeholder.com/150x150/4CAF50/FFFFFF?text=Profile',
         'name': 'Test User',
+        'email': user.email ?? 'test@example.com',
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
       print('✅ Test 3: Profile picture save successful');
       setState(() => _testResult += '✅ Test 3: Profile picture save OK\n');
 
@@ -92,6 +93,46 @@ class _UploadTestScreenState extends State<UploadTestScreen> {
     }
   }
 
+  Future<void> _quickProfileTest() async {
+    setState(() {
+      _testing = true;
+      _testResult = 'Quick profile test...';
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        setState(() => _testResult = '❌ Not authenticated');
+        return;
+      }
+
+      print('🧪 Quick profile test for user: ${user.uid}');
+      
+      // Test minimal profile save
+      await FirebaseFirestore.instance.collection('public_profiles').doc(user.uid).set({
+        'name': 'Test User Profile',
+        'profilePictureUrl': 'https://via.placeholder.com/150x150/4CAF50/FFFFFF?text=Test+Profile',
+        'email': user.email ?? 'test@example.com',
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      setState(() => _testResult = '✅ Quick profile test successful!\nProfile saved with placeholder image.');
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Profile test successful!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+    } catch (e) {
+      print('❌ Quick profile test failed: $e');
+      setState(() => _testResult = '❌ Quick profile test failed: $e');
+    } finally {
+      setState(() => _testing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,19 +167,34 @@ class _UploadTestScreenState extends State<UploadTestScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _testing ? null : _runUploadTest,
-                        icon: Icon(_testing ? Icons.hourglass_empty : Icons.bug_report),
-                        label: Text(_testing ? 'Testing...' : 'Run Upload Test'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                            SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _testing ? null : _runUploadTest,
+                            icon: Icon(_testing ? Icons.hourglass_empty : Icons.bug_report),
+                            label: Text(_testing ? 'Testing...' : 'Run Upload Test'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                        
+                        const SizedBox(height: 8),
+                        
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _testing ? null : _quickProfileTest,
+                            icon: const Icon(Icons.person),
+                            label: const Text('Quick Profile Test'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blue,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
                   ],
                 ),
               ),
