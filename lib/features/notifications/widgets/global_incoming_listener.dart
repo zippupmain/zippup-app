@@ -900,7 +900,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			'bus': ['Bus'],
 			'charter': ['Bus'],
 			'tricycle': ['Tricycle'],
-			'courier': ['Courier'],
+			// Note: Courier moved to moving category
 		};
 		
 		final matchingCategories = basicCategoryMapping[rideType.toLowerCase()] ?? [];
@@ -925,8 +925,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				return _matchBikeType(rideType, providerServiceType);
 			case 'Bus':
 				return _matchBusType(rideType, providerServiceType, passengerCount);
-			case 'Courier':
-				return _matchCourierType(rideType, providerServiceType);
+			// Note: Courier moved to moving category
 			default:
 				print('✅ Default category match');
 				return true;

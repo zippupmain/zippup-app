@@ -57,16 +57,18 @@ class _MovingScreenState extends State<MovingScreen> {
 			return;
 		}
 		final titles = _subcategory == 'courier'
-			? ['Intra-city', 'Intra-state', 'Nationwide']
-			: (_subcategory == 'truck' ? ['Small truck', 'Medium truck', 'Large truck'] : ['Small pickup', 'Large pickup']);
+			? ['Intra-City', 'Intra-State', 'Nationwide'] // Corrected capitalization
+			: (_subcategory == 'truck' ? ['Small Truck', 'Medium Truck', 'Large Truck'] : 
+			   _subcategory == 'pickup' ? ['Small Pickup', 'Large Pickup'] : ['Intra-City', 'Intra-State', 'Nationwide']);
 		final images = _subcategory == 'courier'
-			? ['assets/images/courier_city.png', 'assets/images/courier_state.png', 'assets/images/courier_nationwide.png']
+			? ['assets/images/courier_car.png', 'assets/images/courier_van.png', 'assets/images/courier_big_van.png'] // Updated image names
 			: (_subcategory == 'truck'
 				? ['assets/images/truck_small.png','assets/images/truck_medium.png','assets/images/truck_large.png']
 				: ['assets/images/pickup_small.png','assets/images/pickup_large.png']);
 		final classEmojis = _subcategory == 'courier'
-			? ['🚴‍♂️', '🏍️', '✈️']
-			: (_subcategory == 'truck' ? ['🚚', '🚛', '🚜'] : ['🛻', '🚐']);
+			? ['🚗', '🚐', '🚛'] // Updated: car, small van, big courier van
+			: (_subcategory == 'truck' ? ['🚚', '🚛', '🚜'] : 
+			   _subcategory == 'pickup' ? ['🛻', '🚐'] : ['🚗', '🚐', '🚛']);
 		
 		bool modalScheduled = _scheduled;
 		DateTime? modalScheduledAt = _scheduledAt;
@@ -374,11 +376,11 @@ class _MovingScreenState extends State<MovingScreen> {
 												const SizedBox(width: 8),
 												Expanded(
 													child: _MovingTypeCard(
-														type: 'backie',
+														type: 'pickup',
 														label: 'Pickup',
 														emoji: '🛻',
-														isSelected: _subcategory == 'backie',
-														onTap: () => setState(() => _subcategory = 'backie'),
+														isSelected: _subcategory == 'pickup',
+														onTap: () => setState(() => _subcategory = 'pickup'),
 													),
 												),
 												const SizedBox(width: 8),

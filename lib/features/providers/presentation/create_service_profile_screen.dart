@@ -48,9 +48,9 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			'Bus/Charter': ['Mini Bus (8 seater)', 'Standard Bus (12 seater)', 'Large Bus (16 seater)', 'Charter Bus (30 seater)'],
 		},
 		'moving': {
-			'Truck': ['Small Truck (1-2 rooms)', 'Medium Truck (3-4 rooms)', 'Large Truck (5+ rooms)', 'Specialized Moving'],
-			'Backie/Pickup': ['Single Item', 'Small Load', 'Appliance Moving'],
-			'Courier': ['Intra-City', 'Intra-State', 'Nationwide'], // Corrected courier types
+			'Truck': ['Small Truck', 'Medium Truck', 'Large Truck'], // Simplified truck classes
+			'Pickup': ['Small Pickup', 'Large Pickup'], // Corrected pickup classes
+			'Courier': ['Intra-City', 'Intra-State', 'Nationwide'], // Courier coverage areas
 		},
 		'hire': {
 			'Home Services': ['Plumber', 'Electrician', 'Carpenter', 'Painter', 'Cleaner', 'Gardener'],
@@ -99,7 +99,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	// Corrected structure according to specifications
 	final Map<String, List<String>> _cats = const {
 		'transport': ['Taxi', 'Bike', 'Bus/Charter'], // Removed Courier, added Bus/Charter
-		'moving': ['Truck', 'Backie/Pickup', 'Courier'], // Courier moved here
+		'moving': ['Truck', 'Pickup', 'Courier'], // Corrected structure
 		'hire': ['Home Services', 'Tech Services', 'Construction', 'Auto Services', 'Personal Care'],
 		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Roadside'],
 		'personal': ['Beauty Services', 'Wellness Services', 'Fitness Services', 'Tutoring Services', 'Cleaning Services', 'Childcare Services'],
