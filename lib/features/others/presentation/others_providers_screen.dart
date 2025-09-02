@@ -64,6 +64,7 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 			'lightColor': const Color(0xFFE0F2F1),
 			'darkColor': const Color(0xFF00695C),
 			'services': ['Cardiologists', 'Dermatologist', 'Pediatricians', 'Neurologists', 'Surgeons'],
+			'subtitle': 'Most Searched Specialties - All medical fields available',
 		},
 	};
 
@@ -174,6 +175,29 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 								),
 							),
 						),
+
+						// Info section for medical consulting
+						if (widget.serviceType == 'medical')
+							Container(
+								color: Colors.cyan.shade50,
+								padding: const EdgeInsets.all(12),
+								child: Row(
+									children: [
+										Icon(Icons.info_outline, color: Colors.cyan.shade700, size: 20),
+										const SizedBox(width: 8),
+										Expanded(
+											child: Text(
+												'📋 Showing Most Searched Specialties - All medical fields available on platform',
+												style: TextStyle(
+													color: Colors.cyan.shade700,
+													fontSize: 12,
+													fontWeight: FontWeight.w500,
+												),
+											),
+										),
+									],
+								),
+							),
 
 						const Divider(height: 1),
 

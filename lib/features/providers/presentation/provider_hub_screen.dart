@@ -149,6 +149,12 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 							}
 						},
 					),
+					ListTile(
+						leading: const Icon(Icons.upgrade, color: Colors.orange),
+						title: const Text('🔄 Upgrade Profile'),
+						subtitle: const Text('Add new features to existing profiles (Service Roles, Operational Settings)'),
+						onTap: () => context.push('/profile-migration'),
+					),
 					
 					const Divider(),
 					const Padding(

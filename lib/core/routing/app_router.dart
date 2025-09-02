@@ -69,6 +69,7 @@ import 'package:zippup/features/settings/presentation/enhanced_languages_screen.
 import 'package:zippup/features/settings/presentation/notification_test_screen.dart';
 import 'package:zippup/features/providers/presentation/operational_settings_screen.dart';
 import 'package:zippup/features/providers/presentation/service_roles_manager_screen.dart';
+import 'package:zippup/features/providers/presentation/profile_migration_screen.dart';
 import 'package:zippup/features/profile/presentation/business_profile_screen.dart';
 import 'package:zippup/features/support/presentation/support_screen.dart';
 import 'package:zippup/features/profile/presentation/manage_accounts_screen.dart';
@@ -469,6 +470,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             service: state.pathParameters['service']!,
             subcategory: state.pathParameters['subcategory']!,
           ),
+        ),
+        GoRoute(
+          path: '/profile-migration',
+          name: 'profileMigration',
+          builder: (context, state) => const ProfileMigrationScreen(),
         ),
       GoRoute(
         path: '/business',
