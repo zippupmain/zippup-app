@@ -284,7 +284,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 										Padding(
 											padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
 											child: FilterChip(
-												label: const Text('All'),
+												label: const Text('📋 All History'),
 												selected: _filterStatus == null,
 												onSelected: (_) { setState(() => _filterStatus = null); },
 											),

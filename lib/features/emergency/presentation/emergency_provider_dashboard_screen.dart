@@ -165,8 +165,8 @@ class _EmergencyProviderDashboardScreenState extends State<EmergencyProviderDash
 									labelColor: Colors.white,
 									unselectedLabelColor: Colors.white70,
 									tabs: [
-										Tab(icon: iconWithBadge(Icons.emergency, count), text: count > 0 ? 'Emergency ($count)' : 'Emergency'),
-										const Tab(icon: Icon(Icons.list), text: 'History'),
+										Tab(icon: iconWithBadge(Icons.emergency, count), text: count > 0 ? 'New ($count)' : 'New Requests'),
+										const Tab(icon: Icon(Icons.history), text: 'All History'),
 									],
 								);
 							},

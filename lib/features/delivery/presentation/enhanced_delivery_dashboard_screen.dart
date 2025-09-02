@@ -422,7 +422,7 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                       child: Row(
                         children: [
                           FilterChip(
-                            label: const Text('All Orders'),
+                            label: const Text('📋 All History'),
                             selected: _filterStatus == null,
                             onSelected: (_) => setState(() => _filterStatus = null),
                           ),

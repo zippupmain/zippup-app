@@ -137,8 +137,8 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 								]);
 							}
 							return TabBar(tabs: [
-								Tab(icon: iconWithBadge(Icons.notifications_active, count), text: count > 0 ? 'Incoming ($count)' : 'Incoming'),
-								const Tab(icon: Icon(Icons.list), text: 'Jobs'),
+								Tab(icon: iconWithBadge(Icons.notifications_active, count), text: count > 0 ? 'New ($count)' : 'New Requests'),
+								const Tab(icon: Icon(Icons.history), text: 'All History'),
 							]);
 						},
 					),
