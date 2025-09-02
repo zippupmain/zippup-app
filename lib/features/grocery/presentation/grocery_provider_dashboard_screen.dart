@@ -15,11 +15,11 @@ class GroceryProviderDashboardScreen extends StatefulWidget {
 class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboardScreen> {
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
-	final _service = models.OrderService();
+	final _service = OrderService();
 	bool _storeOpen = true;
 	bool _hideNewWhenClosed = true;
-	models.models.models.OrderStatus? _filter;
-	Stream<List<models.models.Order>>? _incomingStream;
+	models.OrderStatus? _filter;
+	Stream<List<models.Order>>? _incomingStream;
 	late final String _providerId;
 
 	Future<void> _dispatchNextReady() async {
@@ -27,7 +27,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 			final q = await _db
 				.collection('orders')
 				.where('providerId', isEqualTo: _providerId)
-				.where('status', isEqualTo: models.models.OrderStatus.dispatched.name)
+				.where('status', isEqualTo: models.OrderStatus.dispatched.name)
 				.limit(1)
 				.get();
 			if (q.docs.isEmpty) {
@@ -46,14 +46,14 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 		_incomingStream = _db
 			.collection('orders')
 			.where('providerId', isEqualTo: _providerId)
-			.where('status', isEqualTo: models.models.OrderStatus.pending.name)
+			.where('status', isEqualTo: models.OrderStatus.pending.name)
 			.snapshots()
-			.map((snap) => snap.docs.map((d) => models.models.Order.fromJson(d.id, d.data())).toList());
+			.map((snap) => snap.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
 
-	Stream<List<models.models.Order>> _ordersStream(String providerId) {
+	Stream<List<models.Order>> _ordersStream(String providerId) {
 		Query<Map<String, dynamic>> q = _db.collection('orders').where('providerId', isEqualTo: providerId);
-		return q.snapshots().map((snap) => snap.docs.map((d) => models.models.Order.fromJson(d.id, d.data())).toList());
+		return q.snapshots().map((snap) => snap.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
 
 	@override
@@ -120,14 +120,14 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 						child: Row(children: [
 							FilterChip(label: const Text('All'), selected: _filter == null, onSelected: (_) => setState(() => _filter = null)),
 							...[
-								models.models.OrderStatus.pending,
-								models.models.OrderStatus.preparing,
-								models.models.OrderStatus.sorting,
-								models.models.OrderStatus.dispatched,
-								models.models.OrderStatus.assigned,
-								models.models.OrderStatus.enroute,
-								models.models.OrderStatus.arrived,
-								models.models.OrderStatus.delivered,
+								models.OrderStatus.pending,
+								models.OrderStatus.preparing,
+								models.OrderStatus.sorting,
+								models.OrderStatus.dispatched,
+								models.OrderStatus.assigned,
+								models.OrderStatus.enroute,
+								models.OrderStatus.arrived,
+								models.OrderStatus.delivered,
 							].map((s) => Padding(
 								padding: const EdgeInsets.symmetric(horizontal: 4),
 								child: FilterChip(label: Text(s.name), selected: _filter == s, onSelected: (_) => setState(() => _filter = s)),
@@ -152,7 +152,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 											subtitle: Text('models.Order ${o.id.substring(0,6)} • ${o.status.name}'),
 											isThreeLine: false,
 											trailing: Wrap(spacing: 6, children: [
-												FilledButton(onPressed: () => _service.updateStatus(orderId: o.id, status: models.models.OrderStatus.preparing), child: const Text('Accept')),
+												FilledButton(onPressed: () => _service.updateStatus(orderId: o.id, status: models.OrderStatus.preparing), child: const Text('Accept')),
 												TextButton(onPressed: () => _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_vendor', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
 											]),
 										);
@@ -172,7 +172,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 									separatorBuilder: (_, __) => const Divider(height: 1),
 									itemBuilder: (context, i) {
 										final o = orders[i];
-										if (!_storeOpen && _hideNewWhenClosed && o.status == models.models.OrderStatus.pending) return const SizedBox.shrink();
+										if (!_storeOpen && _hideNewWhenClosed && o.status == models.OrderStatus.pending) return const SizedBox.shrink();
 										return ListTile(
 											title: Text('${o.category.name.toUpperCase()} • ${o.status.name}'),
 											subtitle: Text('models.Order ${o.id.substring(0,6)}'),
@@ -196,7 +196,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 										title: const Text('New order request'),
 										content: Text('models.Order ${o.id.substring(0,6)} • ${o.category.name}'),
 										actions: [
-											TextButton(onPressed: () { Navigator.pop(context); _service.updateStatus(orderId: o.id, status: models.models.OrderStatus.preparing); }, child: const Text('Accept')),
+											TextButton(onPressed: () { Navigator.pop(context); _service.updateStatus(orderId: o.id, status: models.OrderStatus.preparing); }, child: const Text('Accept')),
 											TextButton(onPressed: () { Navigator.pop(context); _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_vendor', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)); }, child: const Text('Decline')),
 										],
 									),
@@ -210,22 +210,22 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 		);
 	}
 
-	List<Widget> _groceryActions(BuildContext context, models.Order o, models.OrderService s) {
+	List<Widget> _groceryActions(BuildContext context, models.Order o, OrderService s) {
 		return [
-			if (o.status == models.models.OrderStatus.pending)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.preparing), child: const Text('Prepare')),
-			if (o.status == models.models.OrderStatus.preparing)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.sorting), child: const Text('Sorting')),
-			if (o.status == models.models.OrderStatus.sorting)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.dispatched), child: const Text('Dispatch')),
-			if (o.status == models.models.OrderStatus.dispatched)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.assigned), child: const Text('Assign courier')),
-			if (o.status == models.models.OrderStatus.assigned)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.enroute), child: const Text('Enroute')),
-			if (o.status == models.models.OrderStatus.enroute)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.arrived), child: const Text('Arrived')),
-			if (o.status == models.models.OrderStatus.arrived)
-				FilledButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.delivered), child: const Text('Complete')),
+			if (o.status == models.OrderStatus.pending)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.preparing), child: const Text('Prepare')),
+			if (o.status == models.OrderStatus.preparing)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.sorting), child: const Text('Sorting')),
+			if (o.status == models.OrderStatus.sorting)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.dispatched), child: const Text('Dispatch')),
+			if (o.status == models.OrderStatus.dispatched)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.assigned), child: const Text('Assign courier')),
+			if (o.status == models.OrderStatus.assigned)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.enroute), child: const Text('Enroute')),
+			if (o.status == models.OrderStatus.enroute)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.arrived), child: const Text('Arrived')),
+			if (o.status == models.OrderStatus.arrived)
+				FilledButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.delivered), child: const Text('Complete')),
 		];
 	}
 }
