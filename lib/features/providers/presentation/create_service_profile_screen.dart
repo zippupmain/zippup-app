@@ -205,19 +205,19 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			final nowIso = DateTime.now().toIso8601String();
 			final service = (_category ?? 'transport');
 			final bool bypass = await FlagsService.instance.bypassKyc();
-			// Upload KYC files
-			final storage = FirebaseStorage.instance;
-			Future<String> _put(String path, String name, Uint8List bytes) async {
-				final ref = storage.ref('$path/${DateTime.now().millisecondsSinceEpoch}_$name.jpg');
-				await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
-				return await ref.getDownloadURL();
-			}
-
-			// Public images upload first so URLs are available for both docs
+			// TEST MODE: Use placeholder URLs instead of actual uploads
+			print('🧪 TEST MODE: Using placeholder URLs for all uploads');
+			
 			String? publicImageUrl;
 			String? bannerUrl;
-			if (_publicImageBytes != null) publicImageUrl = await _put('public/$uid', 'public_image', _publicImageBytes!);
-			if (_bannerImageBytes != null) bannerUrl = await _put('public/$uid', 'banner', _bannerImageBytes!);
+			if (_publicImageBytes != null) {
+				publicImageUrl = 'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=Public+Image';
+				print('✅ Public image (test): $publicImageUrl');
+			}
+			if (_bannerImageBytes != null) {
+				bannerUrl = 'https://via.placeholder.com/600x200/2196F3/FFFFFF?text=Banner+Image';
+				print('✅ Banner image (test): $bannerUrl');
+			}
 
 			// Write business profile (for admin management)
 			await FirebaseFirestore.instance.collection('business_profiles').doc(uid).collection('profiles').add({
@@ -234,20 +234,38 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				'bannerUrl': bannerUrl,
 				'kycBypassed': bypass,
 			});
-			// Upload KYC files
+			// TEST MODE: Use placeholder URLs for KYC documents
 			final uploads = <String, String>{};
-			if (_driverLicenseBytes != null) uploads['driverLicenseUrl'] = await _put('kyc/$uid', 'driver_license', _driverLicenseBytes!);
-			if (_vehiclePapersBytes != null) uploads['vehiclePapersUrl'] = await _put('kyc/$uid', 'vehicle_papers', _vehiclePapersBytes!);
-			if (_trafficRegisterBytes != null) uploads['trafficRegisterUrl'] = await _put('kyc/$uid', 'traffic_register', _trafficRegisterBytes!);
+			if (_driverLicenseBytes != null) {
+				uploads['driverLicenseUrl'] = 'https://via.placeholder.com/300x200/9C27B0/FFFFFF?text=Driver+License';
+				print('✅ Driver license (test): ${uploads['driverLicenseUrl']}');
+			}
+			if (_vehiclePapersBytes != null) {
+				uploads['vehiclePapersUrl'] = 'https://via.placeholder.com/300x200/FF5722/FFFFFF?text=Vehicle+Papers';
+				print('✅ Vehicle papers (test): ${uploads['vehiclePapersUrl']}');
+			}
+			if (_trafficRegisterBytes != null) {
+				uploads['trafficRegisterUrl'] = 'https://via.placeholder.com/300x200/607D8B/FFFFFF?text=Traffic+Register';
+				print('✅ Traffic register (test): ${uploads['trafficRegisterUrl']}');
+			}
+			
 			final vehiclePhotoUrls = <String>[];
-			for (final b in _vehiclePhotos360) { vehiclePhotoUrls.add(await _put('kyc/$uid', 'vehicle_360', b)); }
-			if (_operationalLicenseBytes != null) uploads['operationalLicenseUrl'] = await _put('kyc/$uid', 'operational_license', _operationalLicenseBytes!);
+			for (int i = 0; i < _vehiclePhotos360.length; i++) {
+				vehiclePhotoUrls.add('https://via.placeholder.com/300x200/795548/FFFFFF?text=Vehicle+360+${i + 1}');
+			}
+			if (vehiclePhotoUrls.isNotEmpty) print('✅ Vehicle 360 photos (test): ${vehiclePhotoUrls.length} added');
+			
+			if (_operationalLicenseBytes != null) {
+				uploads['operationalLicenseUrl'] = 'https://via.placeholder.com/300x200/3F51B5/FFFFFF?text=Operational+License';
+				print('✅ Operational license (test): ${uploads['operationalLicenseUrl']}');
+			}
 
-			final catLower = (service).toLowerCase();
-			final requiresAdmin = ['transport','moving','emergency','food','grocery'].contains(catLower);
-			final initialStatus = (requiresAdmin && !bypass) ? 'pending_review' : 'active';
+			// TEST MODE: Always approve immediately, no admin review needed
+			print('🧪 TEST MODE: Auto-approving all provider profiles');
+			final initialStatus = 'active'; // Always active in test mode
 
 			// Create provider profile for Provider Hub
+			print('💾 Creating provider profile...');
 			try {
 				await FirebaseFirestore.instance.collection('provider_profiles').add({
 					'userId': uid,
@@ -294,13 +312,27 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				final fn = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('switchActiveRole');
 				await fn.call({'role': 'provider:$service'});
 			} catch (_) {}
+			print('✅ Provider profile creation completed successfully');
 			if (!mounted) return;
+			
 			// Go to Hub
-			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile created')));
+			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+				content: Text('✅ Profile created successfully! You can now access provider features.'),
+				backgroundColor: Colors.green,
+				duration: Duration(seconds: 3),
+			));
 			context.go('/hub');
 		} catch (e) {
+			print('❌ Provider profile creation failed: $e');
+			print('❌ Stack trace: ${StackTrace.current}');
 			if (mounted) {
-				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+				ScaffoldMessenger.of(context).showSnackBar(
+					SnackBar(
+						content: Text('❌ Save failed: $e'),
+						backgroundColor: Colors.red,
+						duration: const Duration(seconds: 5),
+					),
+				);
 			}
 		} finally {
 			if (mounted) setState(() => _saving = false);

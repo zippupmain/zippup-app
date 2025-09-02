@@ -144,27 +144,36 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 		
 		setState(() => _saving = true);
 		try {
+			print('🔄 Starting application submission...');
 			final uid = FirebaseAuth.instance.currentUser!.uid;
+			print('✅ User ID: $uid');
+			
+			// TEST MODE: Skip actual file uploads, use placeholder URLs
 			String? idUrl;
 			String? bizUrl;
+			List<String> vehicleUrls = [];
+			
+			print('🧪 TEST MODE: Using placeholder URLs instead of actual uploads');
+			
 			if (_idBytes != null) {
-				final ref = FirebaseStorage.instance.ref('providers/$uid/id.jpg');
-				await ref.putData(_idBytes!, SettableMetadata(contentType: 'image/jpeg'));
-				idUrl = await ref.getDownloadURL();
+				idUrl = 'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=ID+Document';
+				print('✅ ID document (test): $idUrl');
 			}
+			
 			if (_bizBytes != null) {
-				final ref = FirebaseStorage.instance.ref('providers/$uid/biz.jpg');
-				await ref.putData(_bizBytes!, SettableMetadata(contentType: 'image/jpeg'));
-				bizUrl = await ref.getDownloadURL();
+				bizUrl = 'https://via.placeholder.com/300x200/2196F3/FFFFFF?text=Proof+of+Address';
+				print('✅ Proof of address (test): $bizUrl');
 			}
-			// Upload vehicle photos if applicable
+			
+			// Test mode vehicle photos
 			if (['transport','moving','rentals'].contains(_category) && _vehiclePhotos.isNotEmpty) {
+				print('📤 Adding ${_vehiclePhotos.length} test vehicle photos...');
 				for (int i = 0; i < _vehiclePhotos.length; i++) {
-					final ref = FirebaseStorage.instance.ref('applications/$uid/vehicle_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
-					await ref.putData(_vehiclePhotos[i], SettableMetadata(contentType: 'image/jpeg'));
-					vehicleUrls.add(await ref.getDownloadURL());
+					vehicleUrls.add('https://via.placeholder.com/300x200/FF9800/FFFFFF?text=Vehicle+${i + 1}');
 				}
+				print('✅ Vehicle photos (test): ${vehicleUrls.length} added');
 			}
+			print('💾 Saving application to Firestore...');
 			await FirebaseFirestore.instance.collection('applications').doc(uid).set({
 				'applicantId': uid,
 				'name': _name.text.trim(),
@@ -194,13 +203,26 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 				'status': 'pending',
 				'createdAt': DateTime.now().toIso8601String(),
 			});
+			print('✅ Application saved to Firestore successfully');
+			
 			if (mounted) {
-				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application submitted')));
+				ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+					content: Text('✅ Application submitted successfully!'),
+					backgroundColor: Colors.green,
+				));
 				Navigator.pop(context);
 			}
 		} catch (e) {
+			print('❌ Application submission failed: $e');
+			print('❌ Stack trace: ${StackTrace.current}');
 			if (mounted) {
-				ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submit failed: $e')));
+				ScaffoldMessenger.of(context).showSnackBar(
+					SnackBar(
+						content: Text('❌ Submit failed: $e'),
+						backgroundColor: Colors.red,
+						duration: const Duration(seconds: 5),
+					),
+				);
 			}
 		} finally {
 			setState(() => _saving = false);
