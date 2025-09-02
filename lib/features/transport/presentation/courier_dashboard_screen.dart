@@ -379,6 +379,28 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> with Si
 										),
 									],
 								),
+								const SizedBox(height: 8),
+								
+								// Manual migration button for testing
+								OutlinedButton.icon(
+									onPressed: () async {
+										ScaffoldMessenger.of(context).showSnackBar(
+											const SnackBar(content: Text('🔄 Updating profile...')),
+										);
+										await _checkAndMigrateProfile();
+										ScaffoldMessenger.of(context).showSnackBar(
+											const SnackBar(
+												content: Text('✅ Profile migration completed! Try Vehicle Types and Settings now.'),
+												backgroundColor: Colors.green,
+											),
+										);
+									},
+									icon: const Icon(Icons.update),
+									label: const Text('🔄 Update Profile (if features not working)'),
+									style: OutlinedButton.styleFrom(
+										foregroundColor: Colors.orange,
+									),
+								),
 							],
 						),
 					),
