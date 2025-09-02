@@ -20,7 +20,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	bool _kitchenOpen = true;
 	bool _online = true;
 	bool _hideNewWhenClosed = true;
-	models.models.OrderStatus? _filterStatus;
+	models.OrderStatus? _filterStatus;
 
 	Future<void> _dispatchNextReady() async {
 		try {
@@ -28,7 +28,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 			final q = await FirebaseFirestore.instance
 				.collection('orders')
 				.where('providerId', isEqualTo: uid)
-				.where('status', isEqualTo: models.models.OrderStatus.dispatched.name)
+				.where('status', isEqualTo: models.OrderStatus.dispatched.name)
 				.limit(1)
 				.get();
 			if (q.docs.isEmpty) {
@@ -148,7 +148,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 				.doc(orderId)
 				.update({
 				'assignedCourierId': courierId,
-				'status': models.models.OrderStatus.assigned.name,
+				'status': models.OrderStatus.assigned.name,
 				'assignedAt': FieldValue.serverTimestamp(),
 				'assignedBy': 'manual',
 			});
@@ -193,7 +193,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 		_pendingStream = FirebaseFirestore.instance
 			.collection('orders')
 			.where('providerId', isEqualTo: _providerId)
-			.where('status', isEqualTo: models.models.OrderStatus.pending.name)
+			.where('status', isEqualTo: models.OrderStatus.pending.name)
 			.snapshots()
 			.map((snap) => snap.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
@@ -266,13 +266,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 							if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 							List<models.Order> orders = snapshot.data!;
 							final statuses = [
-								models.models.OrderStatus.pending,
-								models.models.OrderStatus.preparing,
-								models.models.OrderStatus.dispatched,
-								models.models.OrderStatus.assigned,
-								models.models.OrderStatus.enroute,
-								models.models.OrderStatus.arrived,
-								models.models.OrderStatus.delivered,
+								models.OrderStatus.pending,
+								models.OrderStatus.preparing,
+								models.OrderStatus.dispatched,
+								models.OrderStatus.assigned,
+								models.OrderStatus.enroute,
+								models.OrderStatus.arrived,
+								models.OrderStatus.delivered,
 							];
 							if (_filterStatus != null) {
 								orders = orders.where((o) => o.status == _filterStatus).toList();
@@ -314,7 +314,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 											separatorBuilder: (_, __) => const Divider(height: 1),
 											itemBuilder: (context, i) {
 												final o = orders[i];
-												if (!_kitchenOpen && _hideNewWhenClosed && o.status == models.models.OrderStatus.pending) {
+												if (!_kitchenOpen && _hideNewWhenClosed && o.status == models.OrderStatus.pending) {
 													return const SizedBox.shrink();
 												}
 												return ListTile(
@@ -359,9 +359,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
 	List<Widget> _actionsFor(BuildContext context, models.Order o, OrderService service) {
 		switch (o.category) {
-			case models.models.OrderCategory.food:
+			case models.OrderCategory.food:
 				return _foodActions(context, o, service);
-			case models.models.OrderCategory.groceries:
+			case models.OrderCategory.groceries:
 				return _groceryActions(context, o, service);
 			default:
 				return _commonActions(o, service);

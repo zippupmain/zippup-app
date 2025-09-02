@@ -426,8 +426,7 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('Status: ${order.status.name.toUpperCase()}'),
-                                    if (order.address.isNotEmpty)
-                                      Text('📍 ${order.address}'),
+                                    Text('📍 Order ID: ${order.id.substring(0, 8)}'),
                                   ],
                                 ),
                                 trailing: _buildOrderActions(order),
