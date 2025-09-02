@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -1238,14 +1239,15 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		const double earthRadius = 6371; // Earth's radius in kilometers
 		final double dLat = _degreesToRadians(lat2 - lat1);
 		final double dLng = _degreesToRadians(lng2 - lng1);
-		final double a = (dLat / 2).sin() * (dLat / 2).sin() +
-			lat1.cos() * lat2.cos() * (dLng / 2).sin() * (dLng / 2).sin();
-		final double c = 2 * (a.sqrt()).asin();
+		final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+			math.cos(_degreesToRadians(lat1)) * math.cos(_degreesToRadians(lat2)) * 
+			math.sin(dLng / 2) * math.sin(dLng / 2);
+		final double c = 2 * math.asin(math.sqrt(a));
 		return earthRadius * c;
 	}
 
 	double _degreesToRadians(double degrees) {
-		return degrees * (3.14159265359 / 180);
+		return degrees * (math.pi / 180);
 	}
 
 	@override
