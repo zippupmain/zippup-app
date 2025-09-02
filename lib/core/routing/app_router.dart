@@ -394,6 +394,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					builder: (context, state) => const AppointmentBookingScreen(serviceType: 'business'),
 				),
 				GoRoute(
+					path: '/others/medical',
+					builder: (context, state) => const OthersProvidersScreen(serviceType: 'medical'),
+				),
+				GoRoute(
 					path: '/events/create',
 					builder: (context, state) => const CreateEventScreen(),
 				),
