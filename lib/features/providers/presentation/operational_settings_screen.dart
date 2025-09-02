@@ -51,6 +51,15 @@ class _OperationalSettingsScreenState extends State<OperationalSettingsScreen> {
 			'Cleaning': ['House Cleaning', 'Deep Cleaning', 'Laundry Services', 'Organizing', 'Pool Cleaning and Treatment'],
 			'Childcare': ['Babysitter', 'Nanny', 'Child Tutor', 'Child Activities'],
 		},
+		'others': {
+			'Events Planning': ['Wedding Planning', 'Corporate Events', 'Birthday Parties', 'Conference Planning', 'Exhibition Planning'],
+			'Event Ticketing': ['Concert Tickets', 'Sports Events', 'Theater Shows', 'Festival Tickets', 'Conference Tickets'],
+			'Tutoring': ['Math Tutoring', 'English Tutoring', 'Science Tutoring', 'Language Learning', 'Test Prep', 'Homework Help', 'Music Lessons', 'Art Classes', 'IT Tutor', 'Business Tutor'],
+			'Education': ['Online Course', 'Workshop', 'Seminar', 'Training Program', 'Certification Course', 'Skill Development'],
+			'Creative Services': ['Photography', 'Videography', 'Graphics Design', 'Web Design', 'Logo Design', 'Content Creation'],
+			'Business Services': ['Business Consulting', 'Legal Advice', 'Accounting', 'Marketing Strategy', 'HR Consulting', 'Financial Planning'],
+			'Medical Consulting': ['Cardiologists', 'Dermatologist', 'Allergist/Immunologist', 'Endocrinologist', 'Pediatricians', 'Oncologists', 'Ophthalmologists', 'Orthopedic Surgeons', 'Gastroenterologists', 'Lab Technicians', 'Nephrologist', 'Neurologists', 'Obstetrician/Gynecologist', 'Pulmonologist', 'Rheumatologists', 'Hospice and Palliative Medicine', 'Psychiatrists', 'Radiologists', 'Surgeon', 'Anesthesiologist', 'Pharmacist/Chemist', 'Otorhinolaryngologist'],
+		},
   };
 
   @override

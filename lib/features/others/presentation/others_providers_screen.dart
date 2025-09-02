@@ -57,6 +57,14 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 			'darkColor': const Color(0xFF303F9F),
 			'services': ['Consulting', 'Legal Services', 'Accounting', 'Marketing', 'HR Services'],
 		},
+		'medical': {
+			'title': '🩺 Medical Consulting Providers',
+			'icon': Icons.medical_services,
+			'color': Colors.cyan,
+			'lightColor': const Color(0xFFE0F2F1),
+			'darkColor': const Color(0xFF00695C),
+			'services': ['Cardiologists', 'Dermatologist', 'Pediatricians', 'Neurologists', 'Surgeons'],
+		},
 	};
 
 	Future<void> _bookProvider(String providerId, Map<String, dynamic> providerData) async {

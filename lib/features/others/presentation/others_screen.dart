@@ -13,6 +13,7 @@ class OthersScreen extends StatelessWidget {
 			('📚', 'Education', 'Courses, training, workshops', const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF81C784)]), '/others/education'),
 			('🎨', 'Creative Services', 'Design, photography, art', const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFFFB74D)]), '/others/creative'),
 			('💼', 'Business Services', 'Consulting, legal, accounting', const LinearGradient(colors: [Color(0xFF607D8B), Color(0xFF90A4AE)]), '/others/business'),
+			('🩺', 'Medical Consulting', 'Doctors, specialists, healthcare', const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF4DD0E1)]), '/others/medical'),
 		];
 		
 		return Scaffold(
