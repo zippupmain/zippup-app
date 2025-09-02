@@ -142,6 +142,32 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 					),
 					foregroundColor: Colors.white,
 					actions: [
+						StreamBuilder<List<MovingBooking>>(
+							stream: _incomingStream,
+							builder: (context, snapshot) {
+								final count = snapshot.data?.length ?? 0;
+								return IconButton(
+									icon: count > 0 
+										? Badge(
+											label: Text('$count'),
+											child: const Icon(Icons.notifications_active),
+										)
+										: const Icon(Icons.notifications),
+									onPressed: () {
+										if (count > 0) {
+											ScaffoldMessenger.of(context).showSnackBar(
+												SnackBar(content: Text('📦 $count new moving requests! Check the "Requests" tab.')),
+											);
+										} else {
+											ScaffoldMessenger.of(context).showSnackBar(
+												const SnackBar(content: Text('No new moving requests')),
+											);
+										}
+									},
+									tooltip: count > 0 ? '$count new requests' : 'No new requests',
+								);
+							},
+						),
 						IconButton(icon: const Icon(Icons.home_outlined), onPressed: () => context.go('/')),
 						IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
 					], 

@@ -228,6 +228,36 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
         iconTheme: const IconThemeData(color: Colors.black),
         titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
         actions: [
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
+                .collection('orders')
+                .where('assignedCourierId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                .where('status', isEqualTo: 'assigned')
+                .snapshots(),
+            builder: (context, snapshot) {
+              final count = snapshot.data?.docs.length ?? 0;
+              return IconButton(
+                icon: count > 0 
+                    ? Badge(
+                        label: Text('$count'),
+                        child: const Icon(Icons.notifications_active),
+                      )
+                    : const Icon(Icons.notifications),
+                onPressed: () {
+                  if (count > 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('🚚 $count new delivery assignments!')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No new delivery assignments')),
+                    );
+                  }
+                },
+                tooltip: count > 0 ? '$count new deliveries' : 'No new deliveries',
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => context.push('/operational-settings/delivery'),

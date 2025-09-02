@@ -109,7 +109,7 @@ class _MovingPricingManageScreenState extends State<MovingPricingManageScreen> {
         backgroundColor: Colors.green.shade50,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
