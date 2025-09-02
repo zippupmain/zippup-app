@@ -326,22 +326,6 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
               ),
             ),
             
-            const SizedBox(height: 8),
-            
-            // Test button to verify functionality
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _migrating ? null : _testMigrationFunction,
-                icon: const Icon(Icons.bug_report),
-                label: const Text('🧪 Test Migration (Debug)'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-            
             const SizedBox(height: 16),
             
             // Migration status
