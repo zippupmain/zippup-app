@@ -37,14 +37,47 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 		try {
 			final uid = FirebaseAuth.instance.currentUser?.uid;
 			if (uid == null) return;
+			
 			final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
 			final data = doc.data() ?? {};
 			if (!mounted) return;
+			
 			if ((data['name'] ?? '').toString().trim().isNotEmpty) _name.text = data['name'];
 			if ((data['phone'] ?? '').toString().trim().isNotEmpty) _phone.text = data['phone'];
-			if ((data['photoUrl'] ?? '').toString().trim().isNotEmpty) setState(() => _photoUrl = data['photoUrl']);
 			if ((data['email'] ?? '').toString().trim().isNotEmpty) _email.text = data['email'];
+			
+			final photoUrl = (data['photoUrl'] ?? '').toString().trim();
+			if (photoUrl.isNotEmpty) {
+				if (photoUrl.startsWith('stored://')) {
+					// Load image from Firestore chunks
+					await _loadImageFromChunks(uid);
+				} else {
+					setState(() => _photoUrl = photoUrl);
+				}
+			}
 		} catch (_) {}
+	}
+
+	Future<void> _loadImageFromChunks(String uid) async {
+		try {
+			final imageDoc = await FirebaseFirestore.instance.collection('profile_images').doc(uid).get();
+			if (imageDoc.exists) {
+				final data = imageDoc.data()!;
+				final chunks = List<String>.from(data['chunks'] ?? []);
+				
+				if (chunks.isNotEmpty) {
+					final base64 = chunks.join('');
+					final bytes = base64Decode(base64);
+					setState(() {
+						_photoBytes = bytes;
+						_photoUrl = 'stored://profile-$uid';
+					});
+					print('✅ Profile picture loaded from ${chunks.length} chunks');
+				}
+			}
+		} catch (e) {
+			print('❌ Error loading image chunks: $e');
+		}
 	}
 
 	Future<void> _pickPhoto() async {
@@ -61,12 +94,32 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			if (u == null) return;
 			String? url = _photoUrl;
 			if (_photoBytes != null) {
-				// TEST MODE: Use simple placeholder URL to avoid Firestore size limits
-				url = 'placeholder://profile-${u.uid}-${DateTime.now().millisecondsSinceEpoch}';
-				print('✅ Profile picture (test mode): placeholder URL created');
-				
-				// Keep the image bytes in local state for display
-				setState(() => _photoUrl = url);
+				// TEST MODE: Store image as smaller base64 chunks in Firestore
+				try {
+					// Compress and split base64 data into smaller chunks
+					final base64 = base64Encode(_photoBytes!);
+					final chunks = <String>[];
+					const chunkSize = 1000; // Firestore-safe chunk size
+					
+					for (int i = 0; i < base64.length; i += chunkSize) {
+						final end = (i + chunkSize < base64.length) ? i + chunkSize : base64.length;
+						chunks.add(base64.substring(i, end));
+					}
+					
+					// Save image chunks to separate document
+					await FirebaseFirestore.instance.collection('profile_images').doc(u.uid).set({
+						'chunks': chunks,
+						'totalChunks': chunks.length,
+						'mimeType': 'image/jpeg',
+						'updatedAt': FieldValue.serverTimestamp(),
+					});
+					
+					url = 'stored://profile-${u.uid}'; // Reference to stored chunks
+					print('✅ Profile picture saved as ${chunks.length} chunks in Firestore');
+				} catch (e) {
+					print('❌ Error saving image chunks: $e');
+					url = 'placeholder://profile-${u.uid}-${DateTime.now().millisecondsSinceEpoch}';
+				}
 			}
 			final name = _name.text.trim();
 			final email = _email.text.trim();
