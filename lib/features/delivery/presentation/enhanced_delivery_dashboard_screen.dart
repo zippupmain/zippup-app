@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
-import 'package:zippup/common/models/order.dart';
+import 'package:zippup/common/models/order.dart' as models;
 
 class EnhancedDeliveryDashboardScreen extends StatefulWidget {
   const EnhancedDeliveryDashboardScreen({super.key});
@@ -18,7 +18,7 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
   String _userCity = '';
   final Map<String, bool> _businessPartnerships = {};
   List<Map<String, dynamic>> _availableBusinesses = [];
-  OrderStatus? _filterStatus;
+  models.OrderStatus? _filterStatus;
 
   @override
   void initState() {
@@ -337,20 +337,20 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                           const SizedBox(width: 8),
                           FilterChip(
                             label: const Text('Assigned'),
-                            selected: _filterStatus == OrderStatus.assigned,
-                            onSelected: (_) => setState(() => _filterStatus = OrderStatus.assigned),
+                            selected: _filterStatus == models.OrderStatus.assigned,
+                            onSelected: (_) => setState(() => _filterStatus = models.OrderStatus.assigned),
                           ),
                           const SizedBox(width: 8),
                           FilterChip(
                             label: const Text('En Route'),
-                            selected: _filterStatus == OrderStatus.enroute,
-                            onSelected: (_) => setState(() => _filterStatus = OrderStatus.enroute),
+                            selected: _filterStatus == models.OrderStatus.enroute,
+                            onSelected: (_) => setState(() => _filterStatus = models.OrderStatus.enroute),
                           ),
                           const SizedBox(width: 8),
                           FilterChip(
                             label: const Text('Delivered'),
-                            selected: _filterStatus == OrderStatus.delivered,
-                            onSelected: (_) => setState(() => _filterStatus = OrderStatus.delivered),
+                            selected: _filterStatus == models.OrderStatus.delivered,
+                            onSelected: (_) => setState(() => _filterStatus = models.OrderStatus.delivered),
                           ),
                         ],
                       ),
@@ -371,7 +371,7 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                         }
 
                         final orders = snapshot.data!.docs.map((doc) => 
-                          Order.fromJson(doc.id, doc.data())
+                          models.Order.fromJson(doc.id, doc.data())
                         ).toList();
 
                         final filteredOrders = _filterStatus == null 
@@ -448,24 +448,24 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
     );
   }
 
-  Color _getStatusColor(OrderStatus status) {
+  Color _getStatusColor(models.OrderStatus status) {
     switch (status) {
-      case OrderStatus.assigned:
+      case models.OrderStatus.assigned:
         return Colors.blue.shade100;
-      case OrderStatus.enroute:
+      case models.OrderStatus.enroute:
         return Colors.orange.shade100;
-      case OrderStatus.delivered:
+      case models.OrderStatus.delivered:
         return Colors.green.shade100;
       default:
         return Colors.grey.shade100;
     }
   }
 
-  Widget _buildOrderActions(Order order) {
+  Widget _buildOrderActions(models.Order order) {
     switch (order.status) {
-      case OrderStatus.assigned:
+      case models.OrderStatus.assigned:
         return ElevatedButton(
-          onPressed: () => _updateOrderStatus(order.id, OrderStatus.enroute),
+          onPressed: () => _updateOrderStatus(order.id, models.OrderStatus.enroute),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue,
             foregroundColor: Colors.white,
@@ -473,9 +473,9 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
           ),
           child: const Text('Start'),
         );
-      case OrderStatus.enroute:
+      case models.OrderStatus.enroute:
         return ElevatedButton(
-          onPressed: () => _updateOrderStatus(order.id, OrderStatus.delivered),
+          onPressed: () => _updateOrderStatus(order.id, models.OrderStatus.delivered),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
             foregroundColor: Colors.white,
@@ -483,14 +483,14 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
           ),
           child: const Text('Deliver'),
         );
-      case OrderStatus.delivered:
+      case models.OrderStatus.delivered:
         return const Icon(Icons.check_circle, color: Colors.green);
       default:
         return const SizedBox.shrink();
     }
   }
 
-  Future<void> _updateOrderStatus(String orderId, OrderStatus newStatus) async {
+  Future<void> _updateOrderStatus(String orderId, models.OrderStatus newStatus) async {
     try {
       await FirebaseFirestore.instance
           .collection('orders')

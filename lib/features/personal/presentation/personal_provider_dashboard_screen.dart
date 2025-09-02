@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:zippup/common/models/order.dart';
+import 'package:zippup/common/models/order.dart' as models;
 import 'package:zippup/features/providers/widgets/provider_header.dart';
 
 class PersonalProviderDashboardScreen extends StatefulWidget {
@@ -15,8 +15,8 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
 	bool _online = true;
-	OrderStatus? _filter;
-	Stream<List<Order>>? _incomingStream;
+	models.OrderStatus? _filter;
+	Stream<List<models.Order>>? _incomingStream;
 
 	@override
 	void initState() {
@@ -37,14 +37,14 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 		_incomingStream = _db
 			.collection('orders')
 			.where('providerId', isEqualTo: uid)
-			.where('status', isEqualTo: OrderStatus.pending.name)
+			.where('status', isEqualTo: models.OrderStatus.pending.name)
 			.snapshots()
-			.map((s) => s.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+			.map((s) => s.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
 
-	Stream<List<Order>> _ordersStream(String uid) {
+	Stream<List<models.Order>> _ordersStream(String uid) {
 		Query<Map<String, dynamic>> q = _db.collection('orders').where('providerId', isEqualTo: uid);
-		return q.orderBy('createdAt', descending: true).snapshots().map((s) => s.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+		return q.orderBy('createdAt', descending: true).snapshots().map((s) => s.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
 
 	Future<void> _setOnline(bool v) async {
@@ -56,7 +56,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 		}
 	}
 
-	Future<void> _updateOrder(String id, OrderStatus status) async {
+	Future<void> _updateOrder(String id, models.OrderStatus status) async {
 		await _db.collection('orders').doc(id).set({'status': status.name}, SetOptions(merge: true));
 	}
 
@@ -71,7 +71,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 					IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
 				], bottom: PreferredSize(
 					preferredSize: const Size.fromHeight(48),
-					child: StreamBuilder<List<Order>>(
+					child: StreamBuilder<List<models.Order>>(
 						stream: _incomingStream,
 						builder: (context, s) {
 							final count = (s.data?.length ?? 0);
@@ -158,10 +158,10 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 						]),
 					),
 					Expanded(child: TabBarView(children: [
-						StreamBuilder<List<Order>>(
+						StreamBuilder<List<models.Order>>(
 							stream: _incomingStream,
 							builder: (context, s) {
-								final list = s.data ?? const <Order>[];
+								final list = s.data ?? const <models.Order>[];
 								if (list.isEmpty) return const Center(child: Text('No incoming requests'));
 								return ListView.separated(
 									itemCount: list.length,
@@ -190,7 +190,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 								);
 							},
 						),
-						StreamBuilder<List<Order>>(
+						StreamBuilder<List<models.Order>>(
 							stream: _ordersStream(uid),
 							builder: (context, snap) {
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
@@ -213,7 +213,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 							},
 						),
 					])),
-					StreamBuilder<List<Order>>(
+					StreamBuilder<List<models.Order>>(
 						stream: _incomingStream,
 						builder: (context, s) {
 							if (!s.hasData || s.data!.isEmpty) return const SizedBox.shrink();
@@ -239,19 +239,19 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 		);
 	}
 
-	List<Widget> _actionsFor(Order o) {
+	List<Widget> _actionsFor(models.Order o) {
 		switch (o.status) {
-			case OrderStatus.pending:
+			case models.OrderStatus.pending:
 				return [
-					FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.accepted), child: const Text('Accept')),
+					FilledButton(onPressed: () => _updateOrder(o.id, models.OrderStatus.accepted), child: const Text('Accept')),
 					TextButton(onPressed: () => _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_provider', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Reject')),
 				];
-			case OrderStatus.accepted:
-				return [TextButton(onPressed: () => _updateOrder(o.id, OrderStatus.enroute), child: const Text('Enroute'))];
-			case OrderStatus.enroute:
-				return [TextButton(onPressed: () => _updateOrder(o.id, OrderStatus.arrived), child: const Text('Arrived'))];
-			case OrderStatus.arrived:
-				return [FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.completed), child: const Text('Complete'))];
+			case models.OrderStatus.accepted:
+				return [TextButton(onPressed: () => _updateOrder(o.id, models.OrderStatus.enroute), child: const Text('Enroute'))];
+			case models.OrderStatus.enroute:
+				return [TextButton(onPressed: () => _updateOrder(o.id, models.OrderStatus.arrived), child: const Text('Arrived'))];
+			case models.OrderStatus.arrived:
+				return [FilledButton(onPressed: () => _updateOrder(o.id, models.OrderStatus.completed), child: const Text('Complete'))];
 			default:
 				return const [];
 		}

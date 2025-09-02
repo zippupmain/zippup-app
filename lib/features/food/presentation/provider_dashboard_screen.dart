@@ -1,7 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:zippup/common/models/order.dart';
+import 'package:zippup/common/models/order.dart' as models;
 import 'package:zippup/features/food/providers/order_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/features/providers/widgets/provider_header.dart';
@@ -16,11 +16,11 @@ class ProviderDashboardScreen extends StatefulWidget {
 class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	late final OrderService _service;
 	String _providerId = '';
-	Stream<List<Order>>? _pendingStream;
+	Stream<List<models.Order>>? _pendingStream;
 	bool _kitchenOpen = true;
 	bool _online = true;
 	bool _hideNewWhenClosed = true;
-	OrderStatus? _filterStatus;
+	models.OrderStatus? _filterStatus;
 
 	Future<void> _dispatchNextReady() async {
 		try {
@@ -28,7 +28,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 			final q = await FirebaseFirestore.instance
 				.collection('orders')
 				.where('providerId', isEqualTo: uid)
-				.where('status', isEqualTo: OrderStatus.dispatched.name)
+				.where('status', isEqualTo: models.OrderStatus.dispatched.name)
 				.limit(1)
 				.get();
 			if (q.docs.isEmpty) {
@@ -148,7 +148,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 				.doc(orderId)
 				.update({
 				'assignedCourierId': courierId,
-				'status': OrderStatus.assigned.name,
+				'status': models.OrderStatus.assigned.name,
 				'assignedAt': FieldValue.serverTimestamp(),
 				'assignedBy': 'manual',
 			});
@@ -193,9 +193,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 		_pendingStream = FirebaseFirestore.instance
 			.collection('orders')
 			.where('providerId', isEqualTo: _providerId)
-			.where('status', isEqualTo: OrderStatus.pending.name)
+			.where('status', isEqualTo: models.OrderStatus.pending.name)
 			.snapshots()
-			.map((snap) => snap.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+			.map((snap) => snap.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
 
 	Future<void> _initializeProvider() async {
@@ -222,10 +222,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 		}
 	}
 
-	Stream<List<Order>> _ordersStream(String providerId) {
+	Stream<List<models.Order>> _ordersStream(String providerId) {
 		Query<Map<String, dynamic>> q = FirebaseFirestore.instance.collection('orders').where('providerId', isEqualTo: providerId);
 		// Optional: filter by status when kitchen is open (show actionable first)
-		return q.orderBy('createdAt', descending: true).snapshots().map((snap) => snap.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+		return q.orderBy('createdAt', descending: true).snapshots().map((snap) => snap.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
 
 	@override
@@ -260,19 +260,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 							OutlinedButton.icon(onPressed: _showManualDeliveryAssignment, icon: const Icon(Icons.person_add), label: const Text('Assign courier')),
 						]),
 					),
-					StreamBuilder<List<Order>>(
+					StreamBuilder<List<models.Order>>(
 						stream: _ordersStream(_providerId),
 						builder: (context, snapshot) {
 							if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-							List<Order> orders = snapshot.data!;
+							List<models.Order> orders = snapshot.data!;
 							final statuses = [
-								OrderStatus.pending,
-								OrderStatus.preparing,
-								OrderStatus.dispatched,
-								OrderStatus.assigned,
-								OrderStatus.enroute,
-								OrderStatus.arrived,
-								OrderStatus.delivered,
+								models.OrderStatus.pending,
+								models.OrderStatus.preparing,
+								models.OrderStatus.dispatched,
+								models.OrderStatus.assigned,
+								models.OrderStatus.enroute,
+								models.OrderStatus.arrived,
+								models.OrderStatus.delivered,
 							];
 							if (_filterStatus != null) {
 								orders = orders.where((o) => o.status == _filterStatus).toList();
@@ -314,7 +314,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 											separatorBuilder: (_, __) => const Divider(height: 1),
 											itemBuilder: (context, i) {
 												final o = orders[i];
-												if (!_kitchenOpen && _hideNewWhenClosed && o.status == OrderStatus.pending) {
+												if (!_kitchenOpen && _hideNewWhenClosed && o.status == models.OrderStatus.pending) {
 													return const SizedBox.shrink();
 												}
 												return ListTile(
@@ -329,7 +329,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 						},
 					),
 					// Listener overlay
-					StreamBuilder<List<Order>>(
+					StreamBuilder<List<models.Order>>(
 						stream: _pendingStream,
 						builder: (context, snapshot) {
 							if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
