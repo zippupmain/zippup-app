@@ -204,7 +204,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			final uid = user.uid;
 			final nowIso = DateTime.now().toIso8601String();
 			final service = (_category ?? 'transport');
-			final bool bypass = await FlagsService.instance.bypassKyc();
+			final bool bypass = true; // Test mode: always bypass KYC
 			// TEST MODE: Use placeholder URLs instead of actual uploads
 			print('🧪 TEST MODE: Using placeholder URLs for all uploads');
 			
@@ -296,7 +296,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						},
 						'adminDocs': uploads,
 						'inspectionRequired': _inspectionRequired,
-						'kycStatus': requiresAdmin ? (bypass ? 'bypassed' : 'submitted') : 'n/a',
+						'kycStatus': 'bypassed', // Test mode: always bypassed
 					},
 				});
 			} catch (_) {}
