@@ -179,7 +179,7 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
             onSelected: (value) {
               switch (value) {
                 case 'roles':
-                  context.push('/service-roles/delivery/courier');
+                  context.push('/delivery/service-roles');
                   break;
                 case 'settings':
                   context.push('/operational-settings/delivery');
@@ -274,7 +274,7 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () => context.push('/service-roles/delivery/courier'),
+                        onPressed: () => context.push('/delivery/service-roles'),
                         icon: const Icon(Icons.tune),
                         label: const Text('Service Roles'),
                         style: ElevatedButton.styleFrom(

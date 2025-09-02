@@ -508,6 +508,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
         ),
         GoRoute(
+          path: '/delivery/service-roles',
+          name: 'deliveryServiceRoles',
+          builder: (context, state) => const ServiceRolesManagerScreen(
+            service: 'delivery',
+            subcategory: 'delivery',
+          ),
+        ),
+        GoRoute(
           path: '/profile-migration',
           name: 'profileMigration',
           builder: (context, state) => const ProfileMigrationScreen(),

@@ -222,6 +222,11 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
         ? _deliveryCategories
         : _serviceRoles[widget.service]?[widget.subcategory] ?? [];
 
+    // For delivery service, use delivery categories regardless of subcategory
+    if (widget.service == 'delivery') {
+      // Delivery providers can choose which delivery categories to handle
+    }
+
     // If no roles found, show error message
     if (availableRoles.isEmpty) {
       return Scaffold(
