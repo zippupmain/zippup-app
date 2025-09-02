@@ -14,7 +14,7 @@ class MovingProviderDashboardScreen extends StatefulWidget {
 class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardScreen> {
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
-	bool _online = false;
+	bool _online = true;
 	String? _filter;
 	Stream<List<MovingBooking>>? _incomingStream;
 
@@ -29,7 +29,9 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 		if (uid == null) return;
 		final prof = await _db.collection('provider_profiles').where('userId', isEqualTo: uid).where('service', isEqualTo: 'moving').limit(1).get();
 		if (prof.docs.isNotEmpty) {
-			_online = prof.docs.first.get('availabilityOnline') == true;
+			// Always default to online, update profile
+			_online = true;
+			await _db.collection('provider_profiles').doc(prof.docs.first.id).update({'availabilityOnline': true});
 			if (mounted) setState(() {});
 		}
 		_incomingStream = _db

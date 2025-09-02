@@ -32,8 +32,13 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 			if (_isProviderMode) {
 				final prof = await FirebaseFirestore.instance.collection('provider_profiles').where('userId', isEqualTo: uid).where('service', isEqualTo: _service).limit(1).get();
 				if (prof.docs.isNotEmpty) {
-					// Default to online/active, providers can toggle offline
-					_online = prof.docs.first.get('availabilityOnline') ?? true;
+					// Always default to online, providers can toggle offline
+					_online = true;
+					// Update profile to be online by default
+					await FirebaseFirestore.instance
+						.collection('provider_profiles')
+						.doc(prof.docs.first.id)
+						.update({'availabilityOnline': true});
 				} else {
 					// Default to online for new providers
 					_online = true;
@@ -180,6 +185,12 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 						title: const Text('🥬 Grocery Dashboard'),
 						subtitle: const Text('Grocery orders, inventory, delivery'),
 						onTap: () => context.push('/hub/grocery'),
+					),
+					if (_service == 'delivery') ListTile(
+						leading: const Icon(Icons.delivery_dining, color: Colors.orange),
+						title: const Text('🚚 Delivery Dashboard'),
+						subtitle: const Text('Business partnerships, delivery orders, routes'),
+						onTap: () => context.push('/delivery/dashboard'),
 					),
 					
 					// New Enhanced Services

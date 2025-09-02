@@ -63,7 +63,7 @@ class _HireSearchScreenState extends State<HireSearchScreen> with TickerProvider
 					// Navigate to live tracking after brief delay
 					Future.delayed(const Duration(seconds: 2), () {
 						if (mounted) {
-							context.pushReplacement('/track/hire?bookingId=${widget.bookingId}');
+							context.pushReplacement('/hire/track?bookingId=${widget.bookingId}');
 						}
 					});
 				}

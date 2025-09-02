@@ -63,7 +63,7 @@ class _MovingSearchScreenState extends State<MovingSearchScreen> with TickerProv
 					// Navigate to live tracking after brief delay
 					Future.delayed(const Duration(seconds: 2), () {
 						if (mounted) {
-							context.pushReplacement('/track/moving?bookingId=${widget.bookingId}');
+							context.pushReplacement('/moving/track?bookingId=${widget.bookingId}');
 						}
 					});
 				}

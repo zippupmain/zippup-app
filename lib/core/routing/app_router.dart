@@ -18,6 +18,9 @@ import 'package:zippup/features/digital/presentation/digital_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_list_screen.dart';
 import 'package:zippup/features/food/presentation/continental_cuisine_screen.dart';
 import 'package:zippup/features/food/presentation/grocery_categories_screen.dart';
+import 'package:zippup/features/food/presentation/grocery_seller_categories_screen.dart';
+import 'package:zippup/features/delivery/presentation/delivery_business_selection_screen.dart';
+import 'package:zippup/features/delivery/presentation/enhanced_delivery_dashboard_screen.dart';
 import 'package:zippup/features/auth/presentation/auth_gate.dart';
 import 'package:zippup/features/cart/presentation/cart_screen.dart';
 import 'package:zippup/features/chat/presentation/chat_screen.dart';
@@ -30,6 +33,9 @@ import 'package:zippup/features/transport/presentation/ride_track_screen.dart';
 import 'package:zippup/features/transport/presentation/driver_ride_nav_screen.dart';
 import 'package:zippup/features/transport/presentation/courier_dashboard_screen.dart';
 import 'package:zippup/features/hire/presentation/hire_track_screen.dart';
+import 'package:zippup/features/emergency/presentation/emergency_track_screen.dart';
+import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
+import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
 import 'package:zippup/features/hire/presentation/hire_search_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_search_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_search_screen.dart';
@@ -275,11 +281,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					name: 'continentalCuisine',
 					builder: (context, state) => const ContinentalCuisineScreen(),
 				),
-				GoRoute(
-					path: '/grocery/categories',
-					name: 'groceryCategories',
-					builder: (context, state) => const GroceryCategoriesScreen(),
-				),
+				        GoRoute(
+          path: '/grocery/categories',
+          name: 'groceryCategories',
+          builder: (context, state) => const GroceryCategoriesScreen(),
+        ),
+        GoRoute(
+          path: '/grocery/seller-categories',
+          name: 'grocerySellerCategories',
+          builder: (context, state) => const GrocerySellerCategoriesScreen(),
+        ),
+        GoRoute(
+          path: '/delivery/business-partnerships',
+          name: 'deliveryBusinessPartnerships',
+          builder: (context, state) => const DeliveryBusinessSelectionScreen(),
+        ),
+        GoRoute(
+          path: '/delivery/dashboard',
+          name: 'deliveryDashboard',
+          builder: (context, state) => const EnhancedDeliveryDashboardScreen(),
+        ),
 				GoRoute(
 					path: '/food/vendors/:category',
 					name: 'foodVendors',
@@ -329,9 +350,24 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					builder: (context, state) => RideTrackScreen(rideId: state.uri.queryParameters['rideId'] ?? ''),
 				),
 				GoRoute(
-					path: '/track/hire',
-					name: 'trackHire',
+					path: '/hire/track',
+					name: 'hireTrack',
 					builder: (context, state) => HireTrackScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
+				),
+				GoRoute(
+					path: '/emergency/track',
+					name: 'emergencyTrack',
+					builder: (context, state) => EmergencyTrackScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
+				),
+				GoRoute(
+					path: '/moving/track',
+					name: 'movingTrack',
+					builder: (context, state) => MovingTrackScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
+				),
+				GoRoute(
+					path: '/personal/track',
+					name: 'personalTrack',
+					builder: (context, state) => PersonalTrackScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
 				),
 				GoRoute(
 					path: '/track/emergency',

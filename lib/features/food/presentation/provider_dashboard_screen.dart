@@ -18,6 +18,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	String _providerId = '';
 	Stream<List<Order>>? _pendingStream;
 	bool _kitchenOpen = true;
+	bool _online = true;
 	bool _hideNewWhenClosed = true;
 	OrderStatus? _filterStatus;
 
@@ -39,17 +40,186 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 		} catch (_) {}
 	}
 
+	void _showManualDeliveryAssignment() {
+		final TextEditingController courierIdController = TextEditingController();
+		final TextEditingController orderIdController = TextEditingController();
+
+		showDialog(
+			context: context,
+			builder: (context) => AlertDialog(
+				title: const Text('🚚 Manual Delivery Assignment'),
+				content: Column(
+					mainAxisSize: MainAxisSize.min,
+					children: [
+						const Text('Assign a specific courier to an order by entering their User ID:'),
+						const SizedBox(height: 16),
+						TextField(
+							controller: orderIdController,
+							decoration: const InputDecoration(
+								labelText: 'Order ID',
+								hintText: 'Enter order ID to assign',
+								prefixIcon: Icon(Icons.receipt),
+								border: OutlineInputBorder(),
+							),
+						),
+						const SizedBox(height: 12),
+						TextField(
+							controller: courierIdController,
+							decoration: const InputDecoration(
+								labelText: 'Courier User ID',
+								hintText: 'Enter courier\'s user ID',
+								prefixIcon: Icon(Icons.person),
+								border: OutlineInputBorder(),
+							),
+						),
+						const SizedBox(height: 8),
+						const Text(
+							'💡 Tip: You can find courier User IDs in their profile or ask them directly',
+							style: TextStyle(fontSize: 12, color: Colors.grey),
+						),
+					],
+				),
+				actions: [
+					TextButton(
+						onPressed: () => Navigator.pop(context),
+						child: const Text('Cancel'),
+					),
+					ElevatedButton(
+						onPressed: () => _assignCourierToOrder(
+							orderIdController.text.trim(),
+							courierIdController.text.trim(),
+							context,
+						),
+						child: const Text('Assign'),
+					),
+				],
+			),
+		);
+	}
+
+	Future<void> _assignCourierToOrder(String orderId, String courierId, BuildContext dialogContext) async {
+		if (orderId.isEmpty || courierId.isEmpty) {
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(content: Text('❌ Please enter both Order ID and Courier ID')),
+			);
+			return;
+		}
+
+		try {
+			// Verify order exists and belongs to this provider
+			final orderDoc = await FirebaseFirestore.instance
+				.collection('orders')
+				.doc(orderId)
+				.get();
+
+			if (!orderDoc.exists) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text('❌ Order not found')),
+				);
+				return;
+			}
+
+			final orderData = orderDoc.data()!;
+			if (orderData['providerId'] != _providerId) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text('❌ Order does not belong to your business')),
+				);
+				return;
+			}
+
+			// Verify courier exists and is a delivery provider
+			final courierDoc = await FirebaseFirestore.instance
+				.collection('provider_profiles')
+				.where('userId', isEqualTo: courierId)
+				.where('service', isEqualTo: 'delivery')
+				.limit(1)
+				.get();
+
+			if (courierDoc.docs.isEmpty) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text('❌ Courier not found or not a delivery provider')),
+				);
+				return;
+			}
+
+			// Assign courier to order
+			await FirebaseFirestore.instance
+				.collection('orders')
+				.doc(orderId)
+				.update({
+				'assignedCourierId': courierId,
+				'status': OrderStatus.assigned.name,
+				'assignedAt': FieldValue.serverTimestamp(),
+				'assignedBy': 'manual',
+			});
+
+			// Create notification for courier
+			await FirebaseFirestore.instance
+				.collection('notifications')
+				.add({
+				'userId': courierId,
+				'title': '📦 New Delivery Assignment',
+				'message': 'You have been manually assigned to deliver Order $orderId',
+				'type': 'delivery_assignment',
+				'orderId': orderId,
+				'createdAt': FieldValue.serverTimestamp(),
+				'read': false,
+			});
+
+			Navigator.pop(dialogContext);
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(
+						content: Text('✅ Courier assigned successfully!'),
+						backgroundColor: Colors.green,
+					),
+				);
+			}
+		} catch (e) {
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					SnackBar(content: Text('❌ Error assigning courier: $e')),
+				);
+			}
+		}
+	}
+
 	@override
 	void initState() {
 		super.initState();
 		_service = OrderService();
 		_providerId = FirebaseAuth.instance.currentUser?.uid ?? '';
+		_initializeProvider();
 		_pendingStream = FirebaseFirestore.instance
 			.collection('orders')
 			.where('providerId', isEqualTo: _providerId)
 			.where('status', isEqualTo: OrderStatus.pending.name)
 			.snapshots()
 			.map((snap) => snap.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+	}
+
+	Future<void> _initializeProvider() async {
+		try {
+			final uid = FirebaseAuth.instance.currentUser?.uid;
+			if (uid == null) return;
+
+			// Set provider to online by default
+			final providerProfile = await FirebaseFirestore.instance
+				.collection('provider_profiles')
+				.where('userId', isEqualTo: uid)
+				.where('service', whereIn: ['food', 'grocery'])
+				.limit(1)
+				.get();
+
+			if (providerProfile.docs.isNotEmpty) {
+				await FirebaseFirestore.instance
+					.collection('provider_profiles')
+					.doc(providerProfile.docs.first.id)
+					.update({'availabilityOnline': true});
+			}
+		} catch (e) {
+			// Ignore errors during initialization
+		}
 	}
 
 	Stream<List<Order>> _ordersStream(String providerId) {
@@ -81,9 +251,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/food/categories/manage'), icon: const Icon(Icons.category), label: const Text('Food categories')),
 							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: () => context.push('/grocery/seller-categories'), icon: const Icon(Icons.shopping_basket), label: const Text('Grocery categories')),
+							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/food/kitchen/hours'), icon: const Icon(Icons.schedule), label: const Text('Kitchen hours')),
 							const SizedBox(width: 8),
-							OutlinedButton.icon(onPressed: _dispatchNextReady, icon: const Icon(Icons.delivery_dining), label: const Text('Dispatch to courier')),
+							OutlinedButton.icon(onPressed: _dispatchNextReady, icon: const Icon(Icons.delivery_dining), label: const Text('Auto dispatch')),
+							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: _showManualDeliveryAssignment, icon: const Icon(Icons.person_add), label: const Text('Assign courier')),
 						]),
 					),
 					StreamBuilder<List<Order>>(

@@ -14,7 +14,7 @@ class EmergencyProviderDashboardScreen extends StatefulWidget {
 class _EmergencyProviderDashboardScreenState extends State<EmergencyProviderDashboardScreen> {
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
-	bool _online = false;
+	bool _online = true;
 	EmergencyStatus? _filter;
 	Stream<List<EmergencyBooking>>? _incomingStream;
 
@@ -29,7 +29,9 @@ class _EmergencyProviderDashboardScreenState extends State<EmergencyProviderDash
 		if (uid == null) return;
 		final prof = await _db.collection('provider_profiles').where('userId', isEqualTo: uid).where('service', isEqualTo: 'emergency').limit(1).get();
 		if (prof.docs.isNotEmpty) {
-			_online = prof.docs.first.get('availabilityOnline') == true;
+			// Always default to online, update profile
+			_online = true;
+			await _db.collection('provider_profiles').doc(prof.docs.first.id).update({'availabilityOnline': true});
 			if (mounted) setState(() {});
 		}
 		_incomingStream = _db

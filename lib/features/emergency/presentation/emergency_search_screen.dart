@@ -63,7 +63,7 @@ class _EmergencySearchScreenState extends State<EmergencySearchScreen> with Tick
 					// Navigate to live tracking after brief delay
 					Future.delayed(const Duration(seconds: 2), () {
 						if (mounted) {
-							context.pushReplacement('/track/emergency?bookingId=${widget.bookingId}');
+							context.pushReplacement('/emergency/track?bookingId=${widget.bookingId}');
 						}
 					});
 				}

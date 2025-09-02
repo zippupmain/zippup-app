@@ -14,7 +14,7 @@ class CourierDashboardScreen extends StatefulWidget {
 }
 
 class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
-	bool _online = false;
+	bool _online = true;
 	final _rideService = RideService();
 	StreamSubscription<Map<String, dynamic>?>? _activeSub;
 	String? _activeRideId;
@@ -81,6 +81,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
 	@override
 	void initState() {
 		super.initState();
+		_initializeDriverOnline();
 		_activeSub = _activeRideStream().listen((ride) {
 			setState(() {
 				_activeRide = ride;
@@ -92,6 +93,36 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
 				_stopLocationTimer();
 			}
 		});
+	}
+
+	Future<void> _initializeDriverOnline() async {
+		try {
+			final uid = FirebaseAuth.instance.currentUser?.uid;
+			if (uid != null) {
+				// Set driver online by default
+				await FirebaseFirestore.instance
+					.collection('drivers')
+					.doc(uid)
+					.set({'online': true}, SetOptions(merge: true));
+				
+				// Also update provider profile
+				final providerProfile = await FirebaseFirestore.instance
+					.collection('provider_profiles')
+					.where('userId', isEqualTo: uid)
+					.where('service', isEqualTo: 'transport')
+					.limit(1)
+					.get();
+
+				if (providerProfile.docs.isNotEmpty) {
+					await FirebaseFirestore.instance
+						.collection('provider_profiles')
+						.doc(providerProfile.docs.first.id)
+						.update({'availabilityOnline': true});
+				}
+			}
+		} catch (e) {
+			// Ignore errors during initialization
+		}
 	}
 
 	@override

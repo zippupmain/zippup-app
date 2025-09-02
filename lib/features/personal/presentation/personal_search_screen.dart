@@ -63,7 +63,7 @@ class _PersonalSearchScreenState extends State<PersonalSearchScreen> with Ticker
 					// Navigate to live tracking after brief delay
 					Future.delayed(const Duration(seconds: 2), () {
 						if (mounted) {
-							context.pushReplacement('/track/personal?bookingId=${widget.bookingId}');
+							context.pushReplacement('/personal/track?bookingId=${widget.bookingId}');
 						}
 					});
 				}
