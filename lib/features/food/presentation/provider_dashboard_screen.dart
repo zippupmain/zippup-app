@@ -20,7 +20,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 	bool _kitchenOpen = true;
 	bool _online = true;
 	bool _hideNewWhenClosed = true;
-	models.OrderStatus? _filterStatus;
+	models.models.OrderStatus? _filterStatus;
 
 	Future<void> _dispatchNextReady() async {
 		try {
@@ -28,7 +28,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 			final q = await FirebaseFirestore.instance
 				.collection('orders')
 				.where('providerId', isEqualTo: uid)
-				.where('status', isEqualTo: models.OrderStatus.dispatched.name)
+				.where('status', isEqualTo: models.models.OrderStatus.dispatched.name)
 				.limit(1)
 				.get();
 			if (q.docs.isEmpty) {
@@ -148,7 +148,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 				.doc(orderId)
 				.update({
 				'assignedCourierId': courierId,
-				'status': models.OrderStatus.assigned.name,
+				'status': models.models.OrderStatus.assigned.name,
 				'assignedAt': FieldValue.serverTimestamp(),
 				'assignedBy': 'manual',
 			});
@@ -193,7 +193,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 		_pendingStream = FirebaseFirestore.instance
 			.collection('orders')
 			.where('providerId', isEqualTo: _providerId)
-			.where('status', isEqualTo: models.OrderStatus.pending.name)
+			.where('status', isEqualTo: models.models.OrderStatus.pending.name)
 			.snapshots()
 			.map((snap) => snap.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
@@ -266,13 +266,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 							if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 							List<models.Order> orders = snapshot.data!;
 							final statuses = [
-								models.OrderStatus.pending,
-								models.OrderStatus.preparing,
-								models.OrderStatus.dispatched,
-								models.OrderStatus.assigned,
-								models.OrderStatus.enroute,
-								models.OrderStatus.arrived,
-								models.OrderStatus.delivered,
+								models.models.OrderStatus.pending,
+								models.models.OrderStatus.preparing,
+								models.models.OrderStatus.dispatched,
+								models.models.OrderStatus.assigned,
+								models.models.OrderStatus.enroute,
+								models.models.OrderStatus.arrived,
+								models.models.OrderStatus.delivered,
 							];
 							if (_filterStatus != null) {
 								orders = orders.where((o) => o.status == _filterStatus).toList();
@@ -314,7 +314,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 											separatorBuilder: (_, __) => const Divider(height: 1),
 											itemBuilder: (context, i) {
 												final o = orders[i];
-												if (!_kitchenOpen && _hideNewWhenClosed && o.status == models.OrderStatus.pending) {
+												if (!_kitchenOpen && _hideNewWhenClosed && o.status == models.models.OrderStatus.pending) {
 													return const SizedBox.shrink();
 												}
 												return ListTile(
@@ -343,8 +343,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 										content: Text('Order ${latest.id.substring(0, 6)} • ${latest.category.name}'),
 										actions: [
 											TextButton(onPressed: () => Navigator.pop(context), child: const Text('Later')),
-											FilledButton(onPressed: () { _service.updateStatus(orderId: latest.id, status: OrderStatus.accepted); Navigator.pop(context); }, child: const Text('Accept')),
-											TextButton(onPressed: () { _service.updateStatus(orderId: latest.id, status: OrderStatus.rejected); Navigator.pop(context); }, child: const Text('Decline')),
+											FilledButton(onPressed: () { _service.updateStatus(orderId: latest.id, status: models.OrderStatus.accepted); Navigator.pop(context); }, child: const Text('Accept')),
+											TextButton(onPressed: () { _service.updateStatus(orderId: latest.id, status: models.OrderStatus.rejected); Navigator.pop(context); }, child: const Text('Decline')),
 										],
 									),
 								);
@@ -357,54 +357,54 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 		);
 	}
 
-	List<Widget> _actionsFor(BuildContext context, Order o, OrderService service) {
+	List<Widget> _actionsFor(BuildContext context, models.Order o, OrderService service) {
 		switch (o.category) {
-			case OrderCategory.food:
+			case models.models.OrderCategory.food:
 				return _foodActions(context, o, service);
-			case OrderCategory.groceries:
+			case models.models.OrderCategory.groceries:
 				return _groceryActions(context, o, service);
 			default:
 				return _commonActions(o, service);
 		}
 	}
 
-	List<Widget> _foodActions(BuildContext context, Order o, OrderService s) {
+	List<Widget> _foodActions(BuildContext context, models.Order o, OrderService s) {
 		return [
-			if (o.status == OrderStatus.pending)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.preparing), child: const Text('Prepare')),
-			if (o.status == OrderStatus.preparing)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.dispatched), child: const Text('Dispatch')),
-			if (o.status == OrderStatus.dispatched)
+			if (o.status == models.OrderStatus.pending)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.preparing), child: const Text('Prepare')),
+			if (o.status == models.OrderStatus.preparing)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.dispatched), child: const Text('Dispatch')),
+			if (o.status == models.OrderStatus.dispatched)
 				TextButton(onPressed: () => _promptAssignCourier(context, o, s), child: const Text('Assign courier')),
-			if (o.status == OrderStatus.assigned)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.enroute), child: const Text('Enroute')),
-			if (o.status == OrderStatus.enroute)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.arrived), child: const Text('Arrived')),
-			if (o.status == OrderStatus.arrived)
+			if (o.status == models.OrderStatus.assigned)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.enroute), child: const Text('Enroute')),
+			if (o.status == models.OrderStatus.enroute)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.arrived), child: const Text('Arrived')),
+			if (o.status == models.OrderStatus.arrived)
 				FilledButton(onPressed: () => _promptAndComplete(context, o, s), child: const Text('Enter code')),
 		];
 	}
 
-	List<Widget> _groceryActions(BuildContext context, Order o, OrderService s) {
+	List<Widget> _groceryActions(BuildContext context, models.Order o, OrderService s) {
 		return [
-			if (o.status == OrderStatus.preparing)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.sorting), child: const Text('Sorting')),
-			if (o.status == OrderStatus.sorting)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.dispatched), child: const Text('Dispatch')),
+			if (o.status == models.OrderStatus.preparing)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.sorting), child: const Text('Sorting')),
+			if (o.status == models.OrderStatus.sorting)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.dispatched), child: const Text('Dispatch')),
 			..._foodActions(context, o, s),
 		];
 	}
 
-	List<Widget> _commonActions(Order o, OrderService s) {
+	List<Widget> _commonActions(models.Order o, OrderService s) {
 		return [
-			if (o.status == OrderStatus.pending)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.accepted), child: const Text('Accept')),
-			if (o.status == OrderStatus.pending)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.rejected), child: const Text('Reject')),
+			if (o.status == models.OrderStatus.pending)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.accepted), child: const Text('Accept')),
+			if (o.status == models.OrderStatus.pending)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.OrderStatus.rejected), child: const Text('Reject')),
 		];
 	}
 
-	Future<void> _promptAndComplete(BuildContext context, Order o, OrderService s) async {
+	Future<void> _promptAndComplete(BuildContext context, models.Order o, OrderService s) async {
 		final controller = TextEditingController();
 		final code = await showDialog<String>(
 			context: context,
@@ -424,13 +424,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 			}
 			return;
 		}
-		await s.updateStatus(orderId: o.id, status: OrderStatus.delivered, extra: {'deliveryCodeEntered': code});
+		await s.updateStatus(orderId: o.id, status: models.OrderStatus.delivered, extra: {'deliveryCodeEntered': code});
 		if (context.mounted) {
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delivery completed')));
 		}
 	}
 
-	Future<void> _promptAssignCourier(BuildContext context, Order o, OrderService s) async {
+	Future<void> _promptAssignCourier(BuildContext context, models.Order o, OrderService s) async {
 		final controller = TextEditingController();
 		final courier = await showDialog<String>(
 			context: context,
@@ -444,7 +444,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 			),
 		);
 		if (courier == null || courier.isEmpty) return;
-		await s.updateStatus(orderId: o.id, status: OrderStatus.assigned, deliveryId: courier);
+		await s.updateStatus(orderId: o.id, status: models.OrderStatus.assigned, deliveryId: courier);
 		if (context.mounted) {
 			ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Courier assigned')));
 		}

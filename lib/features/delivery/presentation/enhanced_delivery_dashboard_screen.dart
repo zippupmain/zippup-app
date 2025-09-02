@@ -412,9 +412,9 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                                 leading: CircleAvatar(
                                   backgroundColor: _getStatusColor(order.status),
                                   child: Text(
-                                    order.status == OrderStatus.assigned ? '📦' :
-                                    order.status == OrderStatus.enroute ? '🚚' :
-                                    order.status == OrderStatus.delivered ? '✅' : '📋',
+                                    order.status == models.OrderStatus.assigned ? '📦' :
+                                    order.status == models.OrderStatus.enroute ? '🚚' :
+                                    order.status == models.OrderStatus.delivered ? '✅' : '📋',
                                     style: const TextStyle(fontSize: 16),
                                   ),
                                 ),
@@ -426,8 +426,8 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('Status: ${order.status.name.toUpperCase()}'),
-                                    if (order.customerAddress.isNotEmpty)
-                                      Text('📍 ${order.customerAddress}'),
+                                    if (order.address.isNotEmpty)
+                                      Text('📍 ${order.address}'),
                                   ],
                                 ),
                                 trailing: _buildOrderActions(order),

@@ -15,7 +15,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
 	bool _online = true;
-	models.OrderStatus? _filter;
+	models.models.OrderStatus? _filter;
 	Stream<List<models.Order>>? _incomingStream;
 
 	@override
@@ -37,7 +37,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 		_incomingStream = _db
 			.collection('orders')
 			.where('providerId', isEqualTo: uid)
-			.where('status', isEqualTo: models.OrderStatus.pending.name)
+			.where('status', isEqualTo: models.models.OrderStatus.pending.name)
 			.snapshots()
 			.map((s) => s.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
@@ -56,7 +56,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 		}
 	}
 
-	Future<void> _updateOrder(String id, models.OrderStatus status) async {
+	Future<void> _updateOrder(String id, models.models.OrderStatus status) async {
 		await _db.collection('orders').doc(id).set({'status': status.name}, SetOptions(merge: true));
 	}
 
@@ -145,12 +145,12 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 						child: Row(children: [
 							FilterChip(label: const Text('All'), selected: _filter == null, onSelected: (_) => setState(() => _filter = null)),
 							...[
-								OrderStatus.pending,
-								OrderStatus.accepted,
-								OrderStatus.enroute,
-								OrderStatus.arrived,
-								OrderStatus.completed,
-								OrderStatus.cancelled,
+								models.OrderStatus.pending,
+								models.OrderStatus.accepted,
+								models.OrderStatus.enroute,
+								models.OrderStatus.arrived,
+								models.OrderStatus.completed,
+								models.OrderStatus.cancelled,
 							].map((s) => Padding(
 								padding: const EdgeInsets.symmetric(horizontal: 4),
 								child: FilterChip(label: Text(s.name), selected: _filter == s, onSelected: (_) => setState(() => _filter = s)),
@@ -180,7 +180,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 													subtitle: Text('$name\nOrder ${o.id.substring(0,6)} • ${o.status.name}'),
 													isThreeLine: true,
 													trailing: Wrap(spacing: 6, children: [
-														FilledButton(onPressed: () => _updateOrder(o.id, OrderStatus.accepted), child: const Text('Accept')),
+														FilledButton(onPressed: () => _updateOrder(o.id, models.OrderStatus.accepted), child: const Text('Accept')),
 														TextButton(onPressed: () => _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_provider', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
 													]),
 												);
@@ -225,7 +225,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 										title: const Text('New order request'),
 										content: Text('Order ${o.id.substring(0,6)} • ${o.category.name}'),
 										actions: [
-											TextButton(onPressed: () { Navigator.pop(context); _updateOrder(o.id, OrderStatus.accepted); }, child: const Text('Accept')),
+											TextButton(onPressed: () { Navigator.pop(context); _updateOrder(o.id, models.OrderStatus.accepted); }, child: const Text('Accept')),
 											TextButton(onPressed: () { Navigator.pop(context); _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_provider', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)); }, child: const Text('Decline')),
 										],
 									),
@@ -241,17 +241,17 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 
 	List<Widget> _actionsFor(models.Order o) {
 		switch (o.status) {
-			case models.OrderStatus.pending:
+			case models.models.OrderStatus.pending:
 				return [
-					FilledButton(onPressed: () => _updateOrder(o.id, models.OrderStatus.accepted), child: const Text('Accept')),
+					FilledButton(onPressed: () => _updateOrder(o.id, models.models.OrderStatus.accepted), child: const Text('Accept')),
 					TextButton(onPressed: () => _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_provider', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Reject')),
 				];
-			case models.OrderStatus.accepted:
-				return [TextButton(onPressed: () => _updateOrder(o.id, models.OrderStatus.enroute), child: const Text('Enroute'))];
-			case models.OrderStatus.enroute:
-				return [TextButton(onPressed: () => _updateOrder(o.id, models.OrderStatus.arrived), child: const Text('Arrived'))];
-			case models.OrderStatus.arrived:
-				return [FilledButton(onPressed: () => _updateOrder(o.id, models.OrderStatus.completed), child: const Text('Complete'))];
+			case models.models.OrderStatus.accepted:
+				return [TextButton(onPressed: () => _updateOrder(o.id, models.models.OrderStatus.enroute), child: const Text('Enroute'))];
+			case models.models.OrderStatus.enroute:
+				return [TextButton(onPressed: () => _updateOrder(o.id, models.models.OrderStatus.arrived), child: const Text('Arrived'))];
+			case models.models.OrderStatus.arrived:
+				return [FilledButton(onPressed: () => _updateOrder(o.id, models.models.OrderStatus.completed), child: const Text('Complete'))];
 			default:
 				return const [];
 		}
