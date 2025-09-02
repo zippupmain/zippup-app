@@ -29,11 +29,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 		setState(() => _uploadingImages = true);
 		
 		try {
-			// Simulate multiple image upload (in real implementation, use image_picker)
-			// For now, add placeholder URLs
+			// TEST MODE: Use test URLs to avoid CORS issues
 			final newImages = <String>[
-				'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=Ticket+1',
-				'https://via.placeholder.com/300x200/2196F3/FFFFFF?text=Ticket+2',
+				'test://ticket-image-${DateTime.now().millisecondsSinceEpoch}-1',
+				'test://ticket-image-${DateTime.now().millisecondsSinceEpoch}-2',
 			];
 			
 			setState(() {

@@ -205,17 +205,17 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			final nowIso = DateTime.now().toIso8601String();
 			final service = (_category ?? 'transport');
 			final bool bypass = true; // Test mode: always bypass KYC
-			// TEST MODE: Use placeholder URLs instead of actual uploads
-			print('🧪 TEST MODE: Using placeholder URLs for all uploads');
+			// TEST MODE: Bypass all Firebase Storage to avoid CORS issues
+			print('🧪 TEST MODE: Bypassing Firebase Storage due to CORS policy');
 			
 			String? publicImageUrl;
 			String? bannerUrl;
 			if (_publicImageBytes != null) {
-				publicImageUrl = 'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=Public+Image';
+				publicImageUrl = 'test://public-image-${DateTime.now().millisecondsSinceEpoch}';
 				print('✅ Public image (test): $publicImageUrl');
 			}
 			if (_bannerImageBytes != null) {
-				bannerUrl = 'https://via.placeholder.com/600x200/2196F3/FFFFFF?text=Banner+Image';
+				bannerUrl = 'test://banner-image-${DateTime.now().millisecondsSinceEpoch}';
 				print('✅ Banner image (test): $bannerUrl');
 			}
 
@@ -234,29 +234,29 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				'bannerUrl': bannerUrl,
 				'kycBypassed': bypass,
 			});
-			// TEST MODE: Use placeholder URLs for KYC documents
+			// TEST MODE: Bypass all external URLs to avoid CORS
 			final uploads = <String, String>{};
 			if (_driverLicenseBytes != null) {
-				uploads['driverLicenseUrl'] = 'https://via.placeholder.com/300x200/9C27B0/FFFFFF?text=Driver+License';
+				uploads['driverLicenseUrl'] = 'test://driver-license-${DateTime.now().millisecondsSinceEpoch}';
 				print('✅ Driver license (test): ${uploads['driverLicenseUrl']}');
 			}
 			if (_vehiclePapersBytes != null) {
-				uploads['vehiclePapersUrl'] = 'https://via.placeholder.com/300x200/FF5722/FFFFFF?text=Vehicle+Papers';
+				uploads['vehiclePapersUrl'] = 'test://vehicle-papers-${DateTime.now().millisecondsSinceEpoch}';
 				print('✅ Vehicle papers (test): ${uploads['vehiclePapersUrl']}');
 			}
 			if (_trafficRegisterBytes != null) {
-				uploads['trafficRegisterUrl'] = 'https://via.placeholder.com/300x200/607D8B/FFFFFF?text=Traffic+Register';
+				uploads['trafficRegisterUrl'] = 'test://traffic-register-${DateTime.now().millisecondsSinceEpoch}';
 				print('✅ Traffic register (test): ${uploads['trafficRegisterUrl']}');
 			}
 			
 			final vehiclePhotoUrls = <String>[];
 			for (int i = 0; i < _vehiclePhotos360.length; i++) {
-				vehiclePhotoUrls.add('https://via.placeholder.com/300x200/795548/FFFFFF?text=Vehicle+360+${i + 1}');
+				vehiclePhotoUrls.add('test://vehicle-360-${DateTime.now().millisecondsSinceEpoch}-$i');
 			}
 			if (vehiclePhotoUrls.isNotEmpty) print('✅ Vehicle 360 photos (test): ${vehiclePhotoUrls.length} added');
 			
 			if (_operationalLicenseBytes != null) {
-				uploads['operationalLicenseUrl'] = 'https://via.placeholder.com/300x200/3F51B5/FFFFFF?text=Operational+License';
+				uploads['operationalLicenseUrl'] = 'test://operational-license-${DateTime.now().millisecondsSinceEpoch}';
 				print('✅ Operational license (test): ${uploads['operationalLicenseUrl']}');
 			}
 

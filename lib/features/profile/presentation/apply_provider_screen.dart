@@ -148,28 +148,29 @@ class _ApplyProviderScreenState extends State<ApplyProviderScreen> {
 			final uid = FirebaseAuth.instance.currentUser!.uid;
 			print('✅ User ID: $uid');
 			
-			// TEST MODE: Skip actual file uploads, use placeholder URLs
+			// TEST MODE: Completely skip file operations to avoid CORS issues
 			String? idUrl;
 			String? bizUrl;
 			List<String> vehicleUrls = [];
 			
-			print('🧪 TEST MODE: Using placeholder URLs instead of actual uploads');
+			print('🧪 TEST MODE: Bypassing all file operations due to CORS issues');
 			
+			// Generate test URLs without any Firebase Storage calls
 			if (_idBytes != null) {
-				idUrl = 'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=ID+Document';
+				idUrl = 'test://id-document-${DateTime.now().millisecondsSinceEpoch}';
 				print('✅ ID document (test): $idUrl');
 			}
 			
 			if (_bizBytes != null) {
-				bizUrl = 'https://via.placeholder.com/300x200/2196F3/FFFFFF?text=Proof+of+Address';
+				bizUrl = 'test://proof-address-${DateTime.now().millisecondsSinceEpoch}';
 				print('✅ Proof of address (test): $bizUrl');
 			}
 			
-			// Test mode vehicle photos
+			// Test mode vehicle photos - no Firebase Storage calls
 			if (['transport','moving','rentals'].contains(_category) && _vehiclePhotos.isNotEmpty) {
 				print('📤 Adding ${_vehiclePhotos.length} test vehicle photos...');
 				for (int i = 0; i < _vehiclePhotos.length; i++) {
-					vehicleUrls.add('https://via.placeholder.com/300x200/FF9800/FFFFFF?text=Vehicle+${i + 1}');
+					vehicleUrls.add('test://vehicle-${DateTime.now().millisecondsSinceEpoch}-$i');
 				}
 				print('✅ Vehicle photos (test): ${vehicleUrls.length} added');
 			}

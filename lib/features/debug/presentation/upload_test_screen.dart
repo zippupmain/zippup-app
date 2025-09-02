@@ -47,7 +47,7 @@ class _UploadTestScreenState extends State<UploadTestScreen> {
       // Test 3: Profile picture simulation (public_profiles collection)
       print('🧪 Test 3: Testing profile picture save...');
       await FirebaseFirestore.instance.collection('public_profiles').doc(user.uid).set({
-        'profilePictureUrl': 'https://via.placeholder.com/150x150/4CAF50/FFFFFF?text=Profile',
+        'profilePictureUrl': 'test://profile-${DateTime.now().millisecondsSinceEpoch}',
         'name': 'Test User',
         'email': user.email ?? 'test@example.com',
         'updatedAt': FieldValue.serverTimestamp(),
