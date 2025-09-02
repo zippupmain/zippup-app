@@ -115,6 +115,12 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 					// Global notifications and analytics
 					ListTile(leading: const Icon(Icons.inbox), title: const Text('Incoming & Active orders'), subtitle: const Text('All requests routed to you'), onTap: () => context.push('/hub/orders')),
 					ListTile(leading: const Icon(Icons.bar_chart), title: const Text('Analytics & Earnings'), subtitle: const Text('Performance insights'), onTap: () => context.push('/hub/analytics')),
+					ListTile(
+						leading: const Icon(Icons.settings, color: Colors.blue),
+						title: const Text('Operational Settings'),
+						subtitle: const Text('Service radius, class toggles, targeting preferences'),
+						onTap: () => context.push('/operational-settings/$_service'),
+					),
 					
 					const Divider(),
 					const Padding(

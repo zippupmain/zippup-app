@@ -66,12 +66,11 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			'Roadside': ['Battery Jump', 'Tire Change', 'Fuel Delivery', 'Lockout Service'],
 		},
 		'personal': {
-			'Beauty Services': ['Hair Styling', 'Hair Cutting', 'Hair Coloring', 'Manicure', 'Pedicure', 'Facial', 'Makeup'],
-			'Wellness Services': ['Massage Therapy', 'Spa Treatment', 'Aromatherapy', 'Reflexology'],
-			'Fitness Services': ['Personal Training', 'Yoga Instruction', 'Pilates', 'Nutrition Coaching'],
-			'Tutoring Services': ['Academic Tutoring', 'Language Teaching', 'Music Lessons', 'Art Lessons'],
-			'Cleaning Services': ['House Cleaning', 'Office Cleaning', 'Deep Cleaning', 'Post-Construction Cleaning'],
-			'Childcare Services': ['Babysitting', 'Nanny Service', 'Daycare', 'After-School Care'],
+			'Beauty': ['Hair Cut', 'Hair Styling', 'Makeup', 'Facial', 'Eyebrow Threading', 'Waxing', 'Eye Lashes', 'Lips Treatment'],
+			'Wellness': ['Massage', 'Spa Treatment', 'Reflexology', 'Aromatherapy'],
+			'Fitness': ['Personal Trainer', 'Yoga Instructor', 'Physiotherapy', 'Nutrition Coaching'],
+			'Cleaning': ['House Cleaning', 'Deep Cleaning', 'Laundry Services', 'Organizing', 'Pool Cleaning and Treatment'],
+			'Childcare': ['Babysitter', 'Nanny', 'Child Tutor', 'Child Activities'],
 		},
 	};
 
@@ -101,7 +100,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'moving': ['Truck', 'Pickup', 'Courier'], // Corrected structure
 		'hire': ['Home', 'Tech', 'Construction', 'Auto'], // Simplified names, removed Personal Care
 		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Roadside'],
-		'personal': ['Beauty Services', 'Wellness Services', 'Fitness Services', 'Tutoring Services', 'Cleaning Services', 'Childcare Services'],
+		'personal': ['Beauty', 'Wellness', 'Fitness', 'Cleaning', 'Childcare'], // Removed Tutoring, simplified names
 		'others': ['Events Planning', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Event Ticketing'],
 		'food': ['Fast Food', 'Local', 'Pizza', 'Continental', 'Desserts', 'Drinks'],
 		'groceries': ['Grocery Store'],

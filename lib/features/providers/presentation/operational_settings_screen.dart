@@ -40,9 +40,16 @@ class _OperationalSettingsScreenState extends State<OperationalSettingsScreen> {
       'Ambulance': ['Basic Life Support', 'Advanced Life Support', 'Critical Care', 'Patient Transport'],
       'Fire Service': ['Fire Fighting', 'Rescue Operations', 'Hazmat Response'],
       'Security': ['Armed Response', 'Patrol Service', 'Alarm Response', 'VIP Protection'],
-      'Towing': ['Light Vehicle Towing', 'Heavy Vehicle Towing', 'Motorcycle Towing'],
-      'Roadside': ['Battery Jump', 'Tire Change', 'Fuel Delivery', 'Lockout Service'],
-    },
+      			'Towing': ['Light Vehicle Towing', 'Heavy Vehicle Towing', 'Motorcycle Towing'],
+			'Roadside': ['Battery Jump', 'Tire Change', 'Fuel Delivery', 'Lockout Service'],
+		},
+		'personal': {
+			'Beauty': ['Hair Cut', 'Hair Styling', 'Makeup', 'Facial', 'Eyebrow Threading', 'Waxing', 'Eye Lashes', 'Lips Treatment'],
+			'Wellness': ['Massage', 'Spa Treatment', 'Reflexology', 'Aromatherapy'],
+			'Fitness': ['Personal Trainer', 'Yoga Instructor', 'Physiotherapy', 'Nutrition Coaching'],
+			'Cleaning': ['House Cleaning', 'Deep Cleaning', 'Laundry Services', 'Organizing', 'Pool Cleaning and Treatment'],
+			'Childcare': ['Babysitter', 'Nanny', 'Child Tutor', 'Child Activities'],
+		},
   };
 
   @override
