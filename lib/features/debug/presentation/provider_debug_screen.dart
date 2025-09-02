@@ -142,42 +142,43 @@ class _ProviderDebugScreenState extends State<ProviderDebugScreen> {
             if (_loading)
               const Center(child: CircularProgressIndicator())
             else ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: SelectableText(
-                _debugInfo,
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _loadProviderProfiles,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Refresh'),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: _createTestProfiles,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Create Test Profiles'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                child: SelectableText(
+                  _debugInfo,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _loadProviderProfiles,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Refresh'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: _createTestProfiles,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Create Test Profiles'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
