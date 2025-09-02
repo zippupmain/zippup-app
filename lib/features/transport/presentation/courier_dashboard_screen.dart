@@ -486,7 +486,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> with Si
 					])),
 				],
 			),
-		);
+		),
+	);
 	}
 
 	Future<void> _navigateToServiceRoles() async {
