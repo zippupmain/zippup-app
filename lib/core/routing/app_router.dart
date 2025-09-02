@@ -26,6 +26,7 @@ import 'package:zippup/features/moving/presentation/moving_team_manage_screen.da
 import 'package:zippup/features/moving/presentation/moving_pricing_manage_screen.dart';
 import 'package:zippup/features/moving/presentation/moving_schedule_manage_screen.dart';
 import 'package:zippup/features/debug/presentation/upload_test_screen.dart';
+import 'package:zippup/features/debug/presentation/simple_test_screen.dart';
 import 'package:zippup/features/auth/presentation/auth_gate.dart';
 import 'package:zippup/features/cart/presentation/cart_screen.dart';
 import 'package:zippup/features/chat/presentation/chat_screen.dart';
@@ -549,6 +550,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           path: '/upload-test',
           name: 'uploadTest',
           builder: (context, state) => const UploadTestScreen(),
+        ),
+        GoRoute(
+          path: '/simple-test',
+          name: 'simpleTest',
+          builder: (context, state) => const SimpleTestScreen(),
         ),
       GoRoute(
         path: '/business',
