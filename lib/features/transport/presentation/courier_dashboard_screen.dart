@@ -96,6 +96,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> with Si
 	void initState() {
 		super.initState();
 		_initializeDriverOnline();
+		_checkAndMigrateProfile();
 		_activeSub = _activeRideStream().listen((ride) {
 			setState(() {
 				_activeRide = ride;
@@ -107,6 +108,64 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> with Si
 				_stopLocationTimer();
 			}
 		});
+	}
+
+	Future<void> _checkAndMigrateProfile() async {
+		try {
+			final uid = FirebaseAuth.instance.currentUser?.uid;
+			if (uid == null) return;
+
+			final providerDoc = await FirebaseFirestore.instance
+				.collection('provider_profiles')
+				.where('userId', isEqualTo: uid)
+				.where('service', isEqualTo: 'transport')
+				.limit(1)
+				.get();
+
+			if (providerDoc.docs.isNotEmpty) {
+				final data = providerDoc.docs.first.data();
+				final updateData = <String, dynamic>{};
+
+				// Add missing fields for new features
+				if (!data.containsKey('enabledRoles')) {
+					final serviceType = data['serviceType']?.toString() ?? 'taxi';
+					updateData['enabledRoles'] = {serviceType: true};
+				}
+				if (!data.containsKey('enabledClasses')) {
+					final serviceType = data['serviceType']?.toString() ?? 'taxi';
+					updateData['enabledClasses'] = {serviceType: true};
+				}
+				if (!data.containsKey('operationalRadius')) {
+					updateData['operationalRadius'] = 25.0;
+				}
+				if (!data.containsKey('hasRadiusLimit')) {
+					updateData['hasRadiusLimit'] = false;
+				}
+				if (!data.containsKey('availabilityOnline')) {
+					updateData['availabilityOnline'] = true;
+				}
+
+				// Update profile if needed
+				if (updateData.isNotEmpty) {
+					updateData['autoMigratedAt'] = FieldValue.serverTimestamp();
+					await providerDoc.docs.first.reference.update(updateData);
+					print('✅ Auto-migrated transport profile with new features');
+					
+					// Show user that profile was updated
+					if (mounted) {
+						ScaffoldMessenger.of(context).showSnackBar(
+							const SnackBar(
+								content: Text('✅ Profile updated with new features! Vehicle Types and Settings now available.'),
+								backgroundColor: Colors.green,
+								duration: Duration(seconds: 3),
+							),
+						);
+					}
+				}
+			}
+		} catch (e) {
+			print('Error during auto-migration: $e');
+		}
 	}
 
 	Future<void> _initializeDriverOnline() async {

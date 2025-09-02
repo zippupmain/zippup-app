@@ -26,10 +26,74 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
     _initializeDeliveryDashboard();
   }
 
+  Future<void> _autoMigrateProfile() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+
+      final providerDoc = await FirebaseFirestore.instance
+          .collection('provider_profiles')
+          .where('userId', isEqualTo: uid)
+          .where('service', isEqualTo: 'delivery')
+          .limit(1)
+          .get();
+
+      if (providerDoc.docs.isNotEmpty) {
+        final data = providerDoc.docs.first.data();
+        final updateData = <String, dynamic>{};
+
+        // Add missing fields for new features
+        if (!data.containsKey('enabledRoles')) {
+          updateData['enabledRoles'] = {'delivery': true};
+        }
+        if (!data.containsKey('enabledClasses')) {
+          updateData['enabledClasses'] = {'delivery': true};
+        }
+        if (!data.containsKey('operationalRadius')) {
+          updateData['operationalRadius'] = 25.0;
+        }
+        if (!data.containsKey('hasRadiusLimit')) {
+          updateData['hasRadiusLimit'] = false;
+        }
+        if (!data.containsKey('enabledDeliveryCategories')) {
+          updateData['enabledDeliveryCategories'] = {
+            'Food': true,
+            'Grocery': true,
+            'Marketplace': false,
+            'Pharmacy': false,
+          };
+        }
+
+        // Update profile if needed
+        if (updateData.isNotEmpty) {
+          updateData['autoMigratedAt'] = FieldValue.serverTimestamp();
+          await providerDoc.docs.first.reference.update(updateData);
+          print('✅ Auto-migrated delivery profile with new features');
+          
+          // Show user that profile was updated
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Profile updated with new features! Service Roles and Settings now available.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('Error during delivery auto-migration: $e');
+    }
+  }
+
   Future<void> _initializeDeliveryDashboard() async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
+
+      // Auto-migrate profile first
+      await _autoMigrateProfile();
 
       // Get user's city
       final userDoc = await FirebaseFirestore.instance
