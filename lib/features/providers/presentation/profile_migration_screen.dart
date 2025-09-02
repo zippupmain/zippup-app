@@ -105,14 +105,10 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
         // Add delivery categories for delivery providers
         if (service == 'delivery' && !data.containsKey('enabledDeliveryCategories')) {
           updateData['enabledDeliveryCategories'] = {
-            'Fast Food': true,
+            'Food': true,
             'Grocery': true,
             'Marketplace': false,
             'Pharmacy': false,
-            'Electronics': false,
-            'Documents': false,
-            'Flowers': false,
-            'Gifts': false,
           };
           print('Adding delivery categories to delivery profile');
         }

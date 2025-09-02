@@ -311,14 +311,14 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                 Row(
                   children: [
                     const Text(
-                      '🤝 Business Partnerships',
+                      '🤝 Partnership Invitations',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () => context.push('/delivery/business-partnerships'),
-                      icon: const Icon(Icons.edit, size: 16),
-                      label: const Text('Manage'),
+                      icon: const Icon(Icons.mail, size: 16),
+                      label: const Text('View Invites'),
                     ),
                   ],
                 ),
@@ -335,9 +335,14 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                               Icon(Icons.business_center, color: Colors.grey.shade400),
                               const SizedBox(height: 8),
                               Text(
-                                'No businesses found in $_userCity',
-                                style: TextStyle(color: Colors.grey.shade600),
-                              ),
+                                                              'No partnership invitations yet',
+                              style: TextStyle(color: Colors.grey.shade600),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Businesses will invite you to deliver for them.',
+                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                            ),
                             ],
                           ),
                         )

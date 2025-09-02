@@ -155,13 +155,13 @@ class _DeliveryBusinessSelectionScreenState extends State<DeliveryBusinessSelect
             child: Column(
               children: [
                 const Text(
-                  '🎯 Select Businesses to Partner With',
+                  '🤝 Business Partnership Invitations',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Choose food and grocery businesses in $_userCity that you want to deliver for. They can assign orders to you.',
+                  'Accept partnership invitations from businesses in $_userCity. You can deliver for any business that invites you.',
                   style: TextStyle(color: Colors.grey.shade600),
                   textAlign: TextAlign.center,
                 ),
@@ -276,21 +276,21 @@ class _DeliveryBusinessSelectionScreenState extends State<DeliveryBusinessSelect
                                     style: const TextStyle(fontSize: 12),
                                   ),
                                   const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: isSelected ? Colors.green.shade100 : Colors.grey.shade100,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      isSelected ? '✅ Partnership Active' : '⏸️ Not Partnered',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: isSelected ? Colors.green.shade700 : Colors.grey.shade600,
-                                        fontWeight: FontWeight.w500,
+                                                                      Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? Colors.green.shade100 : Colors.orange.shade100,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        isSelected ? '✅ Partnership Accepted' : '📨 Invitation Available',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: isSelected ? Colors.green.shade700 : Colors.orange.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -320,7 +320,7 @@ class _DeliveryBusinessSelectionScreenState extends State<DeliveryBusinessSelect
                           });
                         },
                         icon: const Icon(Icons.select_all),
-                        label: const Text('Partner with All'),
+                        label: const Text('Accept All Invites'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -334,7 +334,7 @@ class _DeliveryBusinessSelectionScreenState extends State<DeliveryBusinessSelect
                           });
                         },
                         icon: const Icon(Icons.clear),
-                        label: const Text('Clear All'),
+                        label: const Text('Decline All'),
                       ),
                     ),
                   ],
@@ -348,7 +348,7 @@ class _DeliveryBusinessSelectionScreenState extends State<DeliveryBusinessSelect
                   child: ElevatedButton.icon(
                     onPressed: _saving ? null : _saveBusinessSelections,
                     icon: Icon(_saving ? Icons.hourglass_empty : Icons.handshake),
-                    label: Text(_saving ? 'Saving...' : '🤝 Save Partnerships'),
+                    label: Text(_saving ? 'Saving...' : '🤝 Accept Partnerships'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                       foregroundColor: Colors.white,

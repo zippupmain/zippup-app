@@ -85,14 +85,10 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
 
   // Delivery categories for delivery providers
   final List<String> _deliveryCategories = [
-    'Fast Food',
+    'Food',
     'Grocery', 
     'Marketplace',
     'Pharmacy',
-    'Electronics',
-    'Documents',
-    'Flowers',
-    'Gifts',
   ];
 
   @override
