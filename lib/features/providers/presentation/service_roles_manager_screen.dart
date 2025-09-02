@@ -223,7 +223,7 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
       // Delivery providers can choose which delivery categories to handle
     }
 
-    // If no roles found, show error message
+    // If no roles found, show error message with debug info
     if (availableRoles.isEmpty) {
       return Scaffold(
         appBar: AppBar(
@@ -250,10 +250,40 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.grey),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Available subcategories for ${widget.service}:\n${_serviceRoles[widget.service]?.keys.join(", ") ?? "None"}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.blue, fontSize: 12),
+                  ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Go Back'),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Go Back'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Try with default subcategory
+                          final defaultSubcategory = _serviceRoles[widget.service]?.keys.first;
+                          if (defaultSubcategory != null) {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (context) => ServiceRolesManagerScreen(
+                                  service: widget.service,
+                                  subcategory: defaultSubcategory,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                        child: const Text('Try Default'),
+                      ),
+                    ],
                   ),
                 ],
               ),

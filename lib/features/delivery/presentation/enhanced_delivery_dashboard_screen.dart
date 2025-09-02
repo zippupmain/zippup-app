@@ -546,7 +546,6 @@ class _EnhancedDeliveryDashboardScreenState extends State<EnhancedDeliveryDashbo
                       stream: FirebaseFirestore.instance
                           .collection('orders')
                           .where('assignedCourierId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                          .orderBy('createdAt', descending: true)
                           .snapshots(),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) {
