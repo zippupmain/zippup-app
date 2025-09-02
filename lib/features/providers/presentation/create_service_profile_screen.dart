@@ -53,11 +53,10 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			'Courier': ['Intra-City', 'Intra-State', 'Nationwide'], // Courier coverage areas
 		},
 		'hire': {
-			'Home Services': ['Plumber', 'Electrician', 'Carpenter', 'Painter', 'Cleaner', 'Gardener'],
-			'Tech Services': ['Phone Repair', 'Computer Repair', 'TV Repair', 'Appliance Repair', 'CCTV Install'],
-			'Construction': ['Builder', 'Mason', 'Welder', 'Roofer', 'Tiler'],
-			'Auto Services': ['Mechanic', 'Auto Electrician', 'Panel Beater', 'Tyre Service'],
-			'Personal Care': ['Barber', 'Hairdresser', 'Makeup Artist', 'Nail Technician'],
+			'Home': ['Plumber', 'Electrician', 'Cleaner', 'Painter', 'Carpenter', 'Pest Control', 'Gardener'],
+			'Tech': ['Phone Repair', 'Computer', 'Network Set Up', 'CCTV Install', 'Data Recovery', 'Solar Installations', 'AC Repair', 'Fridge Repair', 'TV/Electronics Repairs'],
+			'Construction': ['Builder', 'Roofer', 'Tiler', 'Welder', 'Scaffolding', 'Laborers', 'Town Planners', 'Estate Managers', 'Land Surveyors', 'Quantity Surveyors', 'Architect', 'Mason Men/Bricklayer', 'Interior Deco', 'Exterior Deco', 'POP'],
+			'Auto': ['Mechanic', 'Tyre Service', 'Battery Service', 'Fuel Delivery'],
 		},
 		'emergency': {
 			'Ambulance': ['Basic Life Support', 'Advanced Life Support', 'Critical Care', 'Patient Transport'],
@@ -100,7 +99,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	final Map<String, List<String>> _cats = const {
 		'transport': ['Taxi', 'Bike', 'Bus/Charter'], // Removed Courier, added Bus/Charter
 		'moving': ['Truck', 'Pickup', 'Courier'], // Corrected structure
-		'hire': ['Home Services', 'Tech Services', 'Construction', 'Auto Services', 'Personal Care'],
+		'hire': ['Home', 'Tech', 'Construction', 'Auto'], // Simplified names, removed Personal Care
 		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Roadside'],
 		'personal': ['Beauty Services', 'Wellness Services', 'Fitness Services', 'Tutoring Services', 'Cleaning Services', 'Childcare Services'],
 		'others': ['Events Planning', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Event Ticketing'],

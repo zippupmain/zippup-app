@@ -93,34 +93,13 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						shouldShow = true; // Directly assigned to this driver
 						print('✅ Ride ${d.id} assigned to this driver');
 					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && isActiveTransportProvider && isOnline) {
-						// Check if provider's transport type matches the requested ride type
-						final rideType = data['type']?.toString(); // e.g., 'car', 'motorbike', 'bus'
-						final providerData = (await db.collection('provider_profiles')
-							.where('userId', isEqualTo: uid)
-							.where('service', isEqualTo: 'transport')
-							.where('status', isEqualTo: 'active')
-							.limit(1)
-							.get()).docs.first.data();
-						
-						final providerSubcategory = providerData['subcategory']?.toString(); // e.g., 'Taxi', 'Bike', 'Bus'
-						
-						// Check granular matching: subcategory + serviceType + serviceSubtype
-						final providerServiceType = providerData['serviceType']?.toString();
-						final providerServiceSubtype = providerData['serviceSubtype']?.toString();
-						
-						bool typeMatches = _doesTransportTypeMatchGranular(
-							rideType, 
-							providerSubcategory, 
-							providerServiceType, 
-							providerServiceSubtype,
-							data, // Pass full ride data for detailed matching
-						);
-						
-						if (typeMatches) {
+						// Check comprehensive targeting: type + radius + class toggles
+						final shouldShowResult = await _shouldShowToProvider(uid, 'transport', data);
+						if (shouldShowResult) {
 							shouldShow = true;
-							print('✅ Ride ${d.id} matches provider type - Ride: $rideType, Provider: $providerSubcategory');
+							print('✅ Ride ${d.id} matches provider criteria (type + radius + class)');
 						} else {
-							print('🚫 Ride ${d.id} type mismatch - Ride: $rideType, Provider: $providerSubcategory');
+							print('🚫 Ride ${d.id} filtered out by provider criteria');
 						}
 					} else {
 						print('🚫 Ride ${d.id} not for this user - Provider: $isActiveTransportProvider, Online: $isOnline, Assigned: $assignedDriverId');
@@ -1168,6 +1147,105 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		
 		print('🔍 Personal type match check: Request=$requestType, Provider=$providerSubcategory, Matches=$matches');
 		return matches;
+	}
+
+	/// Comprehensive provider targeting check: type + radius + class toggles
+	Future<bool> _shouldShowToProvider(String uid, String service, Map<String, dynamic> requestData) async {
+		try {
+			print('🔍 Comprehensive targeting check for $service provider $uid');
+			
+			// Get provider profile with operational settings
+			final providerSnap = await FirebaseFirestore.instance
+				.collection('provider_profiles')
+				.where('userId', isEqualTo: uid)
+				.where('service', isEqualTo: service)
+				.where('status', isEqualTo: 'active')
+				.limit(1)
+				.get();
+			
+			if (providerSnap.docs.isEmpty) {
+				print('❌ No provider profile found');
+				return false;
+			}
+			
+			final providerData = providerSnap.docs.first.data();
+			
+			// 1. Check service type matching
+			final requestType = requestData['type']?.toString() ?? requestData['subcategory']?.toString();
+			final providerSubcategory = providerData['subcategory']?.toString();
+			final providerServiceType = providerData['serviceType']?.toString();
+			
+			bool typeMatches = false;
+			if (service == 'transport') {
+				typeMatches = _doesTransportTypeMatchGranular(
+					requestType, 
+					providerSubcategory, 
+					providerServiceType, 
+					providerData['serviceSubtype']?.toString(),
+					requestData,
+				);
+			} else {
+				typeMatches = _doesServiceTypeMatch(service, requestType, providerSubcategory);
+			}
+			
+			if (!typeMatches) {
+				print('❌ Service type mismatch');
+				return false;
+			}
+			
+			// 2. Check class toggle (if provider has enabled this specific class)
+			final enabledClasses = providerData['enabledClasses'] as Map<String, dynamic>? ?? {};
+			final requestClass = requestData['class']?.toString() ?? providerServiceType;
+			
+			if (requestClass != null && enabledClasses.isNotEmpty) {
+				final classEnabled = enabledClasses[requestClass] == true;
+				if (!classEnabled) {
+					print('❌ Class $requestClass not enabled by provider');
+					return false;
+				}
+			}
+			
+			// 3. Check operational radius
+			final hasRadiusLimit = providerData['hasRadiusLimit'] == true;
+			if (hasRadiusLimit) {
+				final operationalRadius = (providerData['operationalRadius'] as num?)?.toDouble() ?? 10.0;
+				final requestLat = (requestData['pickupLat'] as num?)?.toDouble();
+				final requestLng = (requestData['pickupLng'] as num?)?.toDouble();
+				final providerLat = (providerData['lat'] as num?)?.toDouble();
+				final providerLng = (providerData['lng'] as num?)?.toDouble();
+				
+				if (requestLat != null && requestLng != null && providerLat != null && providerLng != null) {
+					final distance = _calculateDistance(requestLat, requestLng, providerLat, providerLng);
+					if (distance > operationalRadius) {
+						print('❌ Request outside operational radius: ${distance.toStringAsFixed(1)}km > ${operationalRadius}km');
+						return false;
+					}
+					print('✅ Request within operational radius: ${distance.toStringAsFixed(1)}km ≤ ${operationalRadius}km');
+				}
+			}
+			
+			print('✅ All targeting criteria met');
+			return true;
+			
+		} catch (e) {
+			print('❌ Error in comprehensive targeting: $e');
+			return false;
+		}
+	}
+
+	/// Calculate distance between two points in kilometers
+	double _calculateDistance(double lat1, double lng1, double lat2, double lng2) {
+		const double earthRadius = 6371; // Earth's radius in kilometers
+		final double dLat = _degreesToRadians(lat2 - lat1);
+		final double dLng = _degreesToRadians(lng2 - lng1);
+		final double a = (dLat / 2).sin() * (dLat / 2).sin() +
+			lat1.cos() * lat2.cos() * (dLng / 2).sin() * (dLng / 2).sin();
+		final double c = 2 * (a.sqrt()).asin();
+		return earthRadius * c;
+	}
+
+	double _degreesToRadians(double degrees) {
+		return degrees * (3.14159265359 / 180);
 	}
 
 	@override

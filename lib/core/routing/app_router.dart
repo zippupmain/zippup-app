@@ -66,6 +66,7 @@ import 'package:zippup/features/admin/presentation/driver_delivery_screen.dart';
 import 'package:zippup/features/settings/presentation/languages_screen.dart';
 import 'package:zippup/features/settings/presentation/enhanced_languages_screen.dart';
 import 'package:zippup/features/settings/presentation/notification_test_screen.dart';
+import 'package:zippup/features/providers/presentation/operational_settings_screen.dart';
 import 'package:zippup/features/profile/presentation/business_profile_screen.dart';
 import 'package:zippup/features/support/presentation/support_screen.dart';
 import 'package:zippup/features/profile/presentation/manage_accounts_screen.dart';
@@ -442,6 +443,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           path: '/notification-test',
           name: 'notificationTest',
           builder: (context, state) => const NotificationTestScreen(),
+        ),
+        GoRoute(
+          path: '/operational-settings/:service',
+          name: 'operationalSettings',
+          builder: (context, state) => OperationalSettingsScreen(
+            service: state.pathParameters['service']!,
+          ),
         ),
       GoRoute(
         path: '/business',
