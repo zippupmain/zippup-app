@@ -136,10 +136,12 @@ class _ProviderDebugScreenState extends State<ProviderDebugScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        children: [
-          if (_loading)
-            const Center(child: CircularProgressIndicator())
-          else ...[
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_loading)
+              const Center(child: CircularProgressIndicator())
+            else ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -177,7 +179,7 @@ class _ProviderDebugScreenState extends State<ProviderDebugScreen> {
               ],
             ),
           ],
-        ],
+        ),
       ),
     );
   }
