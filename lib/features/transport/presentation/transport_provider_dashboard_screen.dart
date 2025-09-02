@@ -247,7 +247,6 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 						),
 					),
 				),
-				),
 				body: Column(children: [
 					const ProviderHeader(service: 'transport'),
 					
@@ -475,7 +474,8 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 					),
 				]),
 			),
-		);
+		),
+	);
 	}
 
 	List<Widget> _actionsFor(Ride r) {
