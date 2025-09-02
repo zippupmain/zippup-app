@@ -50,8 +50,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			return;
 		}
 		final db = FirebaseFirestore.instance;
-		print('✅ Setting up AGGRESSIVE ride notification listener for user: $uid');
-		print('🚨 NOTIFICATION DEBUG MODE: Will show all ride requests for testing');
+		print('✅ Setting up ride notification listener for user: $uid');
 		
 		// Listen for ride requests assigned to this driver OR unassigned rides for available drivers
 		_ridesSub = db.collection('rides')
@@ -94,14 +93,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						shouldShow = true; // Directly assigned to this driver
 						print('✅ Ride ${d.id} assigned to this driver');
 					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && isActiveTransportProvider && isOnline) {
-						// Check comprehensive targeting: type + radius + class toggles
-						final shouldShowResult = await _shouldShowToProvider(uid, 'transport', data);
-						if (shouldShowResult) {
-							shouldShow = true;
-							print('✅ Ride ${d.id} matches provider criteria (type + radius + class)');
-						} else {
-							print('🚫 Ride ${d.id} filtered out by provider criteria');
-						}
+						// Simple targeting: just check if provider is active and online
+						shouldShow = true;
+						print('✅ Ride ${d.id} available for active online transport provider');
 					} else {
 						print('🚫 Ride ${d.id} not for this user - Provider: $isActiveTransportProvider, Online: $isOnline, Assigned: $assignedDriverId');
 					}
@@ -512,14 +506,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 							shouldShow = true; // Directly assigned
 							print('✅ $service request ${d.id} assigned to this provider');
 						} else if ((assignedProviderId == null || assignedProviderId.isEmpty) && currentlyOnline) {
-							// Check comprehensive targeting: type + radius + class toggles
-							final shouldShowResult = await _shouldShowToProvider(uid, service, data);
-							if (shouldShowResult) {
-								shouldShow = true;
-								print('✅ $service request ${d.id} matches provider criteria (type + radius + class)');
-							} else {
-								print('🚫 $service request ${d.id} filtered out by provider criteria');
-							}
+							// Simple targeting: just check if provider is active and online
+							shouldShow = true;
+							print('✅ $service request ${d.id} available for active online $service provider');
 						} else {
 							print('🚫 $service request ${d.id} not for this user - Online: $currentlyOnline, Assigned: $assignedProviderId');
 						}
@@ -1189,8 +1178,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			
 			if (!typeMatches) {
 				print('❌ Service type mismatch (service: $service, requestType: $requestType, providerSubcategory: $providerSubcategory)');
-				print('🧪 TEST MODE: Allowing notification anyway for testing');
-				// In test mode, continue instead of returning false
+				return false;
 			}
 			
 			// 2. Check class toggle (if provider has enabled this specific class)
@@ -1201,8 +1189,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				final classEnabled = enabledClasses[requestClass] == true;
 				if (!classEnabled) {
 					print('❌ Class $requestClass not enabled by provider (enabled: ${enabledClasses.keys.join(", ")})');
-					print('🧪 TEST MODE: Allowing notification anyway for testing');
-					// In test mode, continue instead of returning false
+					return false;
 				}
 			}
 			
