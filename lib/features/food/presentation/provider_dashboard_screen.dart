@@ -224,8 +224,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
 	Stream<List<models.Order>> _ordersStream(String providerId) {
 		Query<Map<String, dynamic>> q = FirebaseFirestore.instance.collection('orders').where('providerId', isEqualTo: providerId);
-		// Optional: filter by status when kitchen is open (show actionable first)
-		return q.orderBy('createdAt', descending: true).snapshots().map((snap) => snap.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
+		// Remove orderBy to avoid Firestore index requirement
+		return q.snapshots().map((snap) => snap.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
 
 	@override

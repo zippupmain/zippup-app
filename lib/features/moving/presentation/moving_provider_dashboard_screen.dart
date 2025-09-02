@@ -44,7 +44,7 @@ class _MovingProviderDashboardScreenState extends State<MovingProviderDashboardS
 
 	Stream<List<MovingBooking>> _bookingsStream(String uid) {
 		Query<Map<String, dynamic>> q = _db.collection('moving_bookings').where('providerId', isEqualTo: uid);
-		return q.orderBy('createdAt', descending: true).snapshots().map((s) => s.docs.map((d) => MovingBooking.fromJson(d.id, d.data())).toList());
+		return q.snapshots().map((s) => s.docs.map((d) => MovingBooking.fromJson(d.id, d.data())).toList());
 	}
 
 	Future<void> _setOnline(bool v) async {

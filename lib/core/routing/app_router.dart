@@ -21,6 +21,10 @@ import 'package:zippup/features/food/presentation/grocery_categories_screen.dart
 import 'package:zippup/features/food/presentation/grocery_seller_categories_screen.dart';
 import 'package:zippup/features/delivery/presentation/delivery_business_selection_screen.dart';
 import 'package:zippup/features/delivery/presentation/enhanced_delivery_dashboard_screen.dart';
+import 'package:zippup/features/moving/presentation/moving_vehicles_manage_screen.dart';
+import 'package:zippup/features/moving/presentation/moving_team_manage_screen.dart';
+import 'package:zippup/features/moving/presentation/moving_pricing_manage_screen.dart';
+import 'package:zippup/features/moving/presentation/moving_schedule_manage_screen.dart';
 import 'package:zippup/features/auth/presentation/auth_gate.dart';
 import 'package:zippup/features/cart/presentation/cart_screen.dart';
 import 'package:zippup/features/chat/presentation/chat_screen.dart';
@@ -514,6 +518,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             service: 'delivery',
             subcategory: 'delivery',
           ),
+        ),
+        GoRoute(
+          path: '/moving/vehicles/manage',
+          name: 'movingVehiclesManage',
+          builder: (context, state) => const MovingVehiclesManageScreen(),
+        ),
+        GoRoute(
+          path: '/moving/team/manage',
+          name: 'movingTeamManage',
+          builder: (context, state) => const MovingTeamManageScreen(),
+        ),
+        GoRoute(
+          path: '/moving/pricing/manage',
+          name: 'movingPricingManage',
+          builder: (context, state) => const MovingPricingManageScreen(),
+        ),
+        GoRoute(
+          path: '/moving/schedule/manage',
+          name: 'movingScheduleManage',
+          builder: (context, state) => const MovingScheduleManageScreen(),
         ),
         GoRoute(
           path: '/profile-migration',

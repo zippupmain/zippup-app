@@ -44,7 +44,7 @@ class _PersonalProviderDashboardScreenState extends State<PersonalProviderDashbo
 
 	Stream<List<models.Order>> _ordersStream(String uid) {
 		Query<Map<String, dynamic>> q = _db.collection('orders').where('providerId', isEqualTo: uid);
-		return q.orderBy('createdAt', descending: true).snapshots().map((s) => s.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
+		return q.snapshots().map((s) => s.docs.map((d) => models.Order.fromJson(d.id, d.data())).toList());
 	}
 
 	Future<void> _setOnline(bool v) async {

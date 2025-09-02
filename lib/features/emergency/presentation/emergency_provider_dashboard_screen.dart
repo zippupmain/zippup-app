@@ -44,7 +44,7 @@ class _EmergencyProviderDashboardScreenState extends State<EmergencyProviderDash
 
 	Stream<List<EmergencyBooking>> _bookingsStream(String uid) {
 		Query<Map<String, dynamic>> q = _db.collection('emergency_bookings').where('providerId', isEqualTo: uid);
-		return q.orderBy('createdAt', descending: true).snapshots().map((s) => s.docs.map((d) => EmergencyBooking.fromJson(d.id, d.data())).toList());
+		return q.snapshots().map((s) => s.docs.map((d) => EmergencyBooking.fromJson(d.id, d.data())).toList());
 	}
 
 	Future<void> _setOnline(bool v) async {

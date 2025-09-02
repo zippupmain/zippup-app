@@ -44,7 +44,7 @@ class _HireProviderDashboardScreenState extends State<HireProviderDashboardScree
 
 	Stream<List<HireBooking>> _bookingsStream(String uid) {
 		Query<Map<String, dynamic>> q = _db.collection('hire_bookings').where('providerId', isEqualTo: uid);
-		return q.orderBy('createdAt', descending: true).snapshots().map((s) => s.docs.map((d) => HireBooking.fromJson(d.id, d.data())).toList());
+		return q.snapshots().map((s) => s.docs.map((d) => HireBooking.fromJson(d.id, d.data())).toList());
 	}
 
 	Future<void> _setOnline(bool v) async {

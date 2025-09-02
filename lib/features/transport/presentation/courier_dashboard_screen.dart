@@ -38,7 +38,6 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> with Si
 		return FirebaseFirestore.instance
 			.collection('rides')
 			.where('driverId', isEqualTo: uid)
-			.orderBy('createdAt', descending: true)
 			.snapshots()
 			.map((snap) => snap.docs.map((d) => {'id': d.id, ...d.data()}).toList());
 	}
