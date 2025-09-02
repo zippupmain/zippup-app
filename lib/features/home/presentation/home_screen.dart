@@ -460,7 +460,7 @@ class _QuickActions extends StatelessWidget {
 						return InkWell(
 							onTap: () {
 								if (a.routeName == 'foodVendors') {
-									context.push('/food/vendors/grocery');
+									context.push('/grocery/categories');
 								} else {
 									context.pushNamed(a.routeName);
 								}

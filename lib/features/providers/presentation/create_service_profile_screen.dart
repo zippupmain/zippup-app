@@ -82,6 +82,22 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			'Business Services': ['Business Consulting', 'Legal Advice', 'Accounting', 'Marketing Strategy', 'HR Consulting', 'Financial Planning'],
 			'Medical Consulting': ['Cardiologists', 'Dermatologist', 'Allergist/Immunologist', 'Endocrinologist', 'Pediatricians', 'Oncologists', 'Ophthalmologists', 'Orthopedic Surgeons', 'Gastroenterologists', 'Lab Technicians', 'Nephrologist', 'Neurologists', 'Obstetrician/Gynecologist', 'Pulmonologist', 'Rheumatologists', 'Hospice and Palliative Medicine', 'Psychiatrists', 'Radiologists', 'Surgeon', 'Anesthesiologist', 'Pharmacist/Chemist', 'Otorhinolaryngologist'],
 		},
+		'food': {
+			'Fast Food': ['Burgers', 'Fried Chicken', 'Sandwiches', 'Hot Dogs', 'Tacos'],
+			'Local Cuisine': ['Traditional Dishes', 'Regional Specialties', 'Local Favorites', 'Street Food'],
+			'Pizza': ['Italian Pizza', 'American Pizza', 'Gourmet Pizza', 'Thin Crust', 'Deep Dish'],
+			'Continental': ['African', 'American', 'Asian', 'European', 'Mediterranean', 'Middle Eastern'],
+			'Desserts': ['Cakes', 'Ice Cream', 'Pastries', 'Cookies', 'Traditional Sweets'],
+			'Drinks': ['Fresh Juices', 'Smoothies', 'Coffee', 'Tea', 'Soft Drinks'],
+		},
+		'grocery': {
+			'African': ['African Vegetables', 'African Spices', 'African Grains', 'African Meat', 'African Snacks'],
+			'American': ['American Brands', 'American Snacks', 'American Cereals', 'American Beverages'],
+			'Asian': ['Asian Vegetables', 'Asian Spices', 'Asian Noodles', 'Asian Sauces', 'Asian Snacks'],
+			'European': ['European Cheese', 'European Bread', 'European Wine', 'European Delicacies'],
+			'Mediterranean': ['Mediterranean Oils', 'Mediterranean Herbs', 'Mediterranean Olives', 'Mediterranean Pasta'],
+			'Middle Eastern': ['Middle Eastern Spices', 'Middle Eastern Rice', 'Middle Eastern Nuts', 'Middle Eastern Sweets'],
+		},
 	};
 
 	final Map<String, Map<String, Map<String, List<String>>>> _serviceSubtypes = const {
@@ -112,8 +128,8 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Towing Van', 'Roadside'], // Added Towing Van
 		'personal': ['Beauty', 'Wellness', 'Fitness', 'Cleaning', 'Childcare'], // Removed Tutoring, simplified names
 		'others': ['Events Planning', 'Event Ticketing', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Medical Consulting'], // Added Medical Consulting
-		'food': ['Fast Food', 'Local', 'Pizza', 'Continental', 'Desserts', 'Drinks'],
-		'groceries': ['Grocery Store'],
+		'food': ['Fast Food', 'Local Cuisine', 'Pizza', 'Continental', 'Desserts', 'Drinks'], // Updated Local to Local Cuisine
+		'grocery': ['African', 'American', 'Asian', 'European', 'Mediterranean', 'Middle Eastern'], // Added continental grocery categories
 		'rentals': ['Vehicle', 'Houses', 'Other rentals'],
 		'marketplace': ['Electronics', 'Vehicles', 'Property', 'Fashion', 'Jobs', 'Services'],
 	};
