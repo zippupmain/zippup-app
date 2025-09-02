@@ -143,11 +143,18 @@ class _AddressFieldState extends State<AddressField> {
 													
 													_speech!.listen(
 														onResult: (result) {
-															print('🎤 Address speech result: ${result.recognizedWords}');
-															widget.controller.text = result.recognizedWords;
-															widget.controller.selection = TextSelection.fromPosition(
-																TextPosition(offset: widget.controller.text.length)
-															);
+															print('🎤 Address speech result: ${result.recognizedWords} (final: ${result.finalResult})');
+															
+															// Only update on final result to avoid duplicates
+															if (result.finalResult) {
+																final newText = result.recognizedWords.trim();
+																if (newText.isNotEmpty && newText != widget.controller.text) {
+																	widget.controller.text = newText;
+																	widget.controller.selection = TextSelection.fromPosition(
+																		TextPosition(offset: widget.controller.text.length)
+																	);
+																}
+															}
 														},
 														listenFor: const Duration(seconds: 30),
 														pauseFor: const Duration(seconds: 3),

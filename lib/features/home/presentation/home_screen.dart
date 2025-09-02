@@ -594,11 +594,18 @@ class _HomeSearchBarWidgetState extends State<_HomeSearchBarWidget> {
 			
 			_speech!.listen(
 				onResult: (result) {
-					print('🎤 Speech result: ${result.recognizedWords}');
-					_controller.text = result.recognizedWords;
-					_controller.selection = TextSelection.fromPosition(
-						TextPosition(offset: _controller.text.length)
-					);
+					print('🎤 Speech result: ${result.recognizedWords} (final: ${result.finalResult})');
+					
+					// Only update text on final result to avoid duplicates
+					if (result.finalResult) {
+						final newText = result.recognizedWords.trim();
+						if (newText.isNotEmpty && newText != _controller.text) {
+							_controller.text = newText;
+							_controller.selection = TextSelection.fromPosition(
+								TextPosition(offset: _controller.text.length)
+							);
+						}
+					}
 				},
 				listenFor: const Duration(seconds: 30),
 				pauseFor: const Duration(seconds: 3),

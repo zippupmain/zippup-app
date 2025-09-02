@@ -45,13 +45,17 @@ class FoodScreen extends StatelessWidget {
 			
 			speech.listen(
 				onResult: (result) {
-					print('🎤 Food speech result: ${result.recognizedWords}');
-					controller.text = result.recognizedWords;
+					print('🎤 Food speech result: ${result.recognizedWords} (final: ${result.finalResult})');
 					
+					// Only update text on final result to avoid duplicates
 					if (result.finalResult) {
-						print('✅ Final food search result: ${result.recognizedWords}');
-						_goSearch(context, controller.text);
-						speech.stop();
+						final newText = result.recognizedWords.trim();
+						if (newText.isNotEmpty) {
+							controller.text = newText;
+							print('✅ Final food search result: $newText');
+							_goSearch(context, newText);
+							speech.stop();
+						}
 					}
 				},
 				listenFor: const Duration(seconds: 30),

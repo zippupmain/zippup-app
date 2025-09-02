@@ -35,9 +35,15 @@ class MarketplaceScreen extends StatelessWidget {
 			final ok = await speech.initialize(onError: (_) {});
 			if (!ok) return;
 			speech.listen(onResult: (r) {
-				controller.text = r.recognizedWords;
-				controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
-				if (r.finalResult) _goSearch(context, controller.text);
+				// Only update on final result to avoid duplicates
+				if (r.finalResult) {
+					final newText = r.recognizedWords.trim();
+					if (newText.isNotEmpty) {
+						controller.text = newText;
+						controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
+						_goSearch(context, newText);
+					}
+				}
 			});
 		}
 		return Scaffold(

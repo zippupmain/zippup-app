@@ -37,9 +37,15 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 		final ok = await _speech!.initialize(onError: (_) {});
 		if (!ok) return;
 		_speech!.listen(onResult: (r) {
-			_controller.text = r.recognizedWords;
-			_controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
-			if (r.finalResult) setState(() {});
+			// Only update on final result to avoid duplicates
+			if (r.finalResult) {
+				final newText = r.recognizedWords.trim();
+				if (newText.isNotEmpty && newText != _controller.text) {
+					_controller.text = newText;
+					_controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
+					setState(() {});
+				}
+			}
 		});
 	}
 
