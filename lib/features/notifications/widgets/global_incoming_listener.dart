@@ -512,18 +512,13 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 							shouldShow = true; // Directly assigned
 							print('✅ $service request ${d.id} assigned to this provider');
 						} else if ((assignedProviderId == null || assignedProviderId.isEmpty) && currentlyOnline) {
-							// Check if provider's service type matches the requested service type
-							final requestType = data['type']?.toString() ?? data['subcategory']?.toString();
-							final providerData = currentProviderSnap.docs.first.data();
-							final providerSubcategory = providerData['subcategory']?.toString();
-							
-							bool typeMatches = _doesServiceTypeMatch(service, requestType, providerSubcategory);
-							
-							if (typeMatches) {
+							// Check comprehensive targeting: type + radius + class toggles
+							final shouldShowResult = await _shouldShowToProvider(uid, service, data);
+							if (shouldShowResult) {
 								shouldShow = true;
-								print('✅ $service request ${d.id} matches provider type - Request: $requestType, Provider: $providerSubcategory');
+								print('✅ $service request ${d.id} matches provider criteria (type + radius + class)');
 							} else {
-								print('🚫 $service request ${d.id} type mismatch - Request: $requestType, Provider: $providerSubcategory');
+								print('🚫 $service request ${d.id} filtered out by provider criteria');
 							}
 						} else {
 							print('🚫 $service request ${d.id} not for this user - Online: $currentlyOnline, Assigned: $assignedProviderId');
@@ -1066,8 +1061,11 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			'break_in': ['Security'],
 			
 			// Vehicle emergencies
-			'breakdown': ['Towing', 'Roadside'],
-			'accident': ['Towing'],
+			'breakdown': ['Towing', 'Towing Van', 'Roadside'],
+			'accident': ['Towing', 'Towing Van'],
+			'towing_van': ['Towing Van'],
+			'emergency_towing': ['Towing Van'],
+			'heavy_towing': ['Towing Van'],
 			'flat_tire': ['Roadside'],
 			'battery': ['Roadside'],
 		};

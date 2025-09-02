@@ -63,6 +63,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			'Fire Service': ['Fire Fighting', 'Rescue Operations', 'Hazmat Response'],
 			'Security': ['Armed Response', 'Patrol Service', 'Alarm Response', 'VIP Protection'],
 			'Towing': ['Light Vehicle Towing', 'Heavy Vehicle Towing', 'Motorcycle Towing'],
+			'Towing Van': ['Emergency Towing', 'Accident Recovery', 'Breakdown Service', 'Heavy Duty Towing'],
 			'Roadside': ['Battery Jump', 'Tire Change', 'Fuel Delivery', 'Lockout Service'],
 		},
 		'personal': {
@@ -99,7 +100,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'transport': ['Taxi', 'Bike', 'Bus/Charter'], // Removed Courier, added Bus/Charter
 		'moving': ['Truck', 'Pickup', 'Courier'], // Corrected structure
 		'hire': ['Home', 'Tech', 'Construction', 'Auto'], // Simplified names, removed Personal Care
-		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Roadside'],
+		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Towing Van', 'Roadside'], // Added Towing Van
 		'personal': ['Beauty', 'Wellness', 'Fitness', 'Cleaning', 'Childcare'], // Removed Tutoring, simplified names
 		'others': ['Events Planning', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Event Ticketing'],
 		'food': ['Fast Food', 'Local', 'Pizza', 'Continental', 'Desserts', 'Drinks'],

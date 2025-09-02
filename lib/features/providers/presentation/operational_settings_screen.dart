@@ -39,8 +39,9 @@ class _OperationalSettingsScreenState extends State<OperationalSettingsScreen> {
     'emergency': {
       'Ambulance': ['Basic Life Support', 'Advanced Life Support', 'Critical Care', 'Patient Transport'],
       'Fire Service': ['Fire Fighting', 'Rescue Operations', 'Hazmat Response'],
-      'Security': ['Armed Response', 'Patrol Service', 'Alarm Response', 'VIP Protection'],
-      			'Towing': ['Light Vehicle Towing', 'Heavy Vehicle Towing', 'Motorcycle Towing'],
+      			'Security': ['Armed Response', 'Patrol Service', 'Alarm Response', 'VIP Protection'],
+			'Towing': ['Light Vehicle Towing', 'Heavy Vehicle Towing', 'Motorcycle Towing'],
+			'Towing Van': ['Emergency Towing', 'Accident Recovery', 'Breakdown Service', 'Heavy Duty Towing'],
 			'Roadside': ['Battery Jump', 'Tire Change', 'Fuel Delivery', 'Lockout Service'],
 		},
 		'personal': {
