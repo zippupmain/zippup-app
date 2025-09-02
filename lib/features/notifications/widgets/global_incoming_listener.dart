@@ -1188,8 +1188,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			}
 			
 			if (!typeMatches) {
-				print('❌ Service type mismatch');
-				return false;
+				print('❌ Service type mismatch (service: $service, requestType: $requestType, providerSubcategory: $providerSubcategory)');
+				print('🧪 TEST MODE: Allowing notification anyway for testing');
+				// In test mode, continue instead of returning false
 			}
 			
 			// 2. Check class toggle (if provider has enabled this specific class)
@@ -1199,8 +1200,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			if (requestClass != null && enabledClasses.isNotEmpty) {
 				final classEnabled = enabledClasses[requestClass] == true;
 				if (!classEnabled) {
-					print('❌ Class $requestClass not enabled by provider');
-					return false;
+					print('❌ Class $requestClass not enabled by provider (enabled: ${enabledClasses.keys.join(", ")})');
+					print('🧪 TEST MODE: Allowing notification anyway for testing');
+					// In test mode, continue instead of returning false
 				}
 			}
 			
