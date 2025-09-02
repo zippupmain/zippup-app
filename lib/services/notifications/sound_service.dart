@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
+import 'package:zippup/services/notifications/web_audio_notification_service.dart';
 
 class SoundService {
 	SoundService._internal();
@@ -19,16 +20,13 @@ class SoundService {
 				print('✅ Haptic feedback triggered');
 			}
 			
-			// Try system sounds
-			await SystemSound.play(SystemSoundType.alert);
-			print('✅ System alert sound played');
-			
-			// Try audio player as backup
-			try {
-				await _player.play(AssetSource('sounds/notification.mp3'));
-				print('✅ Audio file played');
-			} catch (e) {
-				print('⚠️ Audio file failed: $e');
+			// Use web audio for actual audible sound
+			if (kIsWeb) {
+				await WebAudioNotificationService.instance.playNormalNotification();
+			} else {
+				// Try system sounds on mobile
+				await SystemSound.play(SystemSoundType.alert);
+				print('✅ System alert sound played');
 			}
 			
 			print('🔔 Customer notification sound completed');
@@ -45,6 +43,10 @@ class SoundService {
 	}
 
 	Future<void> playCall() async {
+		if (kIsWeb) {
+			await WebAudioNotificationService.instance.playUrgentNotification();
+			return;
+		}
 		try {
 			print('🔔 Playing driver notification...');
 			
@@ -76,6 +78,10 @@ class SoundService {
 	}
 
 	Future<void> playTrill() async {
+		if (kIsWeb) {
+			await WebAudioNotificationService.instance.playNormalNotification();
+			return;
+		}
 		try {
 			print('🎉 Playing completion notification...');
 			

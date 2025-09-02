@@ -7,6 +7,7 @@ import 'package:zippup/services/notifications/voice_hijack_service.dart';
 import 'package:zippup/services/notifications/flutter_feedback_service.dart';
 import 'package:zippup/services/notifications/sound_detective_service.dart';
 import 'package:zippup/services/notifications/system_only_service.dart';
+import 'package:zippup/services/notifications/web_audio_notification_service.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NotificationTestScreen extends StatefulWidget {
@@ -234,6 +235,41 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
               ),
             ),
             const SizedBox(height: 24),
+            
+            // NEW: Web Audio Test (should actually make sound)
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : () async {
+                setState(() {
+                  _isLoading = true;
+                  _testResult = 'Testing WEB AUDIO notifications (should be audible)...';
+                });
+                try {
+                  await WebAudioNotificationService.instance.testAllSounds();
+                  setState(() {
+                    _testResult = '🔊 WEB AUDIO Test completed!\n'
+                      '✅ Normal beep: 400Hz tone\n'
+                      '✅ Urgent beeps: 3x 800Hz tones\n'
+                      '🎯 These should be AUDIBLE sounds (not silent)\n'
+                      '💡 If you heard beeps, web audio is working!';
+                  });
+                } catch (e) {
+                  setState(() {
+                    _testResult = '❌ Web audio test failed: $e';
+                  });
+                } finally {
+                  setState(() => _isLoading = false);
+                }
+              },
+              icon: const Icon(Icons.volume_up),
+              label: const Text('🔊 Test Web Audio (AUDIBLE)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 16),
             
             // PRIORITY TEST: SystemSound only (most likely to work)
             ElevatedButton.icon(
