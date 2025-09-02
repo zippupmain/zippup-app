@@ -58,18 +58,20 @@ class SoundService {
 				print('✅ Heavy haptic feedback triggered');
 			}
 			
-			// Multiple system sounds for urgency
-			await SystemSound.play(SystemSoundType.click);
-			await Future.delayed(const Duration(milliseconds: 200));
-			await SystemSound.play(SystemSoundType.click);
-			print('✅ Double system click sounds played');
-			
-			// Try audio player as backup
+			// Use data URL audio for reliable sound (3 urgent beeps)
 			try {
-				await _player.play(AssetSource('sounds/driver_notification.mp3'));
-				print('✅ Driver audio file played');
+				for (int i = 0; i < 3; i++) {
+					await _player.play(UrlSource('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjmL0fPTgjMGJXTA7+ONQQ0PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OihUgwKUKXh8bllHgg2jdT0z4IyBSJ0wO/jkEEND1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BBDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy'));
+					if (i < 2) await Future.delayed(const Duration(milliseconds: 300));
+				}
+				print('✅ Triple data URL urgent beeps played');
 			} catch (e) {
-				print('⚠️ Driver audio file failed: $e');
+				print('❌ Data URL urgent beeps failed: $e');
+				// Fallback to system sounds
+				await SystemSound.play(SystemSoundType.click);
+				await Future.delayed(const Duration(milliseconds: 200));
+				await SystemSound.play(SystemSoundType.click);
+				print('✅ Fallback system sounds played');
 			}
 			
 			print('🔔 Driver notification sound completed');
@@ -91,12 +93,12 @@ class SoundService {
 			await SystemSound.play(SystemSoundType.alert);
 			print('✅ Completion system sound played');
 			
-			// Try audio player
+			// Use data URL audio for completion sound
 			try {
-				await _player.play(AssetSource('sounds/completion.mp3'));
-				print('✅ Completion audio file played');
+				await _player.play(UrlSource('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjmL0fPTgjMGJXTA7+ONQQ0PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OihUgwKUKXh8bllHgg2jdT0z4IyBSJ0wO/jkEEND1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BBDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy2os7CBhkuezoIVIMClCl4fG5ZR4INozU9M+CMgUidMDv45BDDw9Tr+vvsF0YCD6W2vLGeSsFKX7M8tqLOwgYZLns6CFSDApQpeHxuWUeCDaM1PTPgjIFInTA7+OQQw8PU6/r77BdGAg+ltryxnkpBSl+zPLaizsIGGS57OghUgwKUKXh8bllHgg2jNT0z4IyBSJ0wO/jkEMPD1Ov6++wXRgIPpba8sZ5KQUpfszy'));
+				print('✅ Data URL completion beep played');
 			} catch (e) {
-				print('⚠️ Completion audio file failed: $e');
+				print('❌ Data URL completion beep failed: $e');
 			}
 			
 			print('🎉 Completion notification sound completed');

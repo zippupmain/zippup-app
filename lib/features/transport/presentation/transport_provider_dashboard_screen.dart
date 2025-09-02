@@ -119,6 +119,11 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 	Future<void> _updateRide(String id, RideStatus status) async {
 		final uid = _auth.currentUser?.uid;
 		await _db.collection('rides').doc(id).set({'status': status.name, if (status == RideStatus.accepted && uid != null) 'driverId': uid}, SetOptions(merge: true));
+		
+		// Navigate to tracking screen when ride is accepted
+		if (status == RideStatus.accepted && mounted) {
+			context.go('/transport/ride-track/$id');
+		}
 	}
 
 	Future<void> _navigateToServiceRoles() async {
