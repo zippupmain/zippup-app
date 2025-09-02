@@ -206,21 +206,22 @@ class _TransportScreenState extends State<TransportScreen> {
 					
 					if (_type == 'bike') {
 						classes = [
-							{'capacity': 1, 'label': 'Normal Bike', 'emoji': '🏍️', 'price': 400.0},
-							{'capacity': 1, 'label': 'Power Bike', 'emoji': '🏍️⚡', 'price': 600.0},
+							{'capacity': 1, 'label': 'Economy Bike', 'emoji': '🏍️', 'price': 400.0},
+							{'capacity': 1, 'label': 'Luxury Bike', 'emoji': '🏍️⚡', 'price': 600.0},
 						];
 					} else if (_type == 'bus' || _isCharter) {
 						classes = [
-							{'capacity': 8, 'label': 'Mini Bus (8-seater)', 'emoji': '🚐', 'price': 0.0},
-							{'capacity': 12, 'label': 'Standard Bus (12-seater)', 'emoji': '🚌', 'price': 0.0},
-							{'capacity': 16, 'label': 'Large Bus (16-seater)', 'emoji': '🚌', 'price': 0.0},
-							{'capacity': 30, 'label': 'Charter Bus (30-seater)', 'emoji': '🚌', 'price': 0.0},
+							{'capacity': 8, 'label': 'Mini Bus (8 seater)', 'emoji': '🚐', 'price': 0.0},
+							{'capacity': 12, 'label': 'Standard Bus (12 seater)', 'emoji': '🚌', 'price': 0.0},
+							{'capacity': 16, 'label': 'Large Bus (16 seater)', 'emoji': '🚌', 'price': 0.0},
+							{'capacity': 30, 'label': 'Charter Bus (30 seater)', 'emoji': '🚌', 'price': 0.0},
 						];
 					} else {
+						// Taxi classes as they appear in request UI
 						classes = [
 							{'capacity': 2, 'label': 'Tricycle', 'emoji': '🛺', 'price': 0.0},
-							{'capacity': 3, 'label': 'Compact Car', 'emoji': '🚗', 'price': 0.0},
-							{'capacity': 4, 'label': 'Standard Car', 'emoji': '🚙', 'price': 0.0},
+							{'capacity': 3, 'label': 'Compact', 'emoji': '🚗', 'price': 0.0},
+							{'capacity': 4, 'label': 'Standard', 'emoji': '🚙', 'price': 0.0},
 							{'capacity': 6, 'label': 'SUV/Van', 'emoji': '🚐', 'price': 0.0},
 						];
 					}

@@ -43,11 +43,14 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 
 	final Map<String, Map<String, List<String>>> _serviceTypes = const {
 		'transport': {
-			'Taxi': ['2 Seater Car', '4 Seater Car', '6 Seater Car', '8+ Seater Car', 'Luxury Car', 'Economy Car'],
-			'Bike': ['Standard Motorbike', 'Power Bike', 'Scooter', 'Electric Bike'],
-			'Bus': ['Mini Bus (14 seats)', 'Standard Bus (25 seats)', 'Large Bus (40+ seats)', 'Charter Bus'],
-			'Tricycle': ['Standard Tricycle', 'Cargo Tricycle'],
-			'Courier': ['Motorbike Courier', 'Car Courier', 'Bicycle Courier'],
+			'Taxi': ['Tricycle', 'Compact', 'Standard', 'SUV/Van'], // As they appear in request UI
+			'Bike': ['Economy Bike', 'Luxury Bike'], // Renamed from Normal/Power bike
+			'Bus/Charter': ['Mini Bus (8 seater)', 'Standard Bus (12 seater)', 'Large Bus (16 seater)', 'Charter Bus (30 seater)'],
+		},
+		'moving': {
+			'Truck': ['Small Truck (1-2 rooms)', 'Medium Truck (3-4 rooms)', 'Large Truck (5+ rooms)', 'Specialized Moving'],
+			'Backie/Pickup': ['Single Item', 'Small Load', 'Appliance Moving'],
+			'Courier': ['Intra-City', 'Intra-State', 'Nationwide'], // Corrected courier types
 		},
 		'hire': {
 			'Home Services': ['Plumber', 'Electrician', 'Carpenter', 'Painter', 'Cleaner', 'Gardener'],
@@ -93,10 +96,10 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	Uint8List? _publicImageBytes;
 	Uint8List? _bannerImageBytes;
 
-	// Updated to match _subcategories structure for consistency
+	// Corrected structure according to specifications
 	final Map<String, List<String>> _cats = const {
-		'transport': ['Taxi', 'Bike', 'Bus', 'Tricycle', 'Courier'],
-		'moving': ['Truck', 'Backie/Pickup', 'Courier'],
+		'transport': ['Taxi', 'Bike', 'Bus/Charter'], // Removed Courier, added Bus/Charter
+		'moving': ['Truck', 'Backie/Pickup', 'Courier'], // Courier moved here
 		'hire': ['Home Services', 'Tech Services', 'Construction', 'Auto Services', 'Personal Care'],
 		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Roadside'],
 		'personal': ['Beauty Services', 'Wellness Services', 'Fitness Services', 'Tutoring Services', 'Cleaning Services', 'Childcare Services'],
