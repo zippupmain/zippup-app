@@ -22,6 +22,38 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 	TimeOfDay? _eventTime;
 	String _category = 'concert';
 	bool _isCreating = false;
+	List<String> _ticketImages = []; // URLs of uploaded ticket images
+	bool _uploadingImages = false;
+
+	Future<void> _uploadTicketImages() async {
+		setState(() => _uploadingImages = true);
+		
+		try {
+			// Simulate multiple image upload (in real implementation, use image_picker)
+			// For now, add placeholder URLs
+			final newImages = <String>[
+				'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=Ticket+1',
+				'https://via.placeholder.com/300x200/2196F3/FFFFFF?text=Ticket+2',
+			];
+			
+			setState(() {
+				_ticketImages.addAll(newImages);
+				if (_ticketImages.length > 15) {
+					_ticketImages = _ticketImages.take(15).toList();
+				}
+			});
+			
+			ScaffoldMessenger.of(context).showSnackBar(
+				SnackBar(content: Text('✅ Added ${newImages.length} ticket images')),
+			);
+		} catch (e) {
+			ScaffoldMessenger.of(context).showSnackBar(
+				SnackBar(content: Text('❌ Error uploading images: $e')),
+			);
+		} finally {
+			setState(() => _uploadingImages = false);
+		}
+	}
 
 	final Map<String, String> _categories = {
 		'concert': '🎵 Concert',
@@ -72,7 +104,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 				_eventTime!.minute,
 			);
 
-			// Create event
+			// Create event with ticket images
 			final eventRef = FirebaseFirestore.instance.collection('events').doc();
 			await eventRef.set({
 				'organizerId': uid,
@@ -88,6 +120,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 				'status': 'active',
 				'createdAt': DateTime.now().toIso8601String(),
 				'currency': 'NGN',
+				'ticketImages': _ticketImages, // Ticket design images
+				'referencePrefix': eventRef.id.substring(0, 6).toUpperCase(), // Event reference prefix
 			});
 
 			if (mounted) {
@@ -299,6 +333,115 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 														),
 													),
 												],
+											),
+										],
+									),
+								),
+							),
+
+							const SizedBox(height: 24),
+
+							// Ticket images section
+							Card(
+								color: Colors.white,
+								child: Padding(
+									padding: const EdgeInsets.all(16),
+									child: Column(
+										crossAxisAlignment: CrossAxisAlignment.start,
+										children: [
+											const Text('🎫 Ticket Design', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+											const SizedBox(height: 8),
+											const Text('Upload ticket images that buyers will receive (max 15 images)', style: TextStyle(color: Colors.black87)),
+											const SizedBox(height: 12),
+											
+											// Image upload area
+											Container(
+												width: double.infinity,
+												height: 120,
+												decoration: BoxDecoration(
+													border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+													borderRadius: BorderRadius.circular(8),
+													color: Colors.grey.shade50,
+												),
+												child: _ticketImages.isEmpty
+													? Column(
+														mainAxisAlignment: MainAxisAlignment.center,
+														children: [
+															Icon(Icons.add_photo_alternate, size: 48, color: Colors.grey.shade400),
+															const SizedBox(height: 8),
+															Text('Tap to upload ticket images', style: TextStyle(color: Colors.grey.shade600)),
+															const Text('(Multiple selection supported)', style: TextStyle(color: Colors.grey, fontSize: 12)),
+														],
+													)
+													: GridView.builder(
+														padding: const EdgeInsets.all(8),
+														gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+															crossAxisCount: 4,
+															crossAxisSpacing: 8,
+															mainAxisSpacing: 8,
+														),
+														itemCount: _ticketImages.length + 1,
+														itemBuilder: (context, index) {
+															if (index == _ticketImages.length) {
+																return GestureDetector(
+																	onTap: _uploadTicketImages,
+																	child: Container(
+																		decoration: BoxDecoration(
+																			border: Border.all(color: Colors.grey.shade300),
+																			borderRadius: BorderRadius.circular(8),
+																		),
+																		child: Icon(Icons.add, color: Colors.grey.shade400),
+																	),
+																);
+															}
+															return Stack(
+																children: [
+																	Container(
+																		decoration: BoxDecoration(
+																			borderRadius: BorderRadius.circular(8),
+																			image: DecorationImage(
+																				image: NetworkImage(_ticketImages[index]),
+																				fit: BoxFit.cover,
+																			),
+																		),
+																	),
+																	Positioned(
+																		top: 4,
+																		right: 4,
+																		child: GestureDetector(
+																			onTap: () => setState(() => _ticketImages.removeAt(index)),
+																			child: Container(
+																				padding: const EdgeInsets.all(2),
+																				decoration: const BoxDecoration(
+																					color: Colors.red,
+																					shape: BoxShape.circle,
+																				),
+																				child: const Icon(Icons.close, color: Colors.white, size: 16),
+																			),
+																		),
+																	),
+																],
+															);
+														},
+													),
+											),
+											
+											const SizedBox(height: 12),
+											
+											// Upload button
+											SizedBox(
+												width: double.infinity,
+												child: OutlinedButton.icon(
+													onPressed: _uploadingImages ? null : _uploadTicketImages,
+													icon: _uploadingImages 
+														? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+														: const Icon(Icons.upload),
+													label: Text(_uploadingImages ? 'Uploading...' : 'Upload Ticket Images (Max 15)'),
+													style: OutlinedButton.styleFrom(
+														foregroundColor: Colors.blue,
+														padding: const EdgeInsets.symmetric(vertical: 12),
+													),
+												),
 											),
 										],
 									),
