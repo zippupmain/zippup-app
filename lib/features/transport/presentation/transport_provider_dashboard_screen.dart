@@ -11,7 +11,7 @@ class TransportProviderDashboardScreen extends StatefulWidget {
 	State<TransportProviderDashboardScreen> createState() => _TransportProviderDashboardScreenState();
 }
 
-class _TransportProviderDashboardScreenState extends State<TransportProviderDashboardScreen> {
+class _TransportProviderDashboardScreenState extends State<TransportProviderDashboardScreen> with SingleTickerProviderStateMixin {
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
 	bool _online = true;
@@ -175,9 +175,6 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 									case 'settings':
 										context.push('/operational-settings/transport');
 										break;
-									case 'earnings':
-										context.push('/transport/earnings');
-										break;
 									case 'home':
 										context.go('/');
 										break;
@@ -201,14 +198,6 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 									),
 								),
 								const PopupMenuItem(
-									value: 'earnings',
-									child: ListTile(
-										leading: Icon(Icons.attach_money),
-										title: Text('Earnings'),
-										dense: true,
-									),
-								),
-								const PopupMenuItem(
 									value: 'home',
 									child: ListTile(
 										leading: Icon(Icons.home),
@@ -225,257 +214,270 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 							stream: _incomingStream,
 							builder: (context, s) {
 								final count = (s.data?.length ?? 0);
-								Widget iconWithBadge(IconData icon, int c) {
-									return Stack(clipBehavior: Clip.none, children: [
-										Icon(icon),
-										if (c > 0) Positioned(
-											right: -6, top: -4,
-											child: Container(
-												padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-												decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
-												constraints: const BoxConstraints(minWidth: 16),
-												child: Text('$c', style: const TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
-											),
-										),
-									]);
-								}
 								return TabBar(tabs: [
-									Tab(icon: iconWithBadge(Icons.notifications_active, count), text: count > 0 ? 'New ($count)' : 'New Rides'),
+									Tab(
+										icon: count > 0 ? Badge(
+											label: Text('$count'),
+											child: const Icon(Icons.notifications_active),
+										) : const Icon(Icons.notifications_active),
+										text: count > 0 ? 'New ($count)' : 'New Rides',
+									),
 									const Tab(icon: Icon(Icons.history), text: 'All History'),
 								]);
 							},
 						),
 					),
 				),
-				body: Column(children: [
-					const ProviderHeader(service: 'transport'),
-					
-					// Enhanced online toggle and features
-					Container(
-						color: Colors.blue.shade50,
-						padding: const EdgeInsets.all(16),
-						child: Column(
-							children: [
-								// Online status with enhanced UI
-								Card(
-									elevation: 2,
-									child: Container(
-										padding: const EdgeInsets.all(16),
-										decoration: BoxDecoration(
-											borderRadius: BorderRadius.circular(12),
-											gradient: LinearGradient(
-												colors: [
-													_online ? Colors.green.shade100 : Colors.grey.shade100,
-													_online ? Colors.green.shade50 : Colors.grey.shade50,
+				body: Column(
+					children: [
+						const ProviderHeader(service: 'transport'),
+						
+						// Enhanced online toggle and features
+						Container(
+							color: Colors.blue.shade50,
+							padding: const EdgeInsets.all(16),
+							child: Column(
+								children: [
+									// Online status with enhanced UI
+									Card(
+										elevation: 2,
+										child: Container(
+											padding: const EdgeInsets.all(16),
+											decoration: BoxDecoration(
+												borderRadius: BorderRadius.circular(12),
+												gradient: LinearGradient(
+													colors: [
+														_online ? Colors.green.shade100 : Colors.grey.shade100,
+														_online ? Colors.green.shade50 : Colors.grey.shade50,
+													],
+												),
+											),
+											child: Row(
+												children: [
+													Icon(
+														_online ? Icons.directions_car : Icons.car_rental,
+														color: _online ? Colors.green.shade700 : Colors.grey.shade600,
+														size: 32,
+													),
+													const SizedBox(width: 16),
+													Expanded(
+														child: Column(
+															crossAxisAlignment: CrossAxisAlignment.start,
+															children: [
+																Text(
+																	_online ? '🟢 Online - Accepting Rides' : '🔴 Offline - Not Accepting',
+																	style: TextStyle(
+																		fontWeight: FontWeight.bold,
+																		fontSize: 16,
+																		color: _online ? Colors.green.shade800 : Colors.red.shade800,
+																	),
+																),
+																Text(
+																	_online ? 'Ready to receive ride requests' : 'Go online to start earning',
+																	style: const TextStyle(color: Colors.grey, fontSize: 12),
+																),
+															],
+														),
+													),
+													Switch(
+														value: _online,
+														onChanged: _setOnline,
+														activeColor: Colors.green,
+													),
 												],
 											),
 										),
-										child: Row(
-											children: [
-												Icon(
-													_online ? Icons.directions_car : Icons.car_rental,
-													color: _online ? Colors.green.shade700 : Colors.grey.shade600,
-													size: 32,
-												),
-												const SizedBox(width: 16),
-												Expanded(
-													child: Column(
-														crossAxisAlignment: CrossAxisAlignment.start,
-														children: [
-															Text(
-																_online ? '🟢 Online - Accepting Rides' : '🔴 Offline - Not Accepting',
-																style: TextStyle(
-																	fontWeight: FontWeight.bold,
-																	fontSize: 16,
-																	color: _online ? Colors.green.shade800 : Colors.red.shade800,
-																),
-															),
-															Text(
-																_online ? 'Ready to receive ride requests' : 'Go online to start earning',
-																style: const TextStyle(color: Colors.grey, fontSize: 12),
-															),
-														],
+									),
+									
+									const SizedBox(height: 16),
+									
+									// Quick access features
+									Row(
+										children: [
+											Expanded(
+												child: ElevatedButton.icon(
+													onPressed: () => _navigateToServiceRoles(),
+													icon: const Icon(Icons.directions_car),
+													label: const Text('Vehicle Types'),
+													style: ElevatedButton.styleFrom(
+														backgroundColor: Colors.blue,
+														foregroundColor: Colors.white,
+														padding: const EdgeInsets.symmetric(vertical: 12),
 													),
 												),
-												Switch(
-													value: _online,
-													onChanged: _setOnline,
-													activeColor: Colors.green,
-												),
-											],
-										),
-									),
-								),
-								
-								const SizedBox(height: 16),
-								
-								// Quick access features
-								Row(
-									children: [
-										Expanded(
-											child: ElevatedButton.icon(
-												onPressed: () => _navigateToServiceRoles(),
-												icon: const Icon(Icons.directions_car),
-												label: const Text('Vehicle Types'),
-												style: ElevatedButton.styleFrom(
-													backgroundColor: Colors.blue,
-													foregroundColor: Colors.white,
-													padding: const EdgeInsets.symmetric(vertical: 12),
+											),
+											const SizedBox(width: 8),
+											Expanded(
+												child: ElevatedButton.icon(
+													onPressed: () => context.push('/operational-settings/transport'),
+													icon: const Icon(Icons.settings),
+													label: const Text('Settings'),
+													style: ElevatedButton.styleFrom(
+														backgroundColor: Colors.green,
+														foregroundColor: Colors.white,
+														padding: const EdgeInsets.symmetric(vertical: 12),
+													),
 												),
 											),
-										),
-										const SizedBox(width: 8),
-										Expanded(
-											child: ElevatedButton.icon(
-												onPressed: () => context.push('/operational-settings/transport'),
-												icon: const Icon(Icons.settings),
-												label: const Text('Settings'),
-												style: ElevatedButton.styleFrom(
-													backgroundColor: Colors.green,
-													foregroundColor: Colors.white,
-													padding: const EdgeInsets.symmetric(vertical: 12),
-												),
-											),
-										),
-									],
-								),
-							],
-						),
-					),
-					// Status filters
-					Container(
-						color: Colors.white,
-						padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-						child: SingleChildScrollView(
-							scrollDirection: Axis.horizontal,
-							child: Row(children: [
-								FilterChip(
-									label: const Text('📋 All History'),
-									selected: _filter == null,
-									onSelected: (_) => setState(() => _filter = null),
-									backgroundColor: Colors.blue.shade50,
-								),
-								const SizedBox(width: 8),
-								...RideStatus.values.map((s) => Padding(
-									padding: const EdgeInsets.symmetric(horizontal: 4),
-									child: FilterChip(
-										label: Text(s.name),
-										selected: _filter == s,
-										onSelected: (_) => setState(() => _filter = s),
-										backgroundColor: _filter == s ? Colors.blue.shade100 : Colors.grey.shade100,
-									),
-								)),
-							]),
-						),
-					),
-					Expanded(child: TabBarView(children: [
-						// Incoming tab
-						StreamBuilder<List<Ride>>(
-							stream: _incomingStream,
-							builder: (context, s) {
-								final list = s.data ?? const <Ride>[];
-								if (list.isEmpty) return const Center(child: Text('No incoming requests'));
-								return ListView.separated(
-									itemCount: list.length,
-									separatorBuilder: (_, __) => const Divider(height: 1),
-									itemBuilder: (context, i) {
-										final r = list[i];
-										return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-											future: _db.collection('users').doc(r.riderId).get(),
-											builder: (context, userSnap) {
-												final u = userSnap.data?.data() ?? const {};
-												final name = (u['name'] ?? 'Customer').toString();
-												final photo = (u['photoUrl'] ?? '').toString();
-												return ListTile(
-													leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
-													title: Text('REQUEST • ${r.type.name.toUpperCase()}'),
-													subtitle: Text('$name\nFrom: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
-													isThreeLine: true,
-													trailing: Wrap(spacing: 6, children: [
-														FilledButton(onPressed: () async { await _updateRide(r.id, RideStatus.accepted); if (context.mounted) context.push('/driver/ride?rideId=${r.id}'); }, child: const Text('Accept')),
-														TextButton(onPressed: () => _db.collection('rides').doc(r.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
-													]),
-												);
-											},
-										);
-									},
-								);
-							},
-						),
-						// Rides tab
-						StreamBuilder<List<Ride>>(
-							stream: _ridesStream(uid),
-							builder: (context, snap) {
-								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-								var rides = snap.data!;
-								if (_filter != null) rides = rides.where((r) => r.status == _filter).toList();
-								if (rides.isEmpty) return const Center(child: Text('No rides'));
-								return ListView.separated(
-									itemCount: rides.length,
-									separatorBuilder: (_, __) => const Divider(height: 1),
-									itemBuilder: (context, i) {
-										final r = rides[i];
-										return ListTile(
-											title: Text('${r.type.name.toUpperCase()} • ${r.status.name}'),
-											subtitle: Text('From: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
-											isThreeLine: true,
-											trailing: Wrap(spacing: 6, children: _actionsFor(r)),
-										);
-									},
-								);
-							},
-						),
-					])),
-					// Incoming request overlay/ping
-					StreamBuilder<List<Ride>>(
-						stream: _incomingStream,
-						builder: (context, s) {
-							if (!s.hasData || s.data!.isEmpty) return const SizedBox.shrink();
-							final r = s.data!.first;
-							WidgetsBinding.instance.addPostFrameCallback((_) {
-								showDialog(
-									context: context,
-									builder: (_) => AlertDialog(
-										title: const Text('New ride request'),
-										content: Column(
-											mainAxisSize: MainAxisSize.min,
-											crossAxisAlignment: CrossAxisAlignment.start,
-											children: [
-												FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-													future: _db.collection('users').doc(r.riderId).get(),
-													builder: (context, u) {
-														final data = u.data?.data() ?? const {};
-														final name = (data['name'] ?? 'Customer').toString();
-														final photo = (data['photoUrl'] ?? '').toString();
-														return ListTile(
-															contentPadding: EdgeInsets.zero,
-															leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
-															title: Text(name),
-															subtitle: FutureBuilder<AggregateQuerySnapshot>(
-																future: _db.collection('rides').where('riderId', isEqualTo: r.riderId).count().get(),
-																builder: (context, c) => Text('Rides: ${c.data?.count ?? 0}'),
-															),
-														);
-													},
-												),
-												const SizedBox(height: 8),
-												Text('${r.type.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${(r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : '')}'),
-											],
-										),
-										actions: [
-											TextButton(onPressed: () { Navigator.pop(context); _updateRide(r.id, RideStatus.accepted); context.push('/driver/ride?rideId=${r.id}'); }, child: const Text('Accept')),
-											TextButton(onPressed: () { Navigator.pop(context); _db.collection('rides').doc(r.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_driver', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)); }, child: const Text('Decline')),
 										],
 									),
-								);
-							});
-							return const SizedBox.shrink();
-						},
-					),
-				]),
+								],
+							),
+						),
+
+						// Status filters
+						Container(
+							color: Colors.white,
+							padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+							child: SingleChildScrollView(
+								scrollDirection: Axis.horizontal,
+								child: Row(
+									children: [
+										FilterChip(
+											label: const Text('📋 All History'),
+											selected: _filter == null,
+											onSelected: (_) => setState(() => _filter = null),
+											backgroundColor: Colors.blue.shade50,
+										),
+										const SizedBox(width: 8),
+										...RideStatus.values.map((s) => Padding(
+											padding: const EdgeInsets.symmetric(horizontal: 4),
+											child: FilterChip(
+												label: Text(s.name),
+												selected: _filter == s,
+												onSelected: (_) => setState(() => _filter = s),
+												backgroundColor: _filter == s ? Colors.blue.shade100 : Colors.grey.shade100,
+											),
+										)),
+									],
+								),
+							),
+						),
+
+						// Tabs content
+						Expanded(
+							child: TabBarView(
+								children: [
+									// New rides tab
+									StreamBuilder<List<Ride>>(
+										stream: _incomingStream,
+										builder: (context, s) {
+											if (!s.hasData) return const Center(child: CircularProgressIndicator());
+											final list = s.data ?? const <Ride>[];
+											if (list.isEmpty) return const Center(child: Text('No new ride requests'));
+											return ListView.separated(
+												itemCount: list.length,
+												separatorBuilder: (_, __) => const Divider(height: 1),
+												itemBuilder: (context, i) {
+													final r = list[i];
+													return Card(
+														margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+														elevation: 2,
+														child: ListTile(
+															title: Text('🚗 Ride ${r.id.substring(0,6)} • ${r.type.name.toUpperCase()}'),
+															subtitle: Text('From: ${r.pickupAddress}\nTo: ${r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : 'Unknown'}'),
+															trailing: Wrap(spacing: 8, children: _actionsFor(r)),
+															isThreeLine: true,
+														),
+													);
+												},
+											);
+										},
+									),
+									
+									// All rides history tab
+									StreamBuilder<List<Ride>>(
+										stream: _ridesStream(uid),
+										builder: (context, snap) {
+											if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+											var rides = snap.data!;
+											if (_filter != null) rides = rides.where((r) => r.status == _filter).toList();
+											if (rides.isEmpty) return const Center(child: Text('No ride history'));
+											return ListView.separated(
+												itemCount: rides.length,
+												separatorBuilder: (_, __) => const Divider(height: 1),
+												itemBuilder: (context, i) {
+													final r = rides[i];
+													return Card(
+														margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+														elevation: 2,
+														child: ListTile(
+															leading: CircleAvatar(
+																backgroundColor: _getStatusColor(r.status),
+																child: Text(_getStatusIcon(r.status)),
+															),
+															title: Text('🚗 Ride ${r.id.substring(0,6)} • ${r.type.name.toUpperCase()}'),
+															subtitle: Text('Status: ${r.status.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : 'Unknown'}'),
+															trailing: _buildHistoryActions(r),
+															isThreeLine: true,
+															onTap: () => context.push('/track/ride?rideId=${r.id}'),
+														),
+													);
+												},
+											);
+										},
+									),
+								],
+							),
+						),
+					],
+				),
 			),
-		),
-	);
+		);
+	}
+
+	Color _getStatusColor(RideStatus status) {
+		switch (status) {
+			case RideStatus.completed:
+				return Colors.green.shade100;
+			case RideStatus.cancelled:
+				return Colors.red.shade100;
+			case RideStatus.enroute:
+				return Colors.blue.shade100;
+			case RideStatus.accepted:
+				return Colors.orange.shade100;
+			default:
+				return Colors.grey.shade100;
+		}
+	}
+
+	String _getStatusIcon(RideStatus status) {
+		switch (status) {
+			case RideStatus.completed:
+				return '✅';
+			case RideStatus.cancelled:
+				return '❌';
+			case RideStatus.enroute:
+				return '🚗';
+			case RideStatus.accepted:
+				return '📋';
+			default:
+				return '📋';
+		}
+	}
+
+	Widget _buildHistoryActions(Ride ride) {
+		switch (ride.status) {
+			case RideStatus.completed:
+				return const Icon(Icons.check_circle, color: Colors.green);
+			case RideStatus.cancelled:
+				return const Icon(Icons.cancel, color: Colors.red);
+			case RideStatus.accepted:
+			case RideStatus.arriving:
+			case RideStatus.arrived:
+			case RideStatus.enroute:
+				return ElevatedButton(
+					onPressed: () => context.push('/track/ride?rideId=${ride.id}'),
+					style: ElevatedButton.styleFrom(
+						backgroundColor: Colors.blue,
+						foregroundColor: Colors.white,
+						minimumSize: const Size(60, 32),
+					),
+					child: const Text('Track'),
+				);
+			default:
+				return const SizedBox.shrink();
+		}
 	}
 
 	List<Widget> _actionsFor(Ride r) {
@@ -498,4 +500,3 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 		}
 	}
 }
-
