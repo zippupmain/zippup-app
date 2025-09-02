@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -60,9 +61,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 			if (u == null) return;
 			String? url = _photoUrl;
 			if (_photoBytes != null) {
-				// TEST MODE: Use test URL to avoid CORS issues
-				url = 'test://profile-picture-${DateTime.now().millisecondsSinceEpoch}';
-				print('✅ Profile picture (test mode): $url');
+				// TEST MODE: Use data URL to display image without CORS issues
+				final base64 = base64Encode(_photoBytes!);
+				url = 'data:image/jpeg;base64,$base64';
+				print('✅ Profile picture (test mode): data URL created');
 			}
 			final name = _name.text.trim();
 			final email = _email.text.trim();

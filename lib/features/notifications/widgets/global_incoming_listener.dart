@@ -320,8 +320,8 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 							backgroundImage: riderPhoto.isNotEmpty ? NetworkImage(riderPhoto) : null,
 							child: riderPhoto.isEmpty ? const Icon(Icons.person) : null,
 						),
-						title: Text(riderName),
-						subtitle: Text('Rides: $riderRides'),
+						title: Text(riderName ?? 'Customer'),
+						subtitle: Text('Rides: ${riderRides ?? 0}'),
 					),
 					const SizedBox(height: 8),
 					Card(
