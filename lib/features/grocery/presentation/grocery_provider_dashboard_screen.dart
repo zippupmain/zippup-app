@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:zippup/common/models/order.dart';
+import 'package:zippup/common/models/order.dart' as models;
 import 'package:zippup/features/food/providers/order_service.dart';
 import 'package:zippup/features/providers/widgets/provider_header.dart';
 
@@ -15,11 +15,11 @@ class GroceryProviderDashboardScreen extends StatefulWidget {
 class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboardScreen> {
 	final _db = FirebaseFirestore.instance;
 	final _auth = FirebaseAuth.instance;
-	final _service = OrderService();
+	final _service = models.OrderService();
 	bool _storeOpen = true;
 	bool _hideNewWhenClosed = true;
-	OrderStatus? _filter;
-	Stream<List<Order>>? _incomingStream;
+	models.models.models.OrderStatus? _filter;
+	Stream<List<models.models.Order>>? _incomingStream;
 	late final String _providerId;
 
 	Future<void> _dispatchNextReady() async {
@@ -27,7 +27,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 			final q = await _db
 				.collection('orders')
 				.where('providerId', isEqualTo: _providerId)
-				.where('status', isEqualTo: OrderStatus.dispatched.name)
+				.where('status', isEqualTo: models.models.OrderStatus.dispatched.name)
 				.limit(1)
 				.get();
 			if (q.docs.isEmpty) {
@@ -46,14 +46,14 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 		_incomingStream = _db
 			.collection('orders')
 			.where('providerId', isEqualTo: _providerId)
-			.where('status', isEqualTo: OrderStatus.pending.name)
+			.where('status', isEqualTo: models.models.OrderStatus.pending.name)
 			.snapshots()
-			.map((snap) => snap.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+			.map((snap) => snap.docs.map((d) => models.models.Order.fromJson(d.id, d.data())).toList());
 	}
 
-	Stream<List<Order>> _ordersStream(String providerId) {
+	Stream<List<models.models.Order>> _ordersStream(String providerId) {
 		Query<Map<String, dynamic>> q = _db.collection('orders').where('providerId', isEqualTo: providerId);
-		return q.orderBy('createdAt', descending: true).snapshots().map((snap) => snap.docs.map((d) => Order.fromJson(d.id, d.data())).toList());
+		return q.snapshots().map((snap) => snap.docs.map((d) => models.models.Order.fromJson(d.id, d.data())).toList());
 	}
 
 	@override
@@ -66,7 +66,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 					IconButton(icon: const Icon(Icons.close), onPressed: () { if (Navigator.of(context).canPop()) { Navigator.pop(context); } else { context.go('/'); } }),
 				], bottom: PreferredSize(
 					preferredSize: const Size.fromHeight(48),
-					child: StreamBuilder<List<Order>>(
+					child: StreamBuilder<List<models.Order>>(
 						stream: _incomingStream,
 						builder: (context, s) {
 							final count = (s.data?.length ?? 0);
@@ -86,7 +86,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 							}
 							return TabBar(tabs: [
 								Tab(icon: iconWithBadge(Icons.notifications_active, count), text: count > 0 ? 'Incoming ($count)' : 'Incoming'),
-								const Tab(icon: Icon(Icons.list), text: 'Orders'),
+								const Tab(icon: Icon(Icons.list), text: 'models.Orders'),
 							]);
 						},
 					),
@@ -106,9 +106,11 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/food/menu/manage'), icon: const Icon(Icons.edit_note), label: const Text('Add/Edit items')),
 							const SizedBox(width: 8),
+							OutlinedButton.icon(onPressed: () => context.push('/grocery/seller-categories'), icon: const Icon(Icons.shopping_basket), label: const Text('Grocery categories')),
+							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/food/kitchen/hours'), icon: const Icon(Icons.schedule), label: const Text('Open hours')),
 							const SizedBox(width: 8),
-							OutlinedButton.icon(onPressed: _dispatchNextReady, icon: const Icon(Icons.delivery_dining), label: const Text('Dispatch to courier')),
+							OutlinedButton.icon(onPressed: _dispatchNextReady, icon: const Icon(Icons.delivery_dining), label: const Text('Auto dispatch')),
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/hub/orders'), icon: const Icon(Icons.list_alt), label: const Text('All orders')),
 						]),
@@ -118,14 +120,14 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 						child: Row(children: [
 							FilterChip(label: const Text('All'), selected: _filter == null, onSelected: (_) => setState(() => _filter = null)),
 							...[
-								OrderStatus.pending,
-								OrderStatus.preparing,
-								OrderStatus.sorting,
-								OrderStatus.dispatched,
-								OrderStatus.assigned,
-								OrderStatus.enroute,
-								OrderStatus.arrived,
-								OrderStatus.delivered,
+								models.models.OrderStatus.pending,
+								models.models.OrderStatus.preparing,
+								models.models.OrderStatus.sorting,
+								models.models.OrderStatus.dispatched,
+								models.models.OrderStatus.assigned,
+								models.models.OrderStatus.enroute,
+								models.models.OrderStatus.arrived,
+								models.models.OrderStatus.delivered,
 							].map((s) => Padding(
 								padding: const EdgeInsets.symmetric(horizontal: 4),
 								child: FilterChip(label: Text(s.name), selected: _filter == s, onSelected: (_) => setState(() => _filter = s)),
@@ -135,10 +137,10 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 						]),
 					),
 					Expanded(child: TabBarView(children: [
-						StreamBuilder<List<Order>>(
+						StreamBuilder<List<models.Order>>(
 							stream: _incomingStream,
 							builder: (context, s) {
-								final list = s.data ?? const <Order>[];
+								final list = s.data ?? const <models.Order>[];
 								if (list.isEmpty) return const Center(child: Text('No incoming requests'));
 								return ListView.separated(
 									itemCount: list.length,
@@ -147,10 +149,10 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 										final o = list[i];
 										return ListTile(
 											title: Text('REQUEST • ${o.category.name.toUpperCase()}'),
-											subtitle: Text('Order ${o.id.substring(0,6)} • ${o.status.name}'),
+											subtitle: Text('models.Order ${o.id.substring(0,6)} • ${o.status.name}'),
 											isThreeLine: false,
 											trailing: Wrap(spacing: 6, children: [
-												FilledButton(onPressed: () => _service.updateStatus(orderId: o.id, status: OrderStatus.preparing), child: const Text('Accept')),
+												FilledButton(onPressed: () => _service.updateStatus(orderId: o.id, status: models.models.OrderStatus.preparing), child: const Text('Accept')),
 												TextButton(onPressed: () => _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_vendor', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)), child: const Text('Decline')),
 											]),
 										);
@@ -158,7 +160,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 								);
 							},
 						),
-						StreamBuilder<List<Order>>(
+						StreamBuilder<List<models.Order>>(
 							stream: _ordersStream(_providerId),
 							builder: (context, snap) {
 								if (!snap.hasData) return const Center(child: CircularProgressIndicator());
@@ -170,10 +172,10 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 									separatorBuilder: (_, __) => const Divider(height: 1),
 									itemBuilder: (context, i) {
 										final o = orders[i];
-										if (!_storeOpen && _hideNewWhenClosed && o.status == OrderStatus.pending) return const SizedBox.shrink();
+										if (!_storeOpen && _hideNewWhenClosed && o.status == models.models.OrderStatus.pending) return const SizedBox.shrink();
 										return ListTile(
 											title: Text('${o.category.name.toUpperCase()} • ${o.status.name}'),
-											subtitle: Text('Order ${o.id.substring(0,6)}'),
+											subtitle: Text('models.Order ${o.id.substring(0,6)}'),
 											isThreeLine: false,
 											trailing: Wrap(spacing: 6, children: _groceryActions(context, o, _service)),
 										);
@@ -182,7 +184,7 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 							},
 						),
 					])),
-					StreamBuilder<List<Order>>(
+					StreamBuilder<List<models.Order>>(
 						stream: _incomingStream,
 						builder: (context, s) {
 							if (!s.hasData || s.data!.isEmpty) return const SizedBox.shrink();
@@ -192,9 +194,9 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 									context: context,
 									builder: (_) => AlertDialog(
 										title: const Text('New order request'),
-										content: Text('Order ${o.id.substring(0,6)} • ${o.category.name}'),
+										content: Text('models.Order ${o.id.substring(0,6)} • ${o.category.name}'),
 										actions: [
-											TextButton(onPressed: () { Navigator.pop(context); _service.updateStatus(orderId: o.id, status: OrderStatus.preparing); }, child: const Text('Accept')),
+											TextButton(onPressed: () { Navigator.pop(context); _service.updateStatus(orderId: o.id, status: models.models.OrderStatus.preparing); }, child: const Text('Accept')),
 											TextButton(onPressed: () { Navigator.pop(context); _db.collection('orders').doc(o.id).set({'status': 'cancelled', 'cancelReason': 'declined_by_vendor', 'cancelledAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)); }, child: const Text('Decline')),
 										],
 									),
@@ -208,22 +210,22 @@ class _GroceryProviderDashboardScreenState extends State<GroceryProviderDashboar
 		);
 	}
 
-	List<Widget> _groceryActions(BuildContext context, Order o, OrderService s) {
+	List<Widget> _groceryActions(BuildContext context, models.Order o, models.OrderService s) {
 		return [
-			if (o.status == OrderStatus.pending)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.preparing), child: const Text('Prepare')),
-			if (o.status == OrderStatus.preparing)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.sorting), child: const Text('Sorting')),
-			if (o.status == OrderStatus.sorting)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.dispatched), child: const Text('Dispatch')),
-			if (o.status == OrderStatus.dispatched)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.assigned), child: const Text('Assign courier')),
-			if (o.status == OrderStatus.assigned)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.enroute), child: const Text('Enroute')),
-			if (o.status == OrderStatus.enroute)
-				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.arrived), child: const Text('Arrived')),
-			if (o.status == OrderStatus.arrived)
-				FilledButton(onPressed: () => s.updateStatus(orderId: o.id, status: OrderStatus.delivered), child: const Text('Complete')),
+			if (o.status == models.models.OrderStatus.pending)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.preparing), child: const Text('Prepare')),
+			if (o.status == models.models.OrderStatus.preparing)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.sorting), child: const Text('Sorting')),
+			if (o.status == models.models.OrderStatus.sorting)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.dispatched), child: const Text('Dispatch')),
+			if (o.status == models.models.OrderStatus.dispatched)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.assigned), child: const Text('Assign courier')),
+			if (o.status == models.models.OrderStatus.assigned)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.enroute), child: const Text('Enroute')),
+			if (o.status == models.models.OrderStatus.enroute)
+				TextButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.arrived), child: const Text('Arrived')),
+			if (o.status == models.models.OrderStatus.arrived)
+				FilledButton(onPressed: () => s.updateStatus(orderId: o.id, status: models.models.OrderStatus.delivered), child: const Text('Complete')),
 		];
 	}
 }

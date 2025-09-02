@@ -251,8 +251,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: () => context.push('/food/categories/manage'), icon: const Icon(Icons.category), label: const Text('Food categories')),
 							const SizedBox(width: 8),
-							OutlinedButton.icon(onPressed: () => context.push('/grocery/seller-categories'), icon: const Icon(Icons.shopping_basket), label: const Text('Grocery categories')),
-							const SizedBox(width: 8),
+
 							OutlinedButton.icon(onPressed: () => context.push('/food/kitchen/hours'), icon: const Icon(Icons.schedule), label: const Text('Kitchen hours')),
 							const SizedBox(width: 8),
 							OutlinedButton.icon(onPressed: _dispatchNextReady, icon: const Icon(Icons.delivery_dining), label: const Text('Auto dispatch')),

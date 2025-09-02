@@ -133,7 +133,22 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 					.get();
 				
 				if (providerDoc.docs.isNotEmpty) {
-					final subcategory = providerDoc.docs.first.data()['subcategory']?.toString() ?? 'taxi';
+					final data = providerDoc.docs.first.data();
+					var subcategory = data['subcategory']?.toString() ?? 'Taxi';
+					
+					// Map common subcategory variations to correct ones
+					if (subcategory.toLowerCase().contains('taxi') || subcategory.toLowerCase().contains('car')) {
+						subcategory = 'Taxi';
+					} else if (subcategory.toLowerCase().contains('bike') || subcategory.toLowerCase().contains('motor')) {
+						subcategory = 'Bike';
+					} else if (subcategory.toLowerCase().contains('bus') || subcategory.toLowerCase().contains('charter')) {
+						subcategory = 'Bus/Charter';
+					} else {
+						// Default to Taxi if unrecognized
+						subcategory = 'Taxi';
+					}
+					
+					print('🔍 Navigating to service roles: transport/$subcategory');
 					context.push('/service-roles/transport/$subcategory');
 				} else {
 					ScaffoldMessenger.of(context).showSnackBar(
