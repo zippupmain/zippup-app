@@ -121,6 +121,34 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 						subtitle: const Text('Service radius, class toggles, targeting preferences'),
 						onTap: () => context.push('/operational-settings/$_service'),
 					),
+					ListTile(
+						leading: const Icon(Icons.assignment, color: Colors.green),
+						title: const Text('Service Roles Manager'),
+						subtitle: const Text('Enable/disable specific service types within your category'),
+						onTap: () async {
+							// Get provider subcategory first
+							try {
+								final uid = FirebaseAuth.instance.currentUser?.uid;
+								if (uid != null) {
+									final providerDoc = await FirebaseFirestore.instance
+										.collection('provider_profiles')
+										.where('userId', isEqualTo: uid)
+										.where('service', isEqualTo: _service)
+										.limit(1)
+										.get();
+									
+									if (providerDoc.docs.isNotEmpty) {
+										final subcategory = providerDoc.docs.first.data()['subcategory']?.toString() ?? 'unknown';
+										context.push('/service-roles/$_service/$subcategory');
+									}
+								}
+							} catch (e) {
+								ScaffoldMessenger.of(context).showSnackBar(
+									SnackBar(content: Text('Error: $e')),
+								);
+							}
+						},
+					),
 					
 					const Divider(),
 					const Padding(
