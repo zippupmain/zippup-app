@@ -148,11 +148,17 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
   }
 
   Future<void> _saveServiceRoles() async {
+    print('🔄 Starting to save service roles...');
     setState(() => _saving = true);
     
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
+      if (uid == null) {
+        print('❌ No user ID found');
+        return;
+      }
+
+      print('🔍 Looking for provider profile: service=${widget.service}, uid=$uid');
 
       final providerDoc = await FirebaseFirestore.instance
           .collection('provider_profiles')
@@ -161,11 +167,17 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
           .limit(1)
           .get();
 
+      print('📋 Found ${providerDoc.docs.length} provider profiles');
+
       if (providerDoc.docs.isNotEmpty) {
+        final profileId = providerDoc.docs.first.id;
         final updateData = <String, dynamic>{
           'enabledRoles': _enabledRoles,
+          'enabledClasses': _enabledRoles, // Also update enabledClasses for compatibility
           'updatedAt': FieldValue.serverTimestamp(),
         };
+
+        print('💾 Saving roles: $_enabledRoles');
 
         // For delivery, save delivery categories separately
         if (widget.service == 'delivery') {
@@ -174,20 +186,49 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
             deliveryCategories[category] = _enabledRoles[category] ?? false;
           }
           updateData['enabledDeliveryCategories'] = deliveryCategories;
+          print('💾 Saving delivery categories: $deliveryCategories');
         }
 
+        print('🚀 Updating profile $profileId with data: $updateData');
+        
         await providerDoc.docs.first.reference.update(updateData);
+
+        print('✅ Profile updated successfully');
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Service roles updated successfully!')),
+            const SnackBar(
+              content: Text('✅ Service roles updated successfully! Changes are now active.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          
+          // Optional: Navigate back to provider hub after successful save
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) Navigator.of(context).pop();
+          });
+        }
+      } else {
+        print('❌ No provider profile found');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Provider profile not found. Please create a profile first.'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
     } catch (e) {
+      print('❌ Save error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Failed to update roles: $e')),
+          SnackBar(
+            content: Text('❌ Failed to update roles: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     } finally {
@@ -212,12 +253,27 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
       appBar: AppBar(
         title: Text('${widget.subcategory} Service Roles'),
         backgroundColor: Colors.blue.shade50,
+        iconTheme: const IconThemeData(color: Colors.black),
+        titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
         actions: [
-          TextButton(
+          ElevatedButton.icon(
             onPressed: _saving ? null : _saveServiceRoles,
-            child: Text(_saving ? 'Saving...' : 'Save'),
+            icon: Icon(_saving ? Icons.hourglass_empty : Icons.save),
+            label: Text(_saving ? 'Saving...' : 'Save'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
           ),
+          const SizedBox(width: 8),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _saving ? null : _saveServiceRoles,
+        icon: Icon(_saving ? Icons.hourglass_empty : Icons.save),
+        label: Text(_saving ? 'Saving...' : 'Save Changes'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -310,7 +366,21 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
                         ),
                         value: isEnabled,
                         onChanged: (value) {
+                          print('🔄 Toggling $role: $value');
                           setState(() => _enabledRoles[role] = value);
+                          
+                          // Show immediate feedback
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                value == true 
+                                    ? '✅ $role enabled - Remember to save!'
+                                    : '❌ $role disabled - Remember to save!',
+                              ),
+                              backgroundColor: value == true ? Colors.green : Colors.orange,
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
                         },
                         activeColor: Colors.green,
                       ),
@@ -342,11 +412,20 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
+                            print('🔄 Enabling all roles: $availableRoles');
                             setState(() {
                               for (final role in availableRoles) {
                                 _enabledRoles[role] = true;
                               }
                             });
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('✅ All roles enabled - Remember to save!'),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
                           },
                           child: const Text('✅ Enable All'),
                         ),
@@ -355,6 +434,7 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
+                            print('🔄 Disabling all roles except primary: $_primaryRole');
                             setState(() {
                               for (final role in availableRoles) {
                                 _enabledRoles[role] = false;
@@ -364,9 +444,73 @@ class _ServiceRolesManagerScreenState extends State<ServiceRolesManagerScreen> {
                                 _enabledRoles[_primaryRole] = true;
                               }
                             });
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('❌ All roles disabled except $_primaryRole - Remember to save!'),
+                                backgroundColor: Colors.orange,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
                           },
                           child: const Text('❌ Disable All (Keep Primary)'),
                         ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Debug info card
+          Card(
+            color: Colors.blue.shade50,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '🐛 Debug Info',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Service: ${widget.service}'),
+                  Text('Subcategory: ${widget.subcategory}'),
+                  Text('Primary Role: $_primaryRole'),
+                  Text('Available Roles: ${availableRoles.length} (${availableRoles.join(", ")})'),
+                  Text('Enabled Count: ${_enabledRoles.entries.where((e) => e.value).length}'),
+                  Text('Currently Enabled: ${_enabledRoles.entries.where((e) => e.value).map((e) => e.key).join(", ")}'),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          print('🧪 Current enabled roles: $_enabledRoles');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('🧪 Enabled: ${_enabledRoles.entries.where((e) => e.value).map((e) => e.key).join(", ")}'),
+                              duration: const Duration(seconds: 3),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.bug_report, size: 16),
+                        label: const Text('Test State'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: _saving ? null : () async {
+                          print('🧪 Testing save function...');
+                          await _saveServiceRoles();
+                        },
+                        icon: const Icon(Icons.save, size: 16),
+                        label: const Text('Test Save'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                       ),
                     ],
                   ),

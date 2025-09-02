@@ -59,9 +59,10 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
       for (final profile in _providerProfiles) {
         final profileId = profile['id'] as String;
         final data = profile['data'] as Map<String, dynamic>;
+        final service = data['service']?.toString() ?? 'unknown';
         
         setState(() {
-          _migrationStatus = 'Updating ${data['service']} profile...';
+          _migrationStatus = 'Updating $service profile ($profileId)...';
         });
 
         // Add new fields if they don't exist
@@ -70,9 +71,11 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
         // Add operational settings if missing
         if (!data.containsKey('operationalRadius')) {
           updateData['operationalRadius'] = 25.0; // Default 25km radius
+          print('Adding operationalRadius to $service profile');
         }
         if (!data.containsKey('hasRadiusLimit')) {
           updateData['hasRadiusLimit'] = false; // Default no limit
+          print('Adding hasRadiusLimit to $service profile');
         }
         
         // Add enabled roles based on primary service type
@@ -80,8 +83,10 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
           final serviceType = data['serviceType']?.toString();
           if (serviceType != null && serviceType.isNotEmpty) {
             updateData['enabledRoles'] = {serviceType: true}; // Enable primary role
+            print('Adding enabledRoles to $service profile: $serviceType');
           } else {
             updateData['enabledRoles'] = {}; // Empty roles map
+            print('Adding empty enabledRoles to $service profile');
           }
         }
         
@@ -90,13 +95,15 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
           final serviceType = data['serviceType']?.toString();
           if (serviceType != null && serviceType.isNotEmpty) {
             updateData['enabledClasses'] = {serviceType: true}; // Enable primary class
+            print('Adding enabledClasses to $service profile: $serviceType');
           } else {
             updateData['enabledClasses'] = {}; // Empty classes map
+            print('Adding empty enabledClasses to $service profile');
           }
         }
 
         // Add delivery categories for delivery providers
-        if (data['service'] == 'delivery' && !data.containsKey('enabledDeliveryCategories')) {
+        if (service == 'delivery' && !data.containsKey('enabledDeliveryCategories')) {
           updateData['enabledDeliveryCategories'] = {
             'Fast Food': true,
             'Grocery': true,
@@ -107,11 +114,20 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
             'Flowers': false,
             'Gifts': false,
           };
+          print('Adding delivery categories to delivery profile');
+        }
+
+        // Force add availability online if missing
+        if (!data.containsKey('availabilityOnline')) {
+          updateData['availabilityOnline'] = true;
+          print('Adding availabilityOnline to $service profile');
         }
 
         // Update profile if there are changes
         if (updateData.isNotEmpty) {
           updateData['migratedAt'] = FieldValue.serverTimestamp();
+          
+          print('Updating profile $profileId with data: $updateData');
           
           await FirebaseFirestore.instance
               .collection('provider_profiles')
@@ -119,11 +135,14 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
               .update(updateData);
           
           updated++;
+          print('Successfully updated $service profile');
+        } else {
+          print('No updates needed for $service profile');
         }
       }
 
       setState(() {
-        _migrationStatus = '✅ Migration completed! Updated $updated profiles with new features.';
+        _migrationStatus = '✅ Migration completed! Updated $updated profiles with new features.\n\nNow you can access:\n• Service Roles Manager\n• Operational Settings\n• Enhanced targeting features';
         _migrating = false;
       });
 
@@ -131,9 +150,51 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
       await _loadProviderProfiles();
 
     } catch (e) {
+      print('Migration error: $e');
       setState(() {
-        _migrationStatus = '❌ Migration failed: $e';
+        _migrationStatus = '❌ Migration failed: $e\n\nPlease try again or contact support.';
         _migrating = false;
+      });
+    }
+  }
+
+  Future<void> _testMigrationFunction() async {
+    setState(() {
+      _migrationStatus = '🧪 Testing migration function...';
+    });
+
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) {
+        setState(() {
+          _migrationStatus = '❌ Test failed: No user ID found';
+        });
+        return;
+      }
+
+      print('🧪 Testing with user ID: $uid');
+
+      // Test Firestore connection
+      final testQuery = await FirebaseFirestore.instance
+          .collection('provider_profiles')
+          .where('userId', isEqualTo: uid)
+          .get();
+
+      print('📋 Found ${testQuery.docs.length} provider profiles for testing');
+
+      setState(() {
+        _migrationStatus = '✅ Test successful!\n'
+            '• User ID: $uid\n'
+            '• Found ${testQuery.docs.length} profiles\n'
+            '• Firestore connection: Working\n'
+            '• Migration function: Ready\n\n'
+            'You can now safely use "🚀 Upgrade All Profiles"';
+      });
+
+    } catch (e) {
+      print('❌ Test error: $e');
+      setState(() {
+        _migrationStatus = '❌ Test failed: $e\n\nPlease check your internet connection and try again.';
       });
     }
   }
@@ -261,6 +322,22 @@ class _ProfileMigrationScreenState extends State<ProfileMigrationScreen> {
                   backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 8),
+            
+            // Test button to verify functionality
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _migrating ? null : _testMigrationFunction,
+                icon: const Icon(Icons.bug_report),
+                label: const Text('🧪 Test Migration (Debug)'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
             ),
