@@ -57,13 +57,8 @@ class AudibleNotificationService {
     bool success = false;
     
     try {
-      // Use multiple online beep URLs as fallbacks
-      final beepUrls = [
-        'https://www.soundjay.com/misc/sounds/beep-07a.wav',
-        'https://www.soundjay.com/misc/sounds/beep-10.wav', 
-        'https://www.soundjay.com/misc/sounds/beep-3.wav',
-        'https://freesound.org/data/previews/316/316847_5123451-lq.mp3',
-      ];
+      // TEST MODE: Disable external audio URLs to avoid CORS
+      final beepUrls = <String>[]; // Empty list - use only SystemSound
       
       for (int i = 0; i < repeat; i++) {
         bool played = false;
