@@ -586,9 +586,25 @@ BEGIN
             required_certs = ["security_license", "law_enforcement", "private_security"]
             RETURN certifications.containsAny(required_certs)
             
-        CASE "roadside_assistance":
-            required_certs = ["automotive_repair", "towing_license", "mechanical_certification"]
-            RETURN certifications.containsAny(required_certs)
+        CASE "towing_van":
+            required_certs = ["towing_license", "commercial_driving_license"]
+            required_equipment = ["towing_equipment", "winch", "tow_truck"]
+            has_cert = certifications.containsAny(required_certs)
+            has_equipment = equipment.containsAny(required_equipment)
+            RETURN has_cert AND has_equipment
+            
+        CASE "roadside_tyre_fix":
+            RETURN skills.contains("tyre_repair") OR equipment.contains("tyre_tools")
+        CASE "roadside_battery":
+            RETURN skills.contains("battery_replacement") OR equipment.contains("battery_tools")
+        CASE "roadside_fuel":
+            RETURN skills.contains("fuel_delivery") OR equipment.contains("fuel_container")
+        CASE "roadside_mechanic":
+            RETURN skills.contains("automotive_repair") OR skills.contains("mechanic")
+        CASE "roadside_lockout":
+            RETURN skills.contains("locksmith") OR equipment.contains("lockout_tools")
+        CASE "roadside_jumpstart":
+            RETURN skills.contains("battery_jumpstart") OR equipment.contains("jumper_cables")
             
         DEFAULT:
             RETURN true

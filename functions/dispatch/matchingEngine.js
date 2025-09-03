@@ -38,7 +38,9 @@ class MatchingEngine {
                   'bus_charter', 'bus_mini', 'bus_standard', 'bus_large'],
       moving: ['truck_small', 'truck_medium', 'truck_large', 'pickup_small', 'pickup_large',
                'courier_bike', 'courier_intracity', 'courier_intrastate', 'courier_nationwide'],
-      emergency: ['ambulance', 'roadside_assistance', 'fire_services', 'security_services', 'technical_services'],
+      emergency: ['ambulance', 'fire_services', 'security_services', 'towing_van', 
+                   'roadside_tyre_fix', 'roadside_battery', 'roadside_fuel', 
+                   'roadside_mechanic', 'roadside_lockout', 'roadside_jumpstart'],
       hire: ['plumber', 'electrician', 'hairstylist', 'cleaner', 'tutor', 'carpenter', 'painter', 'mechanic']
     };
   }
@@ -466,8 +468,13 @@ class MatchingEngine {
       'ambulance': ['medical_transport', 'first_aid'],
       'fire_services': ['fire_safety', 'emergency_response'],
       'security_services': ['security_license'],
-      'roadside_assistance': ['automotive_repair', 'towing_license'],
-      'technical_services': ['technical_certification']
+      'towing_van': ['towing_license', 'commercial_driving_license'],
+      'roadside_tyre_fix': ['automotive_repair', 'tyre_specialist'],
+      'roadside_battery': ['automotive_electrical', 'battery_specialist'],
+      'roadside_fuel': ['fuel_handling_license'],
+      'roadside_mechanic': ['automotive_repair', 'mechanical_certification'],
+      'roadside_lockout': ['locksmith_certification'],
+      'roadside_jumpstart': ['automotive_electrical']
     };
 
     const required = requiredCerts[requestedClass] || [];

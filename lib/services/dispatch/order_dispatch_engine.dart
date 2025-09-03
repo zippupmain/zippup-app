@@ -346,28 +346,38 @@ class OrderDispatchEngine {
     return true;
   }
 
-  /// Emergency service validation - strict matching required
-  bool _validateEmergencyProvider(String requestedClass, Map<String, dynamic> data) {
-    final enabledClasses = data['enabledClasses'] as Map<String, dynamic>? ?? {};
-    
-    // Emergency services must have explicit class enablement
-    if (!enabledClasses.containsKey(requestedClass) || enabledClasses[requestedClass] != true) {
-      print('❌ Emergency provider does not explicitly support: $requestedClass');
-      return false;
-    }
+  	/// Emergency service validation - strict matching required
+	bool _validateEmergencyProvider(String requestedClass, Map<String, dynamic> data) {
+		final enabledClasses = data['enabledClasses'] as Map<String, dynamic>? ?? {};
+		
+		// Emergency services must have explicit class enablement
+		if (!enabledClasses.containsKey(requestedClass) || enabledClasses[requestedClass] != true) {
+			print('❌ Emergency provider does not explicitly support: $requestedClass');
+			return false;
+		}
 
-    // Additional emergency-specific validations
-    switch (requestedClass) {
-      case 'ambulance':
-        return _validateAmbulanceProvider(data);
-      case 'fire_services':
-        return _validateFireServiceProvider(data);
-      case 'security_services':
-        return _validateSecurityProvider(data);
-      default:
-        return true;
-    }
-  }
+		// Additional emergency-specific validations
+		switch (requestedClass) {
+			case 'ambulance':
+				return _validateAmbulanceProvider(data);
+			case 'fire_services':
+				return _validateFireServiceProvider(data);
+			case 'security_services':
+				return _validateSecurityProvider(data);
+			case 'towing_van':
+				return _validateTowingVanProvider(data);
+			// Roadside assistance sub-classes
+			case 'roadside_tyre_fix':
+			case 'roadside_battery':
+			case 'roadside_fuel':
+			case 'roadside_mechanic':
+			case 'roadside_lockout':
+			case 'roadside_jumpstart':
+				return _validateRoadsideProvider(requestedClass, data);
+			default:
+				return true;
+		}
+	}
 
   /// Hire service validation
   bool _validateHireProvider(String requestedClass, Map<String, dynamic> data) {
@@ -595,10 +605,49 @@ class OrderDispatchEngine {
     return certifications.contains('fire_safety') || certifications.contains('emergency_response');
   }
 
-  bool _validateSecurityProvider(Map<String, dynamic> data) {
-    final certifications = data['certifications'] as List<dynamic>? ?? [];
-    return certifications.contains('security_license') || certifications.contains('law_enforcement');
-  }
+  	bool _validateSecurityProvider(Map<String, dynamic> data) {
+		final certifications = data['certifications'] as List<dynamic>? ?? [];
+		return certifications.contains('security_license') || certifications.contains('law_enforcement');
+	}
+
+	bool _validateTowingVanProvider(Map<String, dynamic> data) {
+		final certifications = data['certifications'] as List<dynamic>? ?? [];
+		final equipment = data['equipment'] as List<dynamic>? ?? [];
+		
+		final hasLicense = certifications.contains('towing_license') || certifications.contains('commercial_driving_license');
+		final hasEquipment = equipment.contains('towing_equipment') || equipment.contains('winch') || equipment.contains('tow_truck');
+		
+		return hasLicense && hasEquipment;
+	}
+
+	bool _validateRoadsideProvider(String requestedClass, Map<String, dynamic> data) {
+		final enabledClasses = data['enabledClasses'] as Map<String, dynamic>? ?? {};
+		final skills = data['skills'] as List<dynamic>? ?? [];
+		final equipment = data['equipment'] as List<dynamic>? ?? [];
+		
+		// Check explicit enablement first
+		if (enabledClasses[requestedClass] == true) {
+			return true;
+		}
+		
+		// Check skill-specific requirements
+		switch (requestedClass) {
+			case 'roadside_tyre_fix':
+				return skills.contains('tyre_repair') || equipment.contains('tyre_tools');
+			case 'roadside_battery':
+				return skills.contains('battery_replacement') || equipment.contains('battery_tools');
+			case 'roadside_fuel':
+				return skills.contains('fuel_delivery') || equipment.contains('fuel_container');
+			case 'roadside_mechanic':
+				return skills.contains('automotive_repair') || skills.contains('mechanic');
+			case 'roadside_lockout':
+				return skills.contains('locksmith') || equipment.contains('lockout_tools');
+			case 'roadside_jumpstart':
+				return skills.contains('battery_jumpstart') || equipment.contains('jumper_cables');
+			default:
+				return false;
+		}
+	}
 
   /// Dispose method for cleanup
   void dispose() {

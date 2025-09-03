@@ -385,10 +385,16 @@ function validateTransportProvider(requestClass, provider) {
 // Emergency classes (STRICT matching required)
 const emergencyClasses = [
   'ambulance',           // Medical emergency transport
-  'roadside_assistance', // Vehicle breakdown help
   'fire_services',       // Fire emergency response
   'security_services',   // Security/safety response
-  'technical_services'   // Technical emergency repairs
+  'towing_van',          // Vehicle towing services
+  // Roadside assistance sub-classes (specific matching)
+  'roadside_tyre_fix',   // Tyre repair/replacement
+  'roadside_battery',    // Battery replacement/jumpstart
+  'roadside_fuel',       // Fuel delivery
+  'roadside_mechanic',   // On-site mechanical repair
+  'roadside_lockout',    // Vehicle lockout assistance
+  'roadside_jumpstart'   // Battery jumpstart service
 ];
 
 // Strict validation - ambulance requests ONLY go to ambulance providers

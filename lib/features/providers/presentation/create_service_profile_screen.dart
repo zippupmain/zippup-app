@@ -36,7 +36,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'transport': ['Taxi', 'Bike', 'Bus', 'Tricycle', 'Courier'],
 		'moving': ['Truck', 'Backie/Pickup', 'Courier'],
 		'hire': ['Home Services', 'Tech Services', 'Construction', 'Auto Services', 'Personal Care'],
-		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Roadside'],
+		'emergency': ['Ambulance', 'Fire Services', 'Security Services', 'Towing Van', 'Roadside Assistance'],
 		'personal': ['Beauty Services', 'Wellness Services', 'Fitness Services', 'Tutoring Services', 'Cleaning Services', 'Childcare Services'],
 		'others': ['Events Planning', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Event Ticketing'],
 	};

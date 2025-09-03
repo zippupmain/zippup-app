@@ -7,7 +7,10 @@ import 'package:zippup/services/location/location_service.dart';
 import 'package:zippup/common/widgets/address_field.dart';
 
 class EmergencyBookingScreen extends StatefulWidget {
-	const EmergencyBookingScreen({super.key});
+	const EmergencyBookingScreen({super.key, this.preSelectedType, this.serviceTitle});
+	
+	final String? preSelectedType;
+	final String? serviceTitle;
 
 	@override
 	State<EmergencyBookingScreen> createState() => _EmergencyBookingScreenState();
@@ -16,16 +19,27 @@ class EmergencyBookingScreen extends StatefulWidget {
 class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 	final TextEditingController _addressController = TextEditingController();
 	final TextEditingController _descriptionController = TextEditingController();
-	String _selectedType = 'medical';
+	late String _selectedType;
 	String _selectedPriority = 'high';
 	bool _isBooking = false;
 
+	@override
+	void initState() {
+		super.initState();
+		_selectedType = widget.preSelectedType ?? 'ambulance';
+	}
+
 	final Map<String, String> _emergencyTypes = const {
-		'medical': '🏥 Medical Emergency',
-		'security': '🛡️ Security Emergency',
-		'fire': '🔥 Fire Emergency',
-		'technical': '⚡ Technical Emergency',
-		'roadside': '🚗 Roadside Assistance',
+		'ambulance': '🚑 Ambulance',
+		'security_services': '🛡️ Security Services',
+		'fire_services': '🔥 Fire Services',
+		'towing_van': '🚛 Towing Van',
+		'roadside_tyre_fix': '🛞 Tyre Fix/Replacement',
+		'roadside_battery': '🔋 Battery Issues',
+		'roadside_fuel': '⛽ Fuel Delivery',
+		'roadside_mechanic': '🔧 Mechanical Repair',
+		'roadside_lockout': '🔑 Vehicle Lockout',
+		'roadside_jumpstart': '⚡ Jumpstart Service',
 	};
 
 	final Map<String, Color> _priorityColors = const {
@@ -72,14 +86,22 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 
 			await bookingRef.set({
 				'clientId': uid,
+				'customerId': uid, // For dispatch engine compatibility
 				'type': _selectedType,
+				'service': 'emergency', // For dispatch engine
+				'serviceClass': _selectedType, // Specific emergency class
 				'description': description,
 				'priority': _selectedPriority,
 				'emergencyAddress': address,
+				'customerLocation': { // For dispatch engine
+					'latitude': 0.0, // Will be updated with actual location
+					'longitude': 0.0,
+					'address': address,
+				},
 				'createdAt': DateTime.now().toIso8601String(),
 				'feeEstimate': feeAmount,
 				'etaMinutes': _selectedPriority == 'critical' ? 5 : 15,
-				'status': 'requested',
+				'status': 'pending', // Changed to 'pending' for dispatch engine
 				'currency': 'NGN',
 				'paymentMethod': 'card',
 			});
@@ -102,9 +124,14 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 
 	@override
 	Widget build(BuildContext context) {
+		final isPreSelected = widget.preSelectedType != null;
+		final title = isPreSelected 
+			? '🚨 ${widget.serviceTitle ?? _emergencyTypes[_selectedType] ?? 'Emergency Service'}'
+			: '🚨 Emergency Services';
+
 		return Scaffold(
 			appBar: AppBar(
-				title: const Text('🚨 Emergency Services'),
+				title: Text(title),
 				backgroundColor: Colors.red.shade50,
 				iconTheme: const IconThemeData(color: Colors.black),
 				titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
@@ -114,8 +141,8 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 				child: Column(
 					crossAxisAlignment: CrossAxisAlignment.stretch,
 					children: [
-						// Emergency type selection
-						Card(
+						// Emergency type selection (only show if not pre-selected)
+						if (!isPreSelected) Card(
 							color: Colors.red.shade50,
 							child: Padding(
 								padding: const EdgeInsets.all(16),
@@ -133,6 +160,33 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 												dense: true,
 											);
 										}).toList(),
+									],
+								),
+							),
+						),
+
+						// Show selected service info when pre-selected
+						if (isPreSelected) Card(
+							color: Colors.blue.shade50,
+							child: Padding(
+								padding: const EdgeInsets.all(16),
+								child: Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										const Text('Selected Service', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+										const SizedBox(height: 8),
+										Row(
+											children: [
+												Icon(_getIconForServiceClass(_selectedType), color: Colors.blue.shade700),
+												const SizedBox(width: 12),
+												Expanded(
+													child: Text(
+														_emergencyTypes[_selectedType] ?? 'Emergency Service',
+														style: TextStyle(fontSize: 16, color: Colors.blue.shade700, fontWeight: FontWeight.w600),
+													),
+												),
+											],
+										),
 									],
 								),
 							),
@@ -273,5 +327,32 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 				),
 			),
 		);
+	}
+
+	IconData _getIconForServiceClass(String serviceClass) {
+		switch (serviceClass) {
+			case 'ambulance':
+				return Icons.medical_services;
+			case 'fire_services':
+				return Icons.local_fire_department;
+			case 'security_services':
+				return Icons.shield_outlined;
+			case 'towing_van':
+				return Icons.fire_truck;
+			case 'roadside_tyre_fix':
+				return Icons.tire_repair;
+			case 'roadside_battery':
+				return Icons.battery_charging_full;
+			case 'roadside_fuel':
+				return Icons.local_gas_station;
+			case 'roadside_mechanic':
+				return Icons.build;
+			case 'roadside_lockout':
+				return Icons.key;
+			case 'roadside_jumpstart':
+				return Icons.electric_bolt;
+			default:
+				return Icons.emergency;
+		}
 	}
 }

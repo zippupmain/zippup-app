@@ -8,11 +8,10 @@ class EmergencyScreen extends StatelessWidget {
 	Widget build(BuildContext context) {
 		final items = [
 			(const Icon(Icons.medical_services), 'Ambulance', 'ambulance'),
-			(const Icon(Icons.local_fire_department), 'Fire Service', 'fire'),
-			(const Icon(Icons.shield_outlined), 'Security', 'security'),
-			(const Icon(Icons.local_shipping), 'Towing', 'towing'),
-			(const Icon(Icons.fire_truck), 'Towing Van', 'towing_van'), // Added Towing Van
-			(const Icon(Icons.build_circle), 'Roadside', 'roadside'),
+			(const Icon(Icons.local_fire_department), 'Fire Services', 'fire_services'),
+			(const Icon(Icons.shield_outlined), 'Security Services', 'security_services'),
+			(const Icon(Icons.fire_truck), 'Towing Van', 'towing_van'),
+			(const Icon(Icons.car_repair), 'Roadside Assistance', 'roadside'),
 		];
 		return Scaffold(
 			appBar: AppBar(title: const Text('Emergency')),
@@ -28,8 +27,9 @@ class EmergencyScreen extends StatelessWidget {
 						onTap: () {
 							if (key == 'roadside') {
 								context.push('/emergency/roadside');
-							} else if (key == 'towing' || key == 'towing_van' || key == 'ambulance' || key == 'fire' || key == 'security') {
-								context.push('/emergency/providers/$key');
+							} else {
+								// Direct booking for specific emergency services
+								context.push('/emergency/booking?type=$key&title=${title.replaceAll(' ', '_')}');
 							}
 						},
 					);

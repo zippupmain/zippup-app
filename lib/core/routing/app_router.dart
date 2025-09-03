@@ -68,6 +68,7 @@ import 'package:zippup/features/moving/presentation/moving_track_screen.dart';
 import 'package:zippup/features/personal/presentation/personal_track_screen.dart';
 import 'package:zippup/features/search/presentation/search_results_screen.dart';
 import 'package:zippup/features/emergency/presentation/emergency_screen.dart';
+import 'package:zippup/features/emergency/presentation/roadside_assistance_screen.dart';
 import 'package:zippup/features/others/presentation/others_screen.dart';
 import 'package:zippup/features/food/presentation/vendor_detail_screen.dart';
 import 'package:zippup/features/marketplace/presentation/product_detail_screen.dart';
@@ -400,7 +401,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 				GoRoute(
 					path: '/emergency',
 					name: 'emergency',
-					builder: (context, state) => const EmergencyBookingScreen(),
+					builder: (context, state) => const EmergencyScreen(),
+				),
+				GoRoute(
+					path: '/emergency/booking',
+					name: 'emergencyBooking',
+					builder: (context, state) {
+						final type = state.uri.queryParameters['type'];
+						final title = state.uri.queryParameters['title'];
+						return EmergencyBookingScreen(
+							preSelectedType: type,
+							serviceTitle: title,
+						);
+					},
 				),
 				GoRoute(
 					path: '/others',
@@ -478,7 +491,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/emergency/roadside',
         name: 'roadside',
-        builder: (context, state) => const HireScreen(initialCategory: 'auto'),
+        builder: (context, state) => const RoadsideAssistanceScreen(),
       ),
       GoRoute(
         path: '/emergency/providers/:type',
