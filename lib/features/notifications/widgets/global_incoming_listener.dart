@@ -52,62 +52,70 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		}
 		final db = FirebaseFirestore.instance;
 		
-		// CRITICAL FIX: Only set up transport listener if user is actually a transport provider
+		// CRITICAL FIX: Set up ride listener for ALL providers with business profiles
 		try {
-			print('🔍 Checking if user is transport provider before setting up listener');
+			print('🔍 Checking if user has ANY active provider profile');
 			final providerSnap = await db.collection('provider_profiles')
 				.where('userId', isEqualTo: uid)
-				.where('service', isEqualTo: 'transport')
 				.where('status', isEqualTo: 'active')
 				.limit(1)
 				.get();
 			
 			if (providerSnap.docs.isEmpty) {
-				print('❌ User is not a transport provider - skipping transport notifications');
+				print('❌ User has no active provider profiles - skipping ride notifications');
 			} else {
-				print('✅ Setting up ride notification listener for transport provider: $uid');
+				print('✅ Setting up ride notification listener for ANY provider: $uid');
 				
-				// Listen for ride requests assigned to this driver OR unassigned rides for available drivers
+				// Listen for ride requests - ALL providers with business profiles should receive them
 				_ridesSub = db.collection('rides')
 					.where('status', isEqualTo: 'requested')
 					.snapshots()
 					.listen((snap) async {
 						print('📡 Received ${snap.docs.length} ride requests from Firestore');
 						
-						// Check current online status
+						// Check if user has ANY active and online provider profile
+						bool hasActiveProvider = false;
 						bool isOnline = false;
 						try {
-							final currentProviderSnap = await db.collection('provider_profiles')
+							final allProviderSnap = await db.collection('provider_profiles')
 								.where('userId', isEqualTo: uid)
-								.where('service', isEqualTo: 'transport')
 								.where('status', isEqualTo: 'active')
-								.limit(1)
 								.get();
 							
-							if (currentProviderSnap.docs.isNotEmpty) {
-								final providerData = currentProviderSnap.docs.first.data();
-								isOnline = providerData['availabilityOnline'] == true;
-								print('✅ Transport provider online status: $isOnline');
+							for (final providerDoc in allProviderSnap.docs) {
+								final providerData = providerDoc.data();
+								final online = providerData['availabilityOnline'] == true;
+								
+								if (online) {
+									hasActiveProvider = true;
+									isOnline = true;
+									print('✅ Found online ${providerData['service']} provider');
+									break;
+								}
+							}
+							
+							if (!hasActiveProvider) {
+								print('❌ No online providers found');
 							}
 						} catch (e) {
-							print('❌ Error checking transport provider online status: $e');
+							print('❌ Error checking provider profiles: $e');
 						}
 				
 				for (final d in snap.docs) {
 					final data = d.data();
 					final assignedDriverId = data['driverId']?.toString();
 					
-					// Proper targeting: Only show to relevant online transport providers
+					// Proper targeting: Show to ANY active online provider
 					bool shouldShow = false;
 					if (assignedDriverId == uid) {
 						shouldShow = true; // Directly assigned to this driver
 						print('✅ Ride ${d.id} assigned to this driver');
-					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && isOnline) {
-						// Simple targeting: just check if provider is online (already confirmed as transport provider)
+					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && hasActiveProvider && isOnline) {
+						// Show to any active online provider (all providers can handle rides)
 						shouldShow = true;
-						print('✅ Ride ${d.id} available for online transport provider');
+						print('✅ Ride ${d.id} available for any online provider');
 					} else {
-						print('🚫 Ride ${d.id} not for this user - Online: $isOnline, Assigned: $assignedDriverId');
+						print('🚫 Ride ${d.id} not for this user - HasActiveProvider: $hasActiveProvider, Online: $isOnline, Assigned: $assignedDriverId');
 					}
 					
 					if (shouldShow && !_shown.contains('ride:${d.id}')) {
