@@ -8,6 +8,7 @@ import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platf
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_map/flutter_map.dart' as lm;
 import 'package:latlong2/latlong.dart' as ll;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:zippup/common/models/ride.dart';
 import 'package:zippup/features/orders/widgets/status_timeline.dart';
 import 'package:zippup/features/transport/providers/ride_service.dart';
@@ -66,61 +67,104 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
   }
  }
 
- List<Widget> _getDriverActions(Ride ride) {
+ List<Widget> _getDriverActions(Ride ride, Map<String, dynamic> data) {
   if (!_isDriver) return [];
+  
+  final driverLat = (data['driverLat'] as num?)?.toDouble();
+  final driverLng = (data['driverLng'] as num?)?.toDouble();
+  final pickupLat = (data['pickupLat'] as num?)?.toDouble();
+  final pickupLng = (data['pickupLng'] as num?)?.toDouble();
+  final destLat = (data['destLat'] as num?)?.toDouble();
+  final destLng = (data['destLng'] as num?)?.toDouble();
+  
+  // Navigation button for active rides
+  Widget? navButton;
+  if (driverLat != null && driverLng != null) {
+    double? targetLat, targetLng;
+    String navLabel = 'Navigate';
+    
+    // Determine navigation target based on ride status
+    if ((ride.status == RideStatus.accepted || ride.status == RideStatus.arriving) && 
+        pickupLat != null && pickupLng != null) {
+      targetLat = pickupLat;
+      targetLng = pickupLng;
+      navLabel = 'Navigate to Pickup';
+    } else if ((ride.status == RideStatus.arrived || ride.status == RideStatus.enroute) && 
+               destLat != null && destLng != null) {
+      targetLat = destLat;
+      targetLng = destLng;
+      navLabel = 'Navigate to Destination';
+    }
+    
+    if (targetLat != null && targetLng != null) {
+      navButton = OutlinedButton.icon(
+        onPressed: () => _openGoogleNavigation(driverLat, driverLng, targetLat!, targetLng!),
+        icon: const Icon(Icons.navigation),
+        label: Text(navLabel),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.blue,
+        ),
+      );
+    }
+  }
+  
+  List<Widget> actions = [];
   
   switch (ride.status) {
    case RideStatus.accepted:
-	return [
-	 ElevatedButton.icon(
-	  onPressed: () => _updateRideStatus(ride.id, RideStatus.arriving),
-	  icon: const Icon(Icons.directions_car),
-	  label: const Text('I\'m on my way'),
-	  style: ElevatedButton.styleFrom(
-	   backgroundColor: Colors.orange,
-	   foregroundColor: Colors.white,
-	  ),
-	 ),
-	];
+    actions.add(ElevatedButton.icon(
+     onPressed: () => _updateRideStatus(ride.id, RideStatus.arriving),
+     icon: const Icon(Icons.directions_car),
+     label: const Text('I\'m on my way'),
+     style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.orange,
+      foregroundColor: Colors.white,
+     ),
+    ));
+    break;
    case RideStatus.arriving:
-	return [
-	 ElevatedButton.icon(
-	  onPressed: () => _updateRideStatus(ride.id, RideStatus.arrived),
-	  icon: const Icon(Icons.location_on),
-	  label: const Text('I have arrived'),
-	  style: ElevatedButton.styleFrom(
-	   backgroundColor: Colors.blue,
-	   foregroundColor: Colors.white,
-	  ),
-	 ),
-	];
+    actions.add(ElevatedButton.icon(
+     onPressed: () => _updateRideStatus(ride.id, RideStatus.arrived),
+     icon: const Icon(Icons.location_on),
+     label: const Text('I have arrived'),
+     style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.blue,
+      foregroundColor: Colors.white,
+     ),
+    ));
+    break;
    case RideStatus.arrived:
-	return [
-	 ElevatedButton.icon(
-	  onPressed: () => _updateRideStatus(ride.id, RideStatus.enroute),
-	  icon: const Icon(Icons.play_arrow),
-	  label: const Text('Start Trip'),
-	  style: ElevatedButton.styleFrom(
-	   backgroundColor: Colors.green,
-	   foregroundColor: Colors.white,
-	  ),
-	 ),
-	];
+    actions.add(ElevatedButton.icon(
+     onPressed: () => _updateRideStatus(ride.id, RideStatus.enroute),
+     icon: const Icon(Icons.play_arrow),
+     label: const Text('Start Trip'),
+     style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.green,
+      foregroundColor: Colors.white,
+     ),
+    ));
+    break;
    case RideStatus.enroute:
-	return [
-	 ElevatedButton.icon(
-	  onPressed: () => _updateRideStatus(ride.id, RideStatus.completed),
-	  icon: const Icon(Icons.check_circle),
-	  label: const Text('Complete Trip'),
-	  style: ElevatedButton.styleFrom(
-	   backgroundColor: Colors.purple,
-	   foregroundColor: Colors.white,
-	  ),
-	 ),
-	];
+    actions.add(ElevatedButton.icon(
+     onPressed: () => _updateRideStatus(ride.id, RideStatus.completed),
+     icon: const Icon(Icons.check_circle),
+     label: const Text('Complete Trip'),
+     style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.purple,
+      foregroundColor: Colors.white,
+     ),
+    ));
+    break;
    default:
-	return [];
+    break;
   }
+  
+  // Add navigation button if available
+  if (navButton != null) {
+    actions.add(navButton);
+  }
+  
+  return actions;
  }
 
  List<String> _stepsFor(RideType type) => const ['Accepted', 'Arriving', 'Arrived', 'Enroute', 'Completed'];
@@ -268,8 +312,8 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
   final destLat = (data['destLat'] as num?)?.toDouble();
   final destLng = (data['destLng'] as num?)?.toDouble();
 
-  // On completion, show comprehensive summary with payment and rating
-  if (ride.status == RideStatus.completed && !_shownSummary) {
+  // On completion, show comprehensive summary with payment and rating - ONLY to the rider/customer
+  if (ride.status == RideStatus.completed && !_shownSummary && !_isDriver) {
    _shownSummary = true;
    WidgetsBinding.instance.addPostFrameCallback((_) async {
 	   // Play completion sound
@@ -784,7 +828,7 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		   child: TextButton.icon(onPressed: () => _cancel(context, widget.rideId), icon: const Icon(Icons.cancel_outlined), label: const Text('Cancel ride')),
 		  ),
 		  // Driver action buttons
-		  ..._getDriverActions(ride).map((button) => Padding(
+		  ..._getDriverActions(ride, data).map((button) => Padding(
 		   padding: const EdgeInsets.only(top: 8.0),
 		   child: SizedBox(
 			width: double.infinity,
@@ -831,7 +875,28 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
   }
  }
 
- bool _rideCancelable(RideStatus s) {
-  return s == RideStatus.requested || s == RideStatus.accepted || s == RideStatus.arriving || s == RideStatus.arrived;
- }
+ 	bool _rideCancelable(RideStatus s) {
+		return s == RideStatus.requested || s == RideStatus.accepted || s == RideStatus.arriving || s == RideStatus.arrived;
+	}
+
+	Future<void> _openGoogleNavigation(double originLat, double originLng, double destLat, double destLng) async {
+		final uri = Uri.parse('https://www.google.com/maps/dir/?api=1&origin=$originLat,$originLng&destination=$destLat,$destLng&travelmode=driving');
+		try {
+			if (await canLaunchUrl(uri)) {
+				await launchUrl(uri, mode: LaunchMode.externalApplication);
+			} else {
+				if (mounted) {
+					ScaffoldMessenger.of(context).showSnackBar(
+						const SnackBar(content: Text('Could not open Google Maps')),
+					);
+				}
+			}
+		} catch (e) {
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					SnackBar(content: Text('Navigation error: $e')),
+				);
+			}
+		}
+	}
 }

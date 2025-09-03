@@ -82,15 +82,22 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 								.where('status', isEqualTo: 'active')
 								.get();
 							
+							print('🔍 Found ${allProviderSnap.docs.length} active provider profiles for user $uid');
 							for (final providerDoc in allProviderSnap.docs) {
 								final providerData = providerDoc.data();
 								final online = providerData['availabilityOnline'] == true;
+								final service = providerData['service']?.toString() ?? 'unknown';
+								final subcategory = providerData['subcategory']?.toString() ?? 'unknown';
+								
+								print('📋 Provider: ${providerDoc.id} | Service: $service | Subcategory: $subcategory | Online: $online');
 								
 								if (online) {
 									hasActiveProvider = true;
 									isOnline = true;
-									print('✅ Found online ${providerData['service']} provider');
+									print('✅ Found online $service provider (subcategory: $subcategory)');
 									break;
+								} else {
+									print('⚠️ Provider $service is OFFLINE - availabilityOnline: ${providerData['availabilityOnline']}');
 								}
 							}
 							
@@ -105,15 +112,34 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					final data = d.data();
 					final assignedDriverId = data['driverId']?.toString();
 					
-					// Proper targeting: Show to ANY active online provider
+					// Proper targeting: Show to ANY active online transport provider
 					bool shouldShow = false;
 					if (assignedDriverId == uid) {
 						shouldShow = true; // Directly assigned to this driver
 						print('✅ Ride ${d.id} assigned to this driver');
 					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && hasActiveProvider && isOnline) {
-						// Show to any active online provider (all providers can handle rides)
-						shouldShow = true;
-						print('✅ Ride ${d.id} available for any online provider');
+						// For transport rides, show to ALL active online transport providers
+						// Check if user has active transport provider profile
+						try {
+							final transportProviderSnap = await db.collection('provider_profiles')
+								.where('userId', isEqualTo: uid)
+								.where('service', isEqualTo: 'transport')
+								.where('status', isEqualTo: 'active')
+								.where('availabilityOnline', isEqualTo: true)
+								.limit(1)
+								.get();
+							
+							if (transportProviderSnap.docs.isNotEmpty) {
+								shouldShow = true;
+								print('✅ Ride ${d.id} available for transport provider');
+								final providerData = transportProviderSnap.docs.first.data();
+								print('📋 Transport Provider Details: service=${providerData['service']}, subcategory=${providerData['subcategory']}, online=${providerData['availabilityOnline']}');
+							} else {
+								print('🚫 No active online transport provider found for user $uid');
+							}
+						} catch (e) {
+							print('❌ Error checking transport provider: $e');
+						}
 					} else {
 						print('🚫 Ride ${d.id} not for this user - HasActiveProvider: $hasActiveProvider, Online: $isOnline, Assigned: $assignedDriverId');
 					}
@@ -126,8 +152,8 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						print('📍 From: ${data['pickupAddress']}');
 						_shown.add('ride:${d.id}');
 						
-						// Create notification record for bell icon
-						_createNotificationRecord(
+						// Create notification record for bell icon (will be auto-marked as read after shown)
+						final notificationId = await _createNotificationRecord(
 							'🚗 New Ride Request',
 							'From: ${data['pickupAddress'] ?? 'Unknown location'}',
 							'/driver/ride?rideId=${d.id}',
@@ -145,6 +171,21 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						
 						// Also show dialog
 						_showRideDialog(d.id, data);
+						
+						// Auto-mark notification as read after 3 seconds to prevent re-showing on refresh
+						if (notificationId != null) {
+							Timer(const Duration(seconds: 3), () async {
+								try {
+									await FirebaseFirestore.instance
+										.collection('notifications')
+										.doc(notificationId)
+										.update({'read': true});
+									print('✅ Auto-marked notification as read: $notificationId');
+								} catch (e) {
+									print('❌ Failed to auto-mark notification as read: $e');
+								}
+							});
+						}
 					} else if (!shouldShow) {
 						print('🚫 Not showing ride ${d.id} - shouldShow: $shouldShow, assignedDriverId: $assignedDriverId, Online: $isOnline');
 					} else if (_shown.contains('ride:${d.id}')) {
@@ -230,6 +271,16 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		int riderRides = 0;
 		try {
 			final riderId = (m['riderId'] ?? '').toString();
+			final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+			
+			print('🔍 PROFILE DEBUG - Current User: $currentUserId, Ride Customer: $riderId');
+			
+			if (riderId.isEmpty) {
+				print('❌ CRITICAL: No riderId in ride data! Ride data keys: ${m.keys.join(", ")}');
+			} else if (riderId == currentUserId) {
+				print('⚠️ WARNING: Customer ID matches current user ID - this might be the profile display issue!');
+			}
+			
 			if (riderId.isNotEmpty) {
 				// Fetch both profiles simultaneously for better performance
 				final results = await Future.wait([
@@ -241,7 +292,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				final u = results[1].data() ?? const {};
 				
 				// Debug: Print profile data
-				print('🔍 Customer Profile Debug:');
+				print('🔍 Customer Profile Debug for ID: $riderId');
 				print('Public profile exists: ${results[0].exists}');
 				print('User profile exists: ${results[1].exists}');
 				print('Public profile data: $pu');
@@ -524,7 +575,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 								'others': '📋',
 							}[service] ?? '💼';
 							
-							_createNotificationRecord(
+							final notificationId = await _createNotificationRecord(
 								'$serviceEmoji New ${service.toUpperCase()} Request',
 								data['description']?.toString() ?? 'Service request received',
 								_routeForService(service),
@@ -543,6 +594,21 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 							
 							// Also show dialog
 							_showServiceDialog(d.id, data, service);
+							
+							// Auto-mark notification as read after 3 seconds to prevent re-showing on refresh
+							if (notificationId != null) {
+								Timer(const Duration(seconds: 3), () async {
+									try {
+										await FirebaseFirestore.instance
+											.collection('notifications')
+											.doc(notificationId)
+											.update({'read': true});
+										print('✅ Auto-marked $service notification as read: $notificationId');
+									} catch (e) {
+										print('❌ Failed to auto-mark $service notification as read: $e');
+									}
+								});
+							}
 						}
 					}
 				});
@@ -558,12 +624,12 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	}
 
 	/// Create a notification record that will show in the bell icon
-	Future<void> _createNotificationRecord(String title, String body, String route) async {
+	Future<String?> _createNotificationRecord(String title, String body, String route) async {
 		try {
 			final uid = FirebaseAuth.instance.currentUser?.uid;
-			if (uid == null) return;
+			if (uid == null) return null;
 			
-			await FirebaseFirestore.instance.collection('notifications').add({
+			final docRef = await FirebaseFirestore.instance.collection('notifications').add({
 				'userId': uid,
 				'title': title,
 				'body': body,
@@ -573,8 +639,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			});
 			
 			print('✅ Created notification record: $title');
+			return docRef.id;
 		} catch (e) {
 			print('❌ Failed to create notification record: $e');
+			return null;
 		}
 	}
 
