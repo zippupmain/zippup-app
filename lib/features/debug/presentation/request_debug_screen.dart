@@ -244,11 +244,23 @@ class _RequestDebugScreenState extends State<RequestDebugScreen> {
 
       info.writeln('✅ Complete flow test finished!');
       info.writeln('');
-      info.writeln('📋 Next Steps:');
+      info.writeln('📋 COMPLETE RIDE FLOW TESTING:');
       info.writeln('1. Ensure you have transport provider profile (active & online)');
       info.writeln('2. Watch for phone-call notification popup');
-      info.writeln('3. Test accept/decline functionality');
-      info.writeln('4. Verify tracking screen navigation');
+      info.writeln('3. Click ACCEPT → should navigate to tracking screen');
+      info.writeln('4. As DRIVER, you should see:');
+      info.writeln('   • App title: "Manage Ride" (not "Track Ride")');
+      info.writeln('   • Orange "I\'m on my way" button');
+      info.writeln('5. Click "I\'m on my way" → should show "I have arrived" button');
+      info.writeln('6. Click "I have arrived" → should show "Start Trip" button');
+      info.writeln('7. Click "Start Trip" → should show "Complete Trip" button');
+      info.writeln('8. Click "Complete Trip" → should play completion sound');
+      info.writeln('');
+      info.writeln('🚨 TROUBLESHOOTING:');
+      info.writeln('• If no notification: Check provider profile at /provider-debug');
+      info.writeln('• If wrong screen: Ensure you accepted the ride as driver');
+      info.writeln('• If no buttons: Check if you are the assigned driver');
+      info.writeln('• Customer view: Shows "Track Ride" with cancel option');
 
       setState(() {
         _debugInfo = info.toString();
