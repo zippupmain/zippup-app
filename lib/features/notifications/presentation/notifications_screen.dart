@@ -11,7 +11,8 @@ class NotificationsScreen extends StatelessWidget {
     return FirebaseFirestore.instance
         .collection('notifications')
         .where('userId', isEqualTo: uid)
-        .limit(100)
+        .where('read', isEqualTo: false) // Only show unread notifications
+        .limit(50)
         .snapshots();
   }
 
