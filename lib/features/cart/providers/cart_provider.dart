@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zippup/features/cart/models/cart_item.dart';
+import 'package:zippup/features/cart/models/saved_cart.dart';
+import 'package:zippup/features/cart/models/vendor_conflict_exception.dart';
 
 class CartNotifier extends StateNotifier<List<CartItem>> {
 	CartNotifier() : super(const []);
@@ -11,9 +14,12 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 	void add(CartItem item) {
 		// Enforce single-vendor checkout
 		if (state.isNotEmpty && state.first.vendorId != item.vendorId) {
-			// Replace cart with new vendor's item for simplicity
-			state = [item];
-			return;
+			// Don't automatically replace - this should trigger a dialog in the UI
+			throw VendorConflictException(
+				currentVendorId: state.first.vendorId,
+				newVendorId: item.vendorId,
+				newItem: item,
+			);
 		}
 		final existingIndex = state.indexWhere((e) => e.id == item.id);
 		if (existingIndex >= 0) {
@@ -23,6 +29,73 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 			return;
 		}
 		state = [...state, item];
+	}
+
+	// Replace entire cart with new vendor's items
+	void replaceCart(List<CartItem> newItems) {
+		state = newItems;
+	}
+
+	// Save current cart and start new one
+	Future<void> saveCurrentCartAndStartNew(CartItem newItem, String customerId) async {
+		if (state.isNotEmpty) {
+			await _saveCartToFirestore(customerId);
+		}
+		state = [newItem];
+	}
+
+	// Save cart to Firestore for later
+	Future<void> _saveCartToFirestore(String customerId) async {
+		if (state.isEmpty) return;
+
+		try {
+			final vendorId = state.first.vendorId;
+			final vendorName = await _getVendorName(vendorId);
+			
+			await FirebaseFirestore.instance.collection('saved_carts').add({
+				'customerId': customerId,
+				'vendorId': vendorId,
+				'vendorName': vendorName,
+				'items': state.map((item) => item.toMap()).toList(),
+				'subtotal': _calculateSubtotal(),
+				'savedAt': FieldValue.serverTimestamp(),
+				'expiresAt': Timestamp.fromDate(DateTime.now().add(Duration(days: 7))),
+			});
+
+			print('✅ Cart saved for vendor: $vendorName');
+		} catch (e) {
+			print('❌ Error saving cart: $e');
+		}
+	}
+
+	// Load saved carts for customer
+	Future<List<SavedCart>> getSavedCarts(String customerId) async {
+		try {
+			final snapshot = await FirebaseFirestore.instance
+				.collection('saved_carts')
+				.where('customerId', isEqualTo: customerId)
+				.where('expiresAt', isGreaterThan: Timestamp.now())
+				.orderBy('savedAt', descending: true)
+				.get();
+
+			return snapshot.docs.map((doc) => SavedCart.fromFirestore(doc)).toList();
+		} catch (e) {
+			print('❌ Error loading saved carts: $e');
+			return [];
+		}
+	}
+
+	double _calculateSubtotal() {
+		return state.fold<double>(0, (sum, item) => sum + (item.price * item.quantity));
+	}
+
+	Future<String> _getVendorName(String vendorId) async {
+		try {
+			final doc = await FirebaseFirestore.instance.collection('vendors').doc(vendorId).get();
+			return doc.data()?['businessName'] ?? 'Unknown Vendor';
+		} catch (e) {
+			return 'Unknown Vendor';
+		}
 	}
 
 	void setQuantity(String id, int quantity) {

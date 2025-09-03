@@ -1,9 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:zippup/features/cart/providers/cart_provider.dart';
 import 'package:zippup/features/cart/models/cart_item.dart';
+import 'package:zippup/features/cart/models/saved_cart.dart';
 import 'package:zippup/services/payments/payments_service.dart';
+import 'package:zippup/services/delivery/delivery_code_service.dart';
 
 class CartScreen extends ConsumerWidget {
 	const CartScreen({super.key});
@@ -20,7 +24,7 @@ class CartScreen extends ConsumerWidget {
 					TextButton(onPressed: notifier.clear, child: const Text('Clear', style: TextStyle(color: Colors.white)))
 			]),
 			body: items.isEmpty
-					? const Center(child: Text('Cart is empty'))
+					? _buildEmptyCartWithSavedCarts(context, ref)
 					: ListView.separated(
 						padding: const EdgeInsets.all(16),
 						itemCount: items.length,
@@ -86,6 +90,82 @@ class CartScreen extends ConsumerWidget {
 			}
 		} catch (e) {
 			ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Checkout failed: $e')));
+		}
+	}
+
+	Widget _buildEmptyCartWithSavedCarts(BuildContext context, WidgetRef ref) {
+		final userId = FirebaseAuth.instance.currentUser?.uid;
+		
+		if (userId == null) {
+			return const Center(child: Text('Cart is empty'));
+		}
+
+		return FutureBuilder<List<SavedCart>>(
+			future: ref.read(cartProvider.notifier).getSavedCarts(userId),
+			builder: (context, snapshot) {
+				if (snapshot.connectionState == ConnectionState.waiting) {
+					return const Center(child: CircularProgressIndicator());
+				}
+
+				final savedCarts = snapshot.data ?? [];
+
+				return Center(
+					child: Column(
+						mainAxisAlignment: MainAxisAlignment.center,
+						children: [
+							Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey.shade400),
+							const SizedBox(height: 16),
+							const Text('Your cart is empty', style: TextStyle(fontSize: 18)),
+							
+							if (savedCarts.isNotEmpty) ...[
+								const SizedBox(height: 32),
+								const Text('Saved Carts', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+								const SizedBox(height: 16),
+								
+								...savedCarts.map((savedCart) => Card(
+									margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+									child: ListTile(
+										leading: Icon(Icons.bookmark, color: Colors.orange),
+										title: Text(savedCart.vendorName),
+										subtitle: Text('${savedCart.itemCount} items • ₦${savedCart.subtotal.toStringAsFixed(0)}'),
+										trailing: Row(
+											mainAxisSize: MainAxisSize.min,
+											children: [
+												IconButton(
+													onPressed: () => _loadSavedCart(context, ref, savedCart),
+													icon: Icon(Icons.restore),
+												),
+												IconButton(
+													onPressed: () => _deleteSavedCart(savedCart.id),
+													icon: Icon(Icons.delete, color: Colors.red),
+												),
+											],
+										),
+									),
+								)),
+							],
+						],
+					),
+				);
+			},
+		);
+	}
+
+	void _loadSavedCart(BuildContext context, WidgetRef ref, SavedCart savedCart) {
+		ref.read(cartProvider.notifier).replaceCart(savedCart.items);
+		ScaffoldMessenger.of(context).showSnackBar(
+			SnackBar(
+				content: Text('Loaded cart from ${savedCart.vendorName}'),
+				backgroundColor: Colors.green,
+			),
+		);
+	}
+
+	Future<void> _deleteSavedCart(String savedCartId) async {
+		try {
+			await FirebaseFirestore.instance.collection('saved_carts').doc(savedCartId).delete();
+		} catch (e) {
+			print('❌ Error deleting saved cart: $e');
 		}
 	}
 }
