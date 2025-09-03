@@ -60,11 +60,10 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		},
 		'emergency': {
 			'Ambulance': ['Basic Life Support', 'Advanced Life Support', 'Critical Care', 'Patient Transport'],
-			'Fire Service': ['Fire Fighting', 'Rescue Operations', 'Hazmat Response'],
-			'Security': ['Armed Response', 'Patrol Service', 'Alarm Response', 'VIP Protection'],
-			'Towing': ['Light Vehicle Towing', 'Heavy Vehicle Towing', 'Motorcycle Towing'],
+			'Fire Services': ['Fire Fighting', 'Rescue Operations', 'Hazmat Response', 'Emergency Response'],
+			'Security Services': ['Armed Response', 'Patrol Service', 'Alarm Response', 'VIP Protection'],
 			'Towing Van': ['Emergency Towing', 'Accident Recovery', 'Breakdown Service', 'Heavy Duty Towing'],
-			'Roadside': ['Battery Jump', 'Tire Change', 'Fuel Delivery', 'Lockout Service'],
+			'Roadside Assistance': ['Tyre Fix/Replacement', 'Battery Issues', 'Fuel Delivery', 'Mechanical Repair', 'Vehicle Lockout', 'Jumpstart Service'],
 		},
 		'personal': {
 			'Beauty': ['Hair Cut', 'Hair Styling', 'Makeup', 'Facial', 'Eyebrow Threading', 'Waxing', 'Eye Lashes', 'Lips Treatment'],
