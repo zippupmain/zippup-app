@@ -42,7 +42,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		super.didUpdateWidget(oldWidget);
 	}
 
-	void _bind() {
+	void _bind() async {
 		final uid = FirebaseAuth.instance.currentUser?.uid;
 		print('🔗 Binding notification listeners for user: $uid');
 		_unbind();
