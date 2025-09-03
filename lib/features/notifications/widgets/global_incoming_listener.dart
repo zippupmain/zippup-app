@@ -51,38 +51,47 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			return;
 		}
 		final db = FirebaseFirestore.instance;
-		print('✅ Setting up ride notification listener for user: $uid');
 		
-		// Listen for ride requests assigned to this driver OR unassigned rides for available drivers
-		_ridesSub = db.collection('rides')
-			.where('status', isEqualTo: 'requested')
-			.snapshots()
-			.listen((snap) async {
-				print('📡 Received ${snap.docs.length} ride requests from Firestore');
+		// CRITICAL FIX: Only set up transport listener if user is actually a transport provider
+		try {
+			print('🔍 Checking if user is transport provider before setting up listener');
+			final providerSnap = await db.collection('provider_profiles')
+				.where('userId', isEqualTo: uid)
+				.where('service', isEqualTo: 'transport')
+				.where('status', isEqualTo: 'active')
+				.limit(1)
+				.get();
+			
+			if (providerSnap.docs.isEmpty) {
+				print('❌ User is not a transport provider - skipping transport notifications');
+			} else {
+				print('✅ Setting up ride notification listener for transport provider: $uid');
 				
-				// Check if user has active transport provider profile AND is online
-				bool isActiveTransportProvider = false;
-				bool isOnline = false;
-				try {
-					print('🔍 Checking transport provider profile for user: $uid');
-					final providerSnap = await db.collection('provider_profiles')
-						.where('userId', isEqualTo: uid)
-						.where('service', isEqualTo: 'transport')
-						.where('status', isEqualTo: 'active')
-						.limit(1)
-						.get();
-					
-					if (providerSnap.docs.isNotEmpty) {
-						final providerData = providerSnap.docs.first.data();
-						isOnline = providerData['availabilityOnline'] == true;
-						isActiveTransportProvider = true;
-						print('✅ Found transport provider - Online: $isOnline');
-					} else {
-						print('❌ No active transport provider profile found');
-					}
-				} catch (e) {
-					print('❌ Error checking transport provider profile: $e');
-				}
+				// Listen for ride requests assigned to this driver OR unassigned rides for available drivers
+				_ridesSub = db.collection('rides')
+					.where('status', isEqualTo: 'requested')
+					.snapshots()
+					.listen((snap) async {
+						print('📡 Received ${snap.docs.length} ride requests from Firestore');
+						
+						// Check current online status
+						bool isOnline = false;
+						try {
+							final currentProviderSnap = await db.collection('provider_profiles')
+								.where('userId', isEqualTo: uid)
+								.where('service', isEqualTo: 'transport')
+								.where('status', isEqualTo: 'active')
+								.limit(1)
+								.get();
+							
+							if (currentProviderSnap.docs.isNotEmpty) {
+								final providerData = currentProviderSnap.docs.first.data();
+								isOnline = providerData['availabilityOnline'] == true;
+								print('✅ Transport provider online status: $isOnline');
+							}
+						} catch (e) {
+							print('❌ Error checking transport provider online status: $e');
+						}
 				
 				for (final d in snap.docs) {
 					final data = d.data();
@@ -93,12 +102,12 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					if (assignedDriverId == uid) {
 						shouldShow = true; // Directly assigned to this driver
 						print('✅ Ride ${d.id} assigned to this driver');
-					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && isActiveTransportProvider && isOnline) {
-						// Simple targeting: just check if provider is active and online
+					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && isOnline) {
+						// Simple targeting: just check if provider is online (already confirmed as transport provider)
 						shouldShow = true;
-						print('✅ Ride ${d.id} available for active online transport provider');
+						print('✅ Ride ${d.id} available for online transport provider');
 					} else {
-						print('🚫 Ride ${d.id} not for this user - Provider: $isActiveTransportProvider, Online: $isOnline, Assigned: $assignedDriverId');
+						print('🚫 Ride ${d.id} not for this user - Online: $isOnline, Assigned: $assignedDriverId');
 					}
 					
 					if (shouldShow && !_shown.contains('ride:${d.id}')) {
@@ -129,12 +138,17 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						// Also show dialog
 						_showRideDialog(d.id, data);
 					} else if (!shouldShow) {
-						print('🚫 Not showing ride ${d.id} - shouldShow: $shouldShow, assignedDriverId: $assignedDriverId, isActiveProvider: $isActiveTransportProvider');
+						print('🚫 Not showing ride ${d.id} - shouldShow: $shouldShow, assignedDriverId: $assignedDriverId, Online: $isOnline');
 					} else if (_shown.contains('ride:${d.id}')) {
 						print('⏭️ Already showed ride ${d.id}, skipping...');
 					}
 				}
 			});
+			}
+		} catch (e) {
+			print('❌ Error setting up transport notifications: $e');
+		}
+		
 		// Enhanced listeners for all service types
 		_setupServiceListener(db, uid, 'hire_bookings', 'hire');
 		_setupServiceListener(db, uid, 'emergency_bookings', 'emergency');
@@ -303,64 +317,38 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			print('❌ Critical error playing audible ride notification: $e');
 		}
 		
-		await showDialog(context: ctx, builder: (_) => AlertDialog(
-			title: const Text('🚗 New Ride Request'),
-			content: Column(
-				mainAxisSize: MainAxisSize.min,
-				crossAxisAlignment: CrossAxisAlignment.start,
-				children: [
-					ListTile(
-						contentPadding: EdgeInsets.zero,
-						leading: CircleAvatar(
-							backgroundImage: riderPhoto.isNotEmpty ? NetworkImage(riderPhoto) : null,
-							child: riderPhoto.isEmpty ? const Icon(Icons.person) : null,
-						),
-						title: Text(riderName ?? 'Customer'),
-						subtitle: Text('Rides: ${riderRides ?? 0}'),
-					),
-					const SizedBox(height: 8),
-					Card(
-						color: Colors.blue.shade50,
-						child: Padding(
-							padding: const EdgeInsets.all(12),
-							child: Column(
-								crossAxisAlignment: CrossAxisAlignment.start,
-								children: [
-									Row(
-										children: [
-											Icon(Icons.directions_car, color: Colors.blue.shade700, size: 20),
-											const SizedBox(width: 8),
-											Text('${(m['type'] ?? 'ride').toString().toUpperCase()} REQUEST', 
-												style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade700)),
-										],
-									),
-									const SizedBox(height: 8),
-									Row(
-										children: [
-											const Icon(Icons.my_location, color: Colors.green, size: 16),
-											const SizedBox(width: 4),
-											Expanded(child: Text('From: ${(m['pickupAddress'] ?? '').toString()}', style: const TextStyle(fontSize: 12))),
-										],
-									),
-									const SizedBox(height: 4),
-									Row(
-										children: [
-											const Icon(Icons.location_on, color: Colors.red, size: 16),
-											const SizedBox(width: 4),
-											Expanded(child: Text('To: ${(m['destinationAddresses'] is List && (m['destinationAddresses'] as List).isNotEmpty) ? (m['destinationAddresses'] as List).first.toString() : 'Not specified'}', style: const TextStyle(fontSize: 12))),
-										],
-									),
-								],
-							),
-						),
-					),
-				],
+		// Show phone-call style notification
+		await Navigator.of(ctx).push(
+			PageRouteBuilder(
+				opaque: false,
+				barrierDismissible: false,
+				pageBuilder: (context, animation, secondaryAnimation) => IncomingCallNotification(
+					requestId: id,
+					requestType: 'RIDE',
+					title: '🚗 ${(m['type'] ?? 'ride').toString().toUpperCase()} REQUEST',
+					subtitle: 'Rides completed: ${riderRides ?? 0}',
+					customerName: riderName,
+					pickupAddress: (m['pickupAddress'] ?? 'Unknown location').toString(),
+					destinationAddress: (m['destinationAddresses'] is List && (m['destinationAddresses'] as List).isNotEmpty) 
+						? (m['destinationAddresses'] as List).first.toString() 
+						: (m['destinationAddress'] ?? '').toString().isNotEmpty
+							? (m['destinationAddress'] ?? '').toString()
+							: null,
+					fare: (m['fare'] ?? 0) > 0 
+						? '₦${(m['fare'] ?? 0).toString()}' 
+						: null,
+					onAccept: () {
+						Navigator.pop(context);
+						_acceptRide(id);
+						context.go('/track/ride?rideId=$id');
+					},
+					onDecline: () {
+						Navigator.pop(context);
+						_declineRide(id);
+					},
+				),
 			),
-			actions: [
-				TextButton(onPressed: () { Navigator.pop(ctx); _declineRide(id); }, child: const Text('Decline')),
-				FilledButton(onPressed: () { Navigator.pop(ctx); _acceptRide(id); _go('/driver/ride?rideId=' + id); }, child: const Text('Accept')),
-			],
-		));
+		);
 	}
 
 	Future<void> _showOrderDialog(String id, Map<String, dynamic> m) async {
