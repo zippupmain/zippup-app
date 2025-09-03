@@ -34,12 +34,93 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	Timer? _riderSimTimer;
 	LatLng? _simulatedDriver;
 	bool _shownSummary = false;
+	bool _isDriver = false;
 
 	@override
 	void dispose() {
 		_riderSimTimer?.cancel();
 		_riderSimTimer = null;
 		super.dispose();
+	}
+
+	Future<void> _updateRideStatus(String rideId, RideStatus status) async {
+		try {
+			await FirebaseFirestore.instance.collection('rides').doc(rideId).update({
+				'status': status.name,
+				'updatedAt': FieldValue.serverTimestamp(),
+			});
+			
+			// Play completion sound for completed rides
+			if (status == RideStatus.completed) {
+				SoundService.instance.playTrill();
+			}
+			
+			print('✅ Updated ride $rideId to status: ${status.name}');
+		} catch (e) {
+			print('❌ Failed to update ride status: $e');
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					SnackBar(content: Text('Failed to update status: $e')),
+				);
+			}
+		}
+	}
+
+	List<Widget> _getDriverActions(Ride ride) {
+		if (!_isDriver) return [];
+		
+		switch (ride.status) {
+			case RideStatus.accepted:
+				return [
+					ElevatedButton.icon(
+						onPressed: () => _updateRideStatus(ride.id, RideStatus.arriving),
+						icon: const Icon(Icons.directions_car),
+						label: const Text('I\'m on my way'),
+						style: ElevatedButton.styleFrom(
+							backgroundColor: Colors.orange,
+							foregroundColor: Colors.white,
+						),
+					),
+				];
+			case RideStatus.arriving:
+				return [
+					ElevatedButton.icon(
+						onPressed: () => _updateRideStatus(ride.id, RideStatus.arrived),
+						icon: const Icon(Icons.location_on),
+						label: const Text('I have arrived'),
+						style: ElevatedButton.styleFrom(
+							backgroundColor: Colors.blue,
+							foregroundColor: Colors.white,
+						),
+					),
+				];
+			case RideStatus.arrived:
+				return [
+					ElevatedButton.icon(
+						onPressed: () => _updateRideStatus(ride.id, RideStatus.enroute),
+						icon: const Icon(Icons.play_arrow),
+						label: const Text('Start Trip'),
+						style: ElevatedButton.styleFrom(
+							backgroundColor: Colors.green,
+							foregroundColor: Colors.white,
+						),
+					),
+				];
+			case RideStatus.enroute:
+				return [
+					ElevatedButton.icon(
+						onPressed: () => _updateRideStatus(ride.id, RideStatus.completed),
+						icon: const Icon(Icons.check_circle),
+						label: const Text('Complete Trip'),
+						style: ElevatedButton.styleFrom(
+							backgroundColor: Colors.purple,
+							foregroundColor: Colors.white,
+						),
+					),
+				];
+			default:
+				return [];
+		}
 	}
 
 	List<String> _stepsFor(RideType type) => const ['Accepted', 'Arriving', 'Arrived', 'Enroute', 'Completed'];
@@ -152,18 +233,35 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 
 	@override
 	Widget build(BuildContext context) {
-		return Scaffold(
-			appBar: AppBar(title: const Text('Track Ride')),
-			body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-				stream: FirebaseFirestore.instance.collection('rides').doc(widget.rideId).snapshots(),
-				builder: (context, snap) {
-					if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-					final data = snap.data!.data() ?? {};
-					final ride = Ride.fromJson(widget.rideId, data);
-					final steps = _stepsFor(ride.type);
-					final idx = _indexFor(ride.status, steps);
-
-					final driverLat = (data['driverLat'] as num?)?.toDouble();
+		return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+			stream: FirebaseFirestore.instance.collection('rides').doc(widget.rideId).snapshots(),
+			builder: (context, snap) {
+				if (!snap.hasData) {
+					return Scaffold(
+						appBar: AppBar(title: const Text('Track Ride')),
+						body: const Center(child: CircularProgressIndicator()),
+					);
+				}
+				
+				final data = snap.data!.data() ?? {};
+				final ride = Ride.fromJson(widget.rideId, data);
+				final steps = _stepsFor(ride.type);
+				final idx = _indexFor(ride.status, steps);
+				
+				// Check if current user is the driver
+				final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+				_isDriver = currentUserId != null && currentUserId == ride.driverId;
+				
+				return Scaffold(
+					appBar: AppBar(title: Text(_isDriver ? 'Manage Ride' : 'Track Ride')),
+					body: _buildRideContent(context, ride, steps, idx, data),
+				);
+			},
+		);
+	}
+	
+	Widget _buildRideContent(BuildContext context, Ride ride, List<String> steps, int idx, Map<String, dynamic> data) {
+		final driverLat = (data['driverLat'] as num?)?.toDouble();
 					final driverLng = (data['driverLng'] as num?)?.toDouble();
 					final pickupLat = (data['pickupLat'] as num?)?.toDouble();
 					final pickupLng = (data['pickupLng'] as num?)?.toDouble();
@@ -681,10 +779,18 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 											padding: const EdgeInsets.only(top: 8.0),
 											child: Text('ETA: $_etaMinutes min'),
 										),
-										if (_rideCancelable(ride.status)) Align(
+										if (_rideCancelable(ride.status) && !_isDriver) Align(
 											alignment: Alignment.centerRight,
 											child: TextButton.icon(onPressed: () => _cancel(context, widget.rideId), icon: const Icon(Icons.cancel_outlined), label: const Text('Cancel ride')),
 										),
+										// Driver action buttons
+										..._getDriverActions(ride).map((button) => Padding(
+											padding: const EdgeInsets.only(top: 8.0),
+											child: SizedBox(
+												width: double.infinity,
+												child: button,
+											),
+										)),
 									],
 								),
 							),
