@@ -294,18 +294,20 @@ class OrderDispatchEngine {
 
   /// Service-specific filtering logic
   bool _passesServiceSpecificFilters(String service, String serviceClass, Map<String, dynamic> providerData) {
-    switch (service) {
-      case 'transport':
-        return _validateTransportProvider(serviceClass, providerData);
-      case 'emergency':
-        return _validateEmergencyProvider(serviceClass, providerData);
-      case 'hire':
-        return _validateHireProvider(serviceClass, providerData);
-      case 'moving':
-        return _validateMovingProvider(serviceClass, providerData);
-      default:
-        return true; // Allow other services
-    }
+    		switch (service) {
+			case 'transport':
+				return _validateTransportProvider(serviceClass, providerData);
+			case 'emergency':
+				return _validateEmergencyProvider(serviceClass, providerData);
+			case 'hire':
+				return _validateHireProvider(serviceClass, providerData);
+			case 'moving':
+				return _validateMovingProvider(serviceClass, providerData);
+			case 'delivery':
+				return _validateDeliveryProvider(serviceClass, providerData);
+			default:
+				return true; // Allow other services
+		}
   }
 
   /// Transport-specific validation
@@ -646,10 +648,48 @@ class OrderDispatchEngine {
 				return skills.contains('battery_jumpstart') || equipment.contains('jumper_cables');
 			default:
 				return false;
-		}
+				}
 	}
 
-  /// Dispose method for cleanup
+	/// Delivery service validation
+	bool _validateDeliveryProvider(String requestedClass, Map<String, dynamic> data) {
+		final enabledClasses = data['enabledClasses'] as Map<String, dynamic>? ?? {};
+		final subcategory = data['subcategory']?.toString();
+		final vehicleType = data['vehicleInfo']?['vehicleType']?.toString()?.toLowerCase();
+
+		// Check explicit class enablement
+		if (enabledClasses[requestedClass] == true) {
+			return true;
+		}
+
+		// Vehicle type compatibility for delivery services
+		final vehicleCompatibility = {
+			'food_delivery': ['motorcycle', 'bicycle', 'car', 'scooter'],
+			'package_delivery': ['motorcycle', 'car', 'van', 'bicycle'],
+			'document_delivery': ['motorcycle', 'bicycle', 'car', 'scooter'],
+			'express_delivery': ['motorcycle', 'car', 'scooter'],
+			'bulk_delivery': ['van', 'small truck', 'car'],
+		};
+
+		final compatibleVehicles = vehicleCompatibility[requestedClass.toLowerCase()] ?? [];
+		if (compatibleVehicles.isNotEmpty && vehicleType != null) {
+			return compatibleVehicles.contains(vehicleType);
+		}
+
+		// Subcategory fallback matching
+		final subcategoryCompatibility = {
+			'Food Delivery': ['restaurant_delivery', 'fast_food', 'fine_dining', 'grocery_delivery'],
+			'Package Delivery': ['same_day', 'next_day', 'express', 'standard'],
+			'Document Delivery': ['legal_documents', 'business_documents', 'urgent_courier'],
+			'Express Delivery': ['1_hour_express', '2_hour_express', 'same_day_express'],
+			'Bulk Delivery': ['wholesale_delivery', 'b2b_logistics', 'multi_drop'],
+		};
+
+		final compatibleClasses = subcategoryCompatibility[subcategory] ?? [];
+		return compatibleClasses.contains(requestedClass.toLowerCase());
+	}
+
+	/// Dispose method for cleanup
   void dispose() {
     for (final timer in _timeoutTimers.values) {
       timer.cancel();

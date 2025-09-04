@@ -125,6 +125,7 @@ import 'package:zippup/features/rentals/presentation/rentals_provider_dashboard_
 import 'package:zippup/features/marketplace/presentation/marketplace_provider_dashboard_screen.dart' as mkdash;
 import 'package:zippup/features/others/presentation/others_provider_dashboard_screen.dart' as othersdash;
 import 'package:zippup/features/delivery/presentation/delivery_provider_dashboard_screen.dart' as deliverydash;
+import 'package:zippup/features/delivery/presentation/delivery_dashboard_screen.dart';
 import 'package:zippup/features/admin/presentation/admin_hub_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -309,6 +310,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           path: '/delivery/dashboard',
           name: 'deliveryDashboard',
           builder: (context, state) => const EnhancedDeliveryDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/delivery/provider-dashboard',
+          name: 'deliveryProviderDashboard',
+          builder: (context, state) => const DeliveryProviderDashboardScreen(),
         ),
 				GoRoute(
 					path: '/food/vendors/:category',

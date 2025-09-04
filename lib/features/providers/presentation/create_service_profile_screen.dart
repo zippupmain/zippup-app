@@ -29,6 +29,10 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	// KYC/public/admin details
 	final _driverName = TextEditingController();
 	final _plateNumber = TextEditingController();
+	final _vehicleModel = TextEditingController();
+	final _vehicleColor = TextEditingController();
+	final _vehicleYear = TextEditingController();
+	String? _selectedVehicleType;
 	final List<Uint8List> _vehiclePhotos360 = [];
 
 	// Service type mappings (same as apply provider form)
@@ -37,6 +41,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'moving': ['Truck', 'Backie/Pickup', 'Courier'],
 		'hire': ['Home Services', 'Tech Services', 'Construction', 'Auto Services', 'Personal Care'],
 		'emergency': ['Ambulance', 'Fire Services', 'Security Services', 'Towing Van', 'Roadside Assistance'],
+		'delivery': ['Food Delivery', 'Package Delivery', 'Document Delivery', 'Express Delivery', 'Bulk Delivery'],
 		'personal': ['Beauty Services', 'Wellness Services', 'Fitness Services', 'Tutoring Services', 'Cleaning Services', 'Childcare Services'],
 		'others': ['Events Planning', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Event Ticketing'],
 	};
@@ -64,6 +69,13 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			'Security Services': ['Armed Response', 'Patrol Service', 'Alarm Response', 'VIP Protection'],
 			'Towing Van': ['Emergency Towing', 'Accident Recovery', 'Breakdown Service', 'Heavy Duty Towing'],
 			'Roadside Assistance': ['Tyre Fix/Replacement', 'Battery Issues', 'Fuel Delivery', 'Mechanical Repair', 'Vehicle Lockout', 'Jumpstart Service'],
+		},
+		'delivery': {
+			'Food Delivery': ['Restaurant Delivery', 'Fast Food', 'Fine Dining', 'Grocery Delivery', 'Beverage Delivery'],
+			'Package Delivery': ['Same Day', 'Next Day', 'Express (2-4 hours)', 'Standard (24-48 hours)', 'Scheduled Delivery'],
+			'Document Delivery': ['Legal Documents', 'Business Documents', 'Personal Documents', 'Certified Mail', 'Urgent Courier'],
+			'Express Delivery': ['1-Hour Express', '2-Hour Express', 'Same Day Express', 'Overnight Express'],
+			'Bulk Delivery': ['Wholesale Delivery', 'B2B Logistics', 'Multi-Drop Routes', 'Warehouse Distribution'],
 		},
 		'personal': {
 			'Beauty': ['Hair Cut', 'Hair Styling', 'Makeup', 'Facial', 'Eyebrow Threading', 'Waxing', 'Eye Lashes', 'Lips Treatment'],
@@ -141,7 +153,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 
 	Widget _kycSection() {
 		final cat = (_category ?? '').toLowerCase();
-		final needsVehicle = ['transport','moving','emergency'].contains(cat);
+		final needsVehicle = ['transport','moving','emergency','delivery'].contains(cat);
 		final needsFoodDocs = ['food','grocery'].contains(cat);
 		if (!needsVehicle && !needsFoodDocs) return const SizedBox.shrink();
 		return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -152,6 +164,65 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				TextField(controller: _driverName, decoration: const InputDecoration(labelText: 'Driver name (public)')),
 				TextField(controller: _plateNumber, decoration: const InputDecoration(labelText: 'Plate number (public)')),
 				const SizedBox(height: 8),
+				
+				// Vehicle details section
+				const Text('Vehicle Details', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+				const SizedBox(height: 8),
+				
+				// Vehicle type dropdown
+				DropdownButtonFormField<String>(
+					value: _selectedVehicleType,
+					decoration: const InputDecoration(
+						labelText: 'Vehicle Type',
+						border: OutlineInputBorder(),
+					),
+					items: _getVehicleTypes().map((type) => DropdownMenuItem(
+						value: type,
+						child: Text(type),
+					)).toList(),
+					onChanged: (value) => setState(() => _selectedVehicleType = value),
+				),
+				const SizedBox(height: 8),
+				
+				// Vehicle model and color
+				Row(
+					children: [
+						Expanded(
+							child: TextField(
+								controller: _vehicleModel,
+								decoration: const InputDecoration(
+									labelText: 'Vehicle Model',
+									hintText: 'e.g., Toyota Camry',
+									border: OutlineInputBorder(),
+								),
+							),
+						),
+						const SizedBox(width: 12),
+						Expanded(
+							child: TextField(
+								controller: _vehicleColor,
+								decoration: const InputDecoration(
+									labelText: 'Vehicle Color',
+									hintText: 'e.g., Blue',
+									border: OutlineInputBorder(),
+								),
+							),
+						),
+					],
+				),
+				const SizedBox(height: 8),
+				
+				// Vehicle year
+				TextField(
+					controller: _vehicleYear,
+					decoration: const InputDecoration(
+						labelText: 'Vehicle Year',
+						hintText: 'e.g., 2020',
+						border: OutlineInputBorder(),
+					),
+					keyboardType: TextInputType.number,
+				),
+				const SizedBox(height: 16),
 				Wrap(spacing: 8, runSpacing: 8, children: [
 					..._vehiclePhotos360.map((b) => Container(width: 64, height: 64, color: Colors.black12, child: const Icon(Icons.photo))),
 					OutlinedButton.icon(onPressed: () async { final b = await _pickImage(); if (b != null) setState(() => _vehiclePhotos360.add(b)); }, icon: const Icon(Icons.add_a_photo), label: const Text('Add 360° photo')),
@@ -291,6 +362,12 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						'publicDetails': {
 							'driverName': _driverName.text.trim().isEmpty ? null : _driverName.text.trim(),
 							'plateNumber': _plateNumber.text.trim().isEmpty ? null : _plateNumber.text.trim(),
+							'vehicleDetails': {
+								'vehicleType': _selectedVehicleType,
+								'vehicleModel': _vehicleModel.text.trim().isEmpty ? null : _vehicleModel.text.trim(),
+								'vehicleColor': _vehicleColor.text.trim().isEmpty ? null : _vehicleColor.text.trim(),
+								'vehicleYear': _vehicleYear.text.trim().isEmpty ? null : int.tryParse(_vehicleYear.text.trim()),
+							},
 							'vehiclePhotos360': vehiclePhotoUrls,
 						},
 						'adminDocs': uploads,
@@ -475,6 +552,22 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving...' : 'Create')),
 			]),
 		);
+	}
+
+	List<String> _getVehicleTypes() {
+		final category = _category?.toLowerCase();
+		switch (category) {
+			case 'transport':
+				return ['Car/Sedan', 'SUV', 'Hatchback', 'Motorcycle', 'Tricycle', 'Bus', 'Mini Bus'];
+			case 'moving':
+				return ['Pickup Truck', 'Small Truck', 'Medium Truck', 'Large Truck', 'Van', 'Motorcycle'];
+			case 'emergency':
+				return ['Ambulance', 'Fire Truck', 'Police Vehicle', 'Towing Truck', 'Emergency Van', 'Motorcycle'];
+			case 'delivery':
+				return ['Motorcycle', 'Bicycle', 'Car', 'Van', 'Small Truck', 'Scooter'];
+			default:
+				return ['Car', 'Motorcycle', 'Van', 'Truck'];
+		}
 	}
 }
 
