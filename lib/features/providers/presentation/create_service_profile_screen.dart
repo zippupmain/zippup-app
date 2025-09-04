@@ -68,14 +68,17 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			'Fire Services': ['Fire Fighting', 'Rescue Operations', 'Hazmat Response', 'Emergency Response'],
 			'Security Services': ['Armed Response', 'Patrol Service', 'Alarm Response', 'VIP Protection'],
 			'Towing Van': ['Emergency Towing', 'Accident Recovery', 'Breakdown Service', 'Heavy Duty Towing'],
-			'Roadside Assistance': ['Tyre Fix/Replacement', 'Battery Issues', 'Fuel Delivery', 'Mechanical Repair', 'Vehicle Lockout', 'Jumpstart Service'],
+			'Tyre Fix/Replacement': ['Flat Tyre Repair', 'Tyre Replacement', 'Puncture Fix', 'Tyre Balancing', 'Emergency Tyre Service'],
+			'Battery Issues': ['Battery Replacement', 'Battery Testing', 'Charging System Repair', 'Alternator Service', 'Electrical Diagnostics'],
+			'Fuel Delivery': ['Petrol Delivery', 'Diesel Delivery', 'Emergency Fuel', 'Fuel System Repair', 'Fuel Pump Service'],
+			'Mechanical Repair': ['Engine Diagnostics', 'Brake Repair', 'Transmission Service', 'Cooling System', 'General Mechanical'],
+			'Vehicle Lockout': ['Key Replacement', 'Lock Repair', 'Emergency Access', 'Ignition Repair', 'Remote Programming'],
+			'Jumpstart Service': ['Battery Jumpstart', 'Charging Service', 'Electrical System Check', 'Starter Motor Service', 'Power Supply'],
 		},
 		'delivery': {
-			'Food Delivery': ['Restaurant Delivery', 'Fast Food', 'Fine Dining', 'Grocery Delivery', 'Beverage Delivery'],
-			'Package Delivery': ['Same Day', 'Next Day', 'Express (2-4 hours)', 'Standard (24-48 hours)', 'Scheduled Delivery'],
-			'Document Delivery': ['Legal Documents', 'Business Documents', 'Personal Documents', 'Certified Mail', 'Urgent Courier'],
-			'Express Delivery': ['1-Hour Express', '2-Hour Express', 'Same Day Express', 'Overnight Express'],
-			'Bulk Delivery': ['Wholesale Delivery', 'B2B Logistics', 'Multi-Drop Routes', 'Warehouse Distribution'],
+			'Bicycle': ['Food Delivery', 'Document Delivery', 'Small Package Delivery', 'Express Delivery (Local)', 'Eco-Friendly Delivery'],
+			'Motorcycle': ['Food Delivery', 'Package Delivery', 'Document Delivery', 'Express Delivery', 'Pharmacy Delivery', 'Same Day Delivery'],
+			'Car': ['Food Delivery', 'Package Delivery', 'Bulk Delivery', 'Grocery Delivery', 'Multi-Drop Delivery', 'Long Distance Delivery'],
 		},
 		'personal': {
 			'Beauty': ['Hair Cut', 'Hair Styling', 'Makeup', 'Facial', 'Eyebrow Threading', 'Waxing', 'Eye Lashes', 'Lips Treatment'],
@@ -137,7 +140,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'moving': ['Truck', 'Pickup', 'Courier'], // Corrected structure
 		'hire': ['Home', 'Tech', 'Construction', 'Auto'], // Simplified names, removed Personal Care
 		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing Van', 'Tyre Fix/Replacement', 'Battery Issues', 'Fuel Delivery', 'Mechanical Repair', 'Vehicle Lockout', 'Jumpstart Service'], // Specific roadside services
-		'delivery': ['Food Delivery', 'Package Delivery', 'Document Delivery', 'Express Delivery', 'Bulk Delivery'], // New delivery category
+		'delivery': ['Bicycle', 'Motorcycle', 'Car'], // Vehicle types for delivery
 		'personal': ['Beauty', 'Wellness', 'Fitness', 'Cleaning', 'Childcare'], // Removed Tutoring, simplified names
 		'others': ['Events Planning', 'Event Ticketing', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Medical Consulting'], // Added Medical Consulting
 		'food': ['Fast Food', 'Local Cuisine', 'Pizza', 'Continental', 'Desserts', 'Drinks'], // Updated Local to Local Cuisine
@@ -154,7 +157,13 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 
 	Widget _kycSection() {
 		final cat = (_category ?? '').toLowerCase();
-		final needsVehicle = ['transport','moving','emergency','delivery'].contains(cat);
+		final sub = (_subcategory ?? '').toLowerCase();
+		
+		// Check if this service needs vehicle details
+		final needsVehicle = ['transport','moving','delivery'].contains(cat) || 
+			(cat == 'emergency' && ['ambulance', 'fire service', 'towing van'].contains(sub));
+		
+		// Roadside services don't need vehicle details - they focus on skills/equipment
 		final needsFoodDocs = ['food','grocery'].contains(cat);
 		if (!needsVehicle && !needsFoodDocs) return const SizedBox.shrink();
 		return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -557,15 +566,24 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 
 	List<String> _getVehicleTypes() {
 		final category = _category?.toLowerCase();
+		final subcategory = _subcategory?.toLowerCase();
+		
 		switch (category) {
 			case 'transport':
 				return ['Car/Sedan', 'SUV', 'Hatchback', 'Motorcycle', 'Tricycle', 'Bus', 'Mini Bus'];
 			case 'moving':
 				return ['Pickup Truck', 'Small Truck', 'Medium Truck', 'Large Truck', 'Van', 'Motorcycle'];
 			case 'emergency':
-				return ['Ambulance', 'Fire Truck', 'Police Vehicle', 'Towing Truck', 'Emergency Van', 'Motorcycle'];
+				if (subcategory == 'ambulance') return ['Ambulance', 'Medical Van', 'Emergency Vehicle'];
+				if (subcategory == 'fire service') return ['Fire Truck', 'Fire Engine', 'Rescue Vehicle'];
+				if (subcategory == 'towing van') return ['Towing Truck', 'Recovery Vehicle', 'Heavy Duty Tow'];
+				return ['Emergency Vehicle', 'Van', 'Truck'];
 			case 'delivery':
-				return ['Motorcycle', 'Bicycle', 'Car', 'Van', 'Small Truck', 'Scooter'];
+				// For delivery, the subcategory IS the vehicle type
+				if (subcategory == 'bicycle') return ['Bicycle', 'Electric Bike'];
+				if (subcategory == 'motorcycle') return ['Motorcycle', 'Scooter', 'Electric Scooter'];
+				if (subcategory == 'car') return ['Car', 'Hatchback', 'Sedan', 'SUV'];
+				return ['Motorcycle', 'Bicycle', 'Car', 'Van'];
 			default:
 				return ['Car', 'Motorcycle', 'Van', 'Truck'];
 		}
