@@ -136,7 +136,8 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		'transport': ['Taxi', 'Bike', 'Bus/Charter'], // Removed Courier, added Bus/Charter
 		'moving': ['Truck', 'Pickup', 'Courier'], // Corrected structure
 		'hire': ['Home', 'Tech', 'Construction', 'Auto'], // Simplified names, removed Personal Care
-		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing', 'Towing Van', 'Roadside'], // Added Towing Van
+		'emergency': ['Ambulance', 'Fire Service', 'Security', 'Towing Van', 'Tyre Fix/Replacement', 'Battery Issues', 'Fuel Delivery', 'Mechanical Repair', 'Vehicle Lockout', 'Jumpstart Service'], // Specific roadside services
+		'delivery': ['Food Delivery', 'Package Delivery', 'Document Delivery', 'Express Delivery', 'Bulk Delivery'], // New delivery category
 		'personal': ['Beauty', 'Wellness', 'Fitness', 'Cleaning', 'Childcare'], // Removed Tutoring, simplified names
 		'others': ['Events Planning', 'Event Ticketing', 'Tutoring', 'Education', 'Creative Services', 'Business Services', 'Medical Consulting'], // Added Medical Consulting
 		'food': ['Fast Food', 'Local Cuisine', 'Pizza', 'Continental', 'Desserts', 'Drinks'], // Updated Local to Local Cuisine
