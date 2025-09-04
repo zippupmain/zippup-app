@@ -126,6 +126,7 @@ import 'package:zippup/features/marketplace/presentation/marketplace_provider_da
 import 'package:zippup/features/others/presentation/others_provider_dashboard_screen.dart' as othersdash;
 import 'package:zippup/features/delivery/presentation/delivery_provider_dashboard_screen.dart' as deliverydash;
 import 'package:zippup/features/delivery/presentation/delivery_dashboard_screen.dart';
+import 'package:zippup/features/delivery/presentation/delivery_tracking_screen.dart';
 import 'package:zippup/features/admin/presentation/admin_hub_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -315,6 +316,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           path: '/delivery/provider-dashboard',
           name: 'deliveryProviderDashboard',
           builder: (context, state) => const DeliveryProviderDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/delivery/track/:deliveryId',
+          name: 'deliveryTracking',
+          builder: (context, state) => DeliveryTrackingScreen(
+            deliveryId: state.pathParameters['deliveryId']!,
+          ),
         ),
 				GoRoute(
 					path: '/food/vendors/:category',

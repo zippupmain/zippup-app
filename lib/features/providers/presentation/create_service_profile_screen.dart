@@ -22,6 +22,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	String? _subcategory;
 	String? _serviceType; // New: Specific service type
 	String? _serviceSubtype; // New: Specific service sub-type
+	List<String> _selectedDeliveryServices = []; // For delivery multi-selection
 	String _status = 'active';
 	String _type = 'individual';
 	bool _saving = false;
@@ -76,9 +77,9 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			'Jumpstart Service': ['Battery Jumpstart', 'Charging Service', 'Electrical System Check', 'Starter Motor Service', 'Power Supply'],
 		},
 		'delivery': {
-			'Bicycle': ['Food Delivery', 'Document Delivery', 'Small Package Delivery', 'Express Delivery (Local)', 'Eco-Friendly Delivery'],
-			'Motorcycle': ['Food Delivery', 'Package Delivery', 'Document Delivery', 'Express Delivery', 'Pharmacy Delivery', 'Same Day Delivery'],
-			'Car': ['Food Delivery', 'Package Delivery', 'Bulk Delivery', 'Grocery Delivery', 'Multi-Drop Delivery', 'Long Distance Delivery'],
+			'Bicycle': ['Food Delivery', 'Grocery Delivery', 'Document Delivery', 'Small Package Delivery', 'Marketplace Delivery', 'Express Delivery (Local)', 'Eco-Friendly Delivery'],
+			'Motorcycle': ['Food Delivery', 'Grocery Delivery', 'Package Delivery', 'Document Delivery', 'Marketplace Delivery', 'Express Delivery', 'Pharmacy Delivery', 'Same Day Delivery'],
+			'Car': ['Food Delivery', 'Grocery Delivery', 'Package Delivery', 'Bulk Delivery', 'Marketplace Delivery', 'Multi-Drop Delivery', 'Long Distance Delivery', 'Heavy Item Delivery'],
 		},
 		'personal': {
 			'Beauty': ['Hair Cut', 'Hair Styling', 'Makeup', 'Facial', 'Eyebrow Threading', 'Waxing', 'Eye Lashes', 'Lips Treatment'],
@@ -160,10 +161,13 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 		final sub = (_subcategory ?? '').toLowerCase();
 		
 		// Check if this service needs vehicle details
-		final needsVehicle = ['transport','moving','delivery'].contains(cat) || 
-			(cat == 'emergency' && ['ambulance', 'fire service', 'towing van'].contains(sub));
+		final needsVehicle = ['transport','moving'].contains(cat) || 
+			(cat == 'emergency' && ['ambulance', 'fire service', 'towing van'].contains(sub)) ||
+			(cat == 'delivery' && ['motorcycle', 'car'].contains(sub));
 		
-		// Roadside services don't need vehicle details - they focus on skills/equipment
+		// Bicycle delivery and roadside services don't need vehicle details
+		final isBicycleDelivery = (cat == 'delivery' && sub == 'bicycle');
+		final isRoadsideService = (cat == 'emergency' && ['tyre fix/replacement', 'battery issues', 'fuel delivery', 'mechanical repair', 'vehicle lockout', 'jumpstart service'].contains(sub));
 		final needsFoodDocs = ['food','grocery'].contains(cat);
 		if (!needsVehicle && !needsFoodDocs) return const SizedBox.shrink();
 		return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -281,6 +285,15 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please sign in first')));
 				return;
 			}
+
+			// Validate delivery service selection
+			if (_category == 'delivery' && _selectedDeliveryServices.isEmpty) {
+				if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text('Please select at least one delivery service type'))
+				);
+				return;
+			}
+
 			final uid = user.uid;
 			final nowIso = DateTime.now().toIso8601String();
 			final service = (_category ?? 'transport');
@@ -347,12 +360,28 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 			// Create provider profile for Provider Hub
 			print('💾 Creating provider profile...');
 			try {
-				await FirebaseFirestore.instance.collection('provider_profiles').add({
+				// Handle delivery services multi-selection
+				final serviceData = <String, dynamic>{
 					'userId': uid,
 					'service': service,
 					'subcategory': _subcategory, // For notification targeting
-					'serviceType': _serviceType, // For granular notification targeting
-					'serviceSubtype': _serviceSubtype, // For ultra-specific targeting
+				};
+
+				if (_category == 'delivery') {
+					// For delivery, store all selected service types
+					serviceData['serviceTypes'] = _selectedDeliveryServices;
+					serviceData['serviceType'] = _selectedDeliveryServices.isNotEmpty ? _selectedDeliveryServices.first : null;
+					serviceData['enabledClasses'] = Map<String, bool>.fromEntries(
+						_selectedDeliveryServices.map((service) => MapEntry(service, true))
+					);
+				} else {
+					// For other services, use single service type
+					serviceData['serviceType'] = _serviceType;
+					serviceData['serviceSubtype'] = _serviceSubtype;
+				}
+
+				await FirebaseFirestore.instance.collection('provider_profiles').add({
+					...serviceData,
 					'status': initialStatus,
 					'availabilityOnline': false,
 					'rating': 0.0,
@@ -439,7 +468,8 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						_category = v; 
 						_subcategory = null; 
 						_serviceType = null; 
-						_serviceSubtype = null; 
+						_serviceSubtype = null;
+						_selectedDeliveryServices = []; // Reset delivery services when category changes
 					}),
 				),
 				if (subs.isNotEmpty)
@@ -450,11 +480,12 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						onChanged: (v) => setState(() { 
 							_subcategory = v; 
 							_serviceType = null; 
-							_serviceSubtype = null; 
+							_serviceSubtype = null;
+							_selectedDeliveryServices = []; // Reset delivery services when subcategory changes
 						}),
 					),
 				
-				// Service Type dropdown (more specific)
+				// Service Type selection (dropdown for most services, multi-select for delivery)
 				if (_subcategory != null)
 					Builder(
 						builder: (context) {
@@ -475,6 +506,51 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 								);
 							}
 							
+							// Multi-select for delivery services
+							if (_category == 'delivery') {
+								return Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										const Text(
+											'🚚 Delivery Services (Select all that apply):',
+											style: TextStyle(fontWeight: FontWeight.w600),
+										),
+										const SizedBox(height: 8),
+										Wrap(
+											spacing: 8,
+											runSpacing: 8,
+											children: availableTypes.map((serviceType) {
+												final isSelected = _selectedDeliveryServices.contains(serviceType);
+												return FilterChip(
+													label: Text(serviceType),
+													selected: isSelected,
+													onSelected: (selected) {
+														setState(() {
+															if (selected) {
+																_selectedDeliveryServices.add(serviceType);
+															} else {
+																_selectedDeliveryServices.remove(serviceType);
+															}
+														});
+													},
+													selectedColor: Colors.blue.shade100,
+													checkmarkColor: Colors.blue.shade700,
+												);
+											}).toList(),
+										),
+										if (_selectedDeliveryServices.isEmpty)
+											Padding(
+												padding: const EdgeInsets.only(top: 8),
+												child: Text(
+													'Please select at least one delivery service type',
+													style: TextStyle(color: Colors.red.shade600, fontSize: 12),
+												),
+											),
+									],
+								);
+							}
+							
+							// Regular dropdown for other services
 							return DropdownButtonFormField<String>(
 								value: _serviceType,
 								items: availableTypes
