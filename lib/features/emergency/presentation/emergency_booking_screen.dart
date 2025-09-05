@@ -20,6 +20,7 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 	final TextEditingController _addressController = TextEditingController();
 	final TextEditingController _descriptionController = TextEditingController();
 	late String _selectedType;
+	List<String> _selectedTypes = []; // For multi-selection
 	String _selectedPriority = 'high';
 	bool _isBooking = false;
 
@@ -27,6 +28,10 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 	void initState() {
 		super.initState();
 		_selectedType = widget.preSelectedType ?? 'ambulance';
+		// Initialize selected types with pre-selected type if available
+		if (widget.preSelectedType != null) {
+			_selectedTypes = [widget.preSelectedType!];
+		}
 	}
 
 	final Map<String, String> _emergencyTypes = const {
@@ -67,6 +72,14 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 			return;
 		}
 
+		// Validate emergency service selection (only if not pre-selected)
+		if (widget.preSelectedType == null && _selectedTypes.isEmpty) {
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(content: Text('Please select at least one emergency service type'))
+			);
+			return;
+		}
+
 		setState(() => _isBooking = true);
 
 		try {
@@ -84,10 +97,14 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 							  (_selectedPriority == 'high' ? 7500.0 : 
 							  (_selectedPriority == 'medium' ? 5000.0 : 3000.0));
 
+			// Determine the service types to use
+			final serviceTypes = widget.preSelectedType != null ? [_selectedType] : _selectedTypes;
+			
 			await bookingRef.set({
 				'clientId': uid,
 				'customerId': uid, // For dispatch engine compatibility
-				'type': _selectedType,
+				'type': _selectedType, // Primary type for backward compatibility
+				'serviceTypes': serviceTypes, // All selected service types
 				'service': 'emergency', // For dispatch engine
 				'serviceClass': _selectedType, // Specific emergency class
 				'description': description,
@@ -149,17 +166,42 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 								child: Column(
 									crossAxisAlignment: CrossAxisAlignment.start,
 									children: [
-										const Text('Emergency Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+										const Text('Emergency Services (Select all that apply)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
 										const SizedBox(height: 12),
-										..._emergencyTypes.entries.map((entry) {
-											return RadioListTile<String>(
-												value: entry.key,
-												groupValue: _selectedType,
-												onChanged: (value) => setState(() => _selectedType = value!),
-												title: Text(entry.value, style: const TextStyle(color: Colors.black)),
-												dense: true,
-											);
-										}).toList(),
+										Wrap(
+											spacing: 8,
+											runSpacing: 8,
+											children: _emergencyTypes.entries.map((entry) {
+												final isSelected = _selectedTypes.contains(entry.key);
+												return FilterChip(
+													label: Text(entry.value),
+													selected: isSelected,
+													onSelected: (selected) {
+														setState(() {
+															if (selected) {
+																_selectedTypes.add(entry.key);
+																_selectedType = entry.key; // Keep for backward compatibility
+															} else {
+																_selectedTypes.remove(entry.key);
+																if (_selectedTypes.isNotEmpty) {
+																	_selectedType = _selectedTypes.first;
+																}
+															}
+														});
+													},
+													selectedColor: Colors.red.shade100,
+													checkmarkColor: Colors.red.shade700,
+												);
+											}).toList(),
+										),
+										if (_selectedTypes.isEmpty)
+											Padding(
+												padding: const EdgeInsets.only(top: 8),
+												child: Text(
+													'Please select at least one emergency service type',
+													style: TextStyle(color: Colors.red.shade600, fontSize: 12),
+												),
+											),
 									],
 								),
 							),
@@ -186,6 +228,32 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 													),
 												),
 											],
+										),
+									],
+								),
+							),
+						),
+
+						// Show selected services when multiple are selected
+						if (!isPreSelected && _selectedTypes.isNotEmpty) Card(
+							color: Colors.green.shade50,
+							child: Padding(
+								padding: const EdgeInsets.all(16),
+								child: Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										Text('Selected Services (${_selectedTypes.length})', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green.shade700)),
+										const SizedBox(height: 8),
+										Wrap(
+											spacing: 8,
+											runSpacing: 8,
+											children: _selectedTypes.map((type) {
+												return Chip(
+													label: Text(_emergencyTypes[type] ?? type),
+													backgroundColor: Colors.green.shade100,
+													labelStyle: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w500),
+												);
+											}).toList(),
 										),
 									],
 								),

@@ -23,6 +23,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	String? _serviceType; // New: Specific service type
 	String? _serviceSubtype; // New: Specific service sub-type
 	List<String> _selectedDeliveryServices = []; // For delivery multi-selection
+	List<String> _selectedEmergencyServices = []; // For emergency multi-selection
 	String _status = 'active';
 	String _type = 'individual';
 	bool _saving = false;
@@ -293,6 +294,14 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				);
 				return;
 			}
+			
+			// Validate emergency service selection
+			if (_category == 'emergency' && _selectedEmergencyServices.isEmpty) {
+				if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text('Please select at least one emergency service type'))
+				);
+				return;
+			}
 
 			final uid = user.uid;
 			final nowIso = DateTime.now().toIso8601String();
@@ -373,6 +382,13 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 					serviceData['serviceType'] = _selectedDeliveryServices.isNotEmpty ? _selectedDeliveryServices.first : null;
 					serviceData['enabledClasses'] = Map<String, bool>.fromEntries(
 						_selectedDeliveryServices.map((service) => MapEntry(service, true))
+					);
+				} else if (_category == 'emergency') {
+					// For emergency, store all selected service types
+					serviceData['serviceTypes'] = _selectedEmergencyServices;
+					serviceData['serviceType'] = _selectedEmergencyServices.isNotEmpty ? _selectedEmergencyServices.first : null;
+					serviceData['enabledClasses'] = Map<String, bool>.fromEntries(
+						_selectedEmergencyServices.map((service) => MapEntry(service, true))
 					);
 				} else {
 					// For other services, use single service type
@@ -470,6 +486,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						_serviceType = null; 
 						_serviceSubtype = null;
 						_selectedDeliveryServices = []; // Reset delivery services when category changes
+						_selectedEmergencyServices = []; // Reset emergency services when category changes
 					}),
 				),
 				if (subs.isNotEmpty)
@@ -482,6 +499,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 							_serviceType = null; 
 							_serviceSubtype = null;
 							_selectedDeliveryServices = []; // Reset delivery services when subcategory changes
+							_selectedEmergencyServices = []; // Reset emergency services when subcategory changes
 						}),
 					),
 				
@@ -543,6 +561,50 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 												padding: const EdgeInsets.only(top: 8),
 												child: Text(
 													'Please select at least one delivery service type',
+													style: TextStyle(color: Colors.red.shade600, fontSize: 12),
+												),
+											),
+									],
+								);
+							}
+							
+							// Multi-select for emergency services
+							if (_category == 'emergency') {
+								return Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										const Text(
+											'🚨 Emergency Services (Select all that apply):',
+											style: TextStyle(fontWeight: FontWeight.w600),
+										),
+										const SizedBox(height: 8),
+										Wrap(
+											spacing: 8,
+											runSpacing: 8,
+											children: availableTypes.map((serviceType) {
+												final isSelected = _selectedEmergencyServices.contains(serviceType);
+												return FilterChip(
+													label: Text(serviceType),
+													selected: isSelected,
+													onSelected: (selected) {
+														setState(() {
+															if (selected) {
+																_selectedEmergencyServices.add(serviceType);
+															} else {
+																_selectedEmergencyServices.remove(serviceType);
+															}
+														});
+													},
+													selectedColor: Colors.red.shade100,
+													checkmarkColor: Colors.red.shade700,
+												);
+											}).toList(),
+										),
+										if (_selectedEmergencyServices.isEmpty)
+											Padding(
+												padding: const EdgeInsets.only(top: 8),
+												child: Text(
+													'Please select at least one emergency service type',
 													style: TextStyle(color: Colors.red.shade600, fontSize: 12),
 												),
 											),
