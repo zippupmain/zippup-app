@@ -23,6 +23,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 	String? _serviceType; // New: Specific service type
 	String? _serviceSubtype; // New: Specific service sub-type
 	List<String> _selectedDeliveryServices = []; // For delivery multi-selection
+	List<String> _selectedEmergencyServices = []; // For emergency multi-selection
 	String _status = 'active';
 	String _type = 'individual';
 	bool _saving = false;
@@ -294,6 +295,14 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				return;
 			}
 
+			// Validate emergency service selection for roadside services
+			if (_category == 'emergency' && _isRoadsideEmergencyService() && _selectedEmergencyServices.isEmpty) {
+				if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text('Please select at least one emergency service type'))
+				);
+				return;
+			}
+
 			final uid = user.uid;
 			final nowIso = DateTime.now().toIso8601String();
 			final service = (_category ?? 'transport');
@@ -374,6 +383,13 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 					serviceData['enabledClasses'] = Map<String, bool>.fromEntries(
 						_selectedDeliveryServices.map((service) => MapEntry(service, true))
 					);
+				} else if (_category == 'emergency' && _isRoadsideEmergencyService()) {
+					// For roadside emergency services, store all selected service types
+					serviceData['serviceTypes'] = _selectedEmergencyServices;
+					serviceData['serviceType'] = _selectedEmergencyServices.isNotEmpty ? _selectedEmergencyServices.first : null;
+					serviceData['enabledClasses'] = Map<String, bool>.fromEntries(
+						_selectedEmergencyServices.map((service) => MapEntry(service, true))
+					);
 				} else {
 					// For other services, use single service type
 					serviceData['serviceType'] = _serviceType;
@@ -395,6 +411,7 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						'subcategory': _subcategory,
 						'serviceType': _serviceType, // New: Specific service type
 						'serviceSubtype': _serviceSubtype, // New: Specific service sub-type
+						'selectedEmergencyServices': _category == 'emergency' && _isRoadsideEmergencyService() ? _selectedEmergencyServices : null,
 						'type': _type,
 						'publicImageUrl': publicImageUrl,
 						'bannerUrl': bannerUrl,
@@ -467,9 +484,10 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 					onChanged: (v) => setState(() { 
 						_category = v; 
 						_subcategory = null; 
-						_serviceType = null; 
-						_serviceSubtype = null;
-						_selectedDeliveryServices = []; // Reset delivery services when category changes
+				_serviceType = null; 
+				_serviceSubtype = null;
+				_selectedDeliveryServices = []; // Reset delivery services when category changes
+				_selectedEmergencyServices = []; // Reset emergency services when category changes
 					}),
 				),
 				if (subs.isNotEmpty)
@@ -478,10 +496,11 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 						items: subs.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
 						decoration: const InputDecoration(labelText: 'Subcategory'),
 						onChanged: (v) => setState(() { 
-							_subcategory = v; 
-							_serviceType = null; 
-							_serviceSubtype = null;
-							_selectedDeliveryServices = []; // Reset delivery services when subcategory changes
+				_subcategory = v; 
+				_serviceType = null; 
+				_serviceSubtype = null;
+				_selectedDeliveryServices = []; // Reset delivery services when subcategory changes
+				_selectedEmergencyServices = []; // Reset emergency services when subcategory changes
 						}),
 					),
 				
@@ -543,6 +562,50 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 												padding: const EdgeInsets.only(top: 8),
 												child: Text(
 													'Please select at least one delivery service type',
+													style: TextStyle(color: Colors.red.shade600, fontSize: 12),
+												),
+											),
+									],
+								);
+							}
+							
+							// Multi-select for emergency roadside services
+							if (_category == 'emergency' && _isRoadsideEmergencyService()) {
+								return Column(
+									crossAxisAlignment: CrossAxisAlignment.start,
+									children: [
+										Text(
+											'🚨 ${_subcategory} Services (Select all that apply):',
+											style: const TextStyle(fontWeight: FontWeight.w600),
+										),
+										const SizedBox(height: 8),
+										Wrap(
+											spacing: 8,
+											runSpacing: 8,
+											children: availableTypes.map((serviceType) {
+												final isSelected = _selectedEmergencyServices.contains(serviceType);
+												return FilterChip(
+													label: Text(serviceType),
+													selected: isSelected,
+													onSelected: (selected) {
+														setState(() {
+															if (selected) {
+																_selectedEmergencyServices.add(serviceType);
+															} else {
+																_selectedEmergencyServices.remove(serviceType);
+															}
+														});
+													},
+													selectedColor: Colors.red.shade100,
+													checkmarkColor: Colors.red.shade700,
+												);
+											}).toList(),
+										),
+										if (_selectedEmergencyServices.isEmpty)
+											Padding(
+												padding: const EdgeInsets.only(top: 8),
+												child: Text(
+													'Please select at least one ${_subcategory?.toLowerCase()} service type',
 													style: TextStyle(color: Colors.red.shade600, fontSize: 12),
 												),
 											),
@@ -638,6 +701,12 @@ class _CreateServiceProfileScreenState extends State<CreateServiceProfileScreen>
 				FilledButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving...' : 'Create')),
 			]),
 		);
+	}
+
+	// Helper method to check if current emergency service is a roadside service that should have multi-select
+	bool _isRoadsideEmergencyService() {
+		return _category == 'emergency' && _subcategory != null && 
+			['Tyre Fix/Replacement', 'Battery Issues', 'Fuel Delivery', 'Mechanical Repair', 'Vehicle Lockout', 'Jumpstart Service'].contains(_subcategory);
 	}
 
 	List<String> _getVehicleTypes() {
