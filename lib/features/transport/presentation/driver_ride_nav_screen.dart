@@ -436,6 +436,30 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 							child: Column(
 								crossAxisAlignment: CrossAxisAlignment.stretch,
 								children: [
+									if (ride.riderId.isNotEmpty && (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving || ride.status == RideStatus.arrived || ride.status == RideStatus.enroute))
+										Card(
+											child: FutureBuilder<List<dynamic>>(
+												future: Future.wait([
+													FirebaseFirestore.instance.collection('public_profiles').doc(ride.riderId).get(const GetOptions(source: Source.server)),
+													FirebaseFirestore.instance.collection('users').doc(ride.riderId).get(const GetOptions(source: Source.server)),
+												]),
+												builder: (context, s) {
+													final pu = (s.data != null && s.data!.isNotEmpty) ? ((s.data![0] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {}) : const {};
+													final u = (s.data != null && s.data!.length > 1) ? ((s.data![1] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {}) : const {};
+													String name = 'Customer';
+													if ((pu['name'] ?? '').toString().trim().isNotEmpty) name = pu['name'].toString().trim();
+													else if ((u['name'] ?? '').toString().trim().isNotEmpty) name = u['name'].toString().trim();
+													String photo = '';
+													if ((pu['photoUrl'] ?? '').toString().trim().isNotEmpty) photo = pu['photoUrl'].toString().trim();
+													else if ((u['photoUrl'] ?? '').toString().trim().isNotEmpty) photo = u['photoUrl'].toString().trim();
+													return ListTile(
+														leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
+														title: Text(name),
+														subtitle: Text('Passenger • ${ride.type.name.toUpperCase()}'),
+													);
+												},
+											),
+										),
 									Row(children: [
 										Expanded(child: FilledButton.icon(
 											onPressed: (driverLat != null && driverLng != null && destLat != null && destLng != null)
