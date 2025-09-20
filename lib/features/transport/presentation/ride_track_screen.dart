@@ -385,15 +385,22 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		}
 	   } catch (_) {}
 	   
-	   await showDialog(context: context, builder: (_) async {
+	   await showDialog(context: context, builder: (_) {
 		final fare = ride.fareEstimate;
-		final currencySymbol = await CurrencyService.getSymbol();
-		final currencyCode = await CurrencyService.getCode();
 		int? stars;
 		final ctl = TextEditingController();
 		String paymentMethod = 'card'; // Move outside StatefulBuilder
 		
-		return StatefulBuilder(builder: (context, setDialogState) {
+		return FutureBuilder<List<String>>(
+			future: Future.wait([
+				CurrencyService.getSymbol(),
+				CurrencyService.getCode(),
+			]),
+			builder: (context, currencySnapshot) {
+				final currencySymbol = currencySnapshot.data?[0] ?? CurrencyService.getCachedSymbol();
+				final currencyCode = currencySnapshot.data?[1] ?? CurrencyService.getCachedCode();
+				
+				return StatefulBuilder(builder: (context, setDialogState) {
 		 return AlertDialog(
 		  title: const Text('🎉 Ride Completed!'),
 		  content: SingleChildScrollView(
@@ -569,6 +576,8 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		  ],
 		 );
 		});
+			},
+		);
 	   });
 	  });
 	 }

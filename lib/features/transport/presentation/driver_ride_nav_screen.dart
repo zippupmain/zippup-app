@@ -267,11 +267,15 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 								}
 							} catch (_) {}
 							
-							await showDialog(context: context, builder: (_) async {
+							await showDialog(context: context, builder: (_) {
 								final fare = ride.fareEstimate;
-								final currencySymbol = await CurrencyService.getSymbol();
 								
-								return AlertDialog(
+								return FutureBuilder<String>(
+									future: CurrencyService.getSymbol(),
+									builder: (context, currencySnapshot) {
+										final currencySymbol = currencySnapshot.data ?? CurrencyService.getCachedSymbol();
+										
+										return AlertDialog(
 									title: const Text('🎉 Ride Completed!'),
 									content: SingleChildScrollView(
 										child: Column(
@@ -368,6 +372,8 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 											child: const Text('Done'),
 										),
 									],
+								);
+									},
 								);
 							});
 						});
