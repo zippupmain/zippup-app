@@ -8,6 +8,7 @@ import 'package:zippup/core/routing/app_router.dart';
 import 'package:zippup/core/theme/app_theme.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:zippup/services/notifications/notifications_service.dart';
+import 'package:zippup/services/notifications/notification_cleanup_service.dart';
 import 'package:zippup/services/localization/app_localizations.dart';
 import 'package:zippup/providers/locale_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -16,6 +17,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'dart:js' as js; // disabled for wasm compatibility
 import 'dart:async';
 import 'dart:ui' as ui;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zippup/features/notifications/widgets/global_incoming_listener.dart';
 
 Future<void> main() async {
@@ -110,6 +112,14 @@ class _BootstrapAppState extends State<_BootstrapApp> {
 			if (!kIsWeb) {
 				await NotificationsService.instance.init();
 			}
+			
+			// Set up auth state listener for notification cleanup
+			FirebaseAuth.instance.authStateChanges().listen((user) async {
+				if (user != null) {
+					// User logged in - perform notification cleanup
+					await NotificationCleanupService.performStartupCleanup();
+				}
+			});
 		} catch (e, s) {
 			// ignore: avoid_print
 			print('Init error: ' + e.toString());

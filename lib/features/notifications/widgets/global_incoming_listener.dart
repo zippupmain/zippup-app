@@ -176,15 +176,27 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						// Also show dialog
 						_showRideDialog(d.id, data);
 						
-						// Auto-mark notification as read after 3 seconds to prevent re-showing on refresh
+						// Auto-mark notification as read after 10 seconds to prevent re-showing on refresh
+						// but only if user hasn't manually interacted with it
 						if (notificationId != null) {
-							Timer(const Duration(seconds: 3), () async {
+							Timer(const Duration(seconds: 10), () async {
 								try {
-									await FirebaseFirestore.instance
+									// Check if notification still exists and is unread before marking as read
+									final notificationDoc = await FirebaseFirestore.instance
 										.collection('notifications')
 										.doc(notificationId)
-										.update({'read': true});
-									print('✅ Auto-marked notification as read: $notificationId');
+										.get();
+									
+									if (notificationDoc.exists && notificationDoc.data()?['read'] != true) {
+										await FirebaseFirestore.instance
+											.collection('notifications')
+											.doc(notificationId)
+											.update({
+												'read': true,
+												'autoMarkedAt': FieldValue.serverTimestamp(),
+											});
+										print('✅ Auto-marked notification as read: $notificationId');
+									}
 								} catch (e) {
 									print('❌ Failed to auto-mark notification as read: $e');
 								}
@@ -599,15 +611,27 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 							// Also show dialog
 							_showServiceDialog(d.id, data, service);
 							
-							// Auto-mark notification as read after 3 seconds to prevent re-showing on refresh
+							// Auto-mark notification as read after 10 seconds to prevent re-showing on refresh
+							// but only if user hasn't manually interacted with it
 							if (notificationId != null) {
-								Timer(const Duration(seconds: 3), () async {
+								Timer(const Duration(seconds: 10), () async {
 									try {
-										await FirebaseFirestore.instance
+										// Check if notification still exists and is unread before marking as read
+										final notificationDoc = await FirebaseFirestore.instance
 											.collection('notifications')
 											.doc(notificationId)
-											.update({'read': true});
-										print('✅ Auto-marked $service notification as read: $notificationId');
+											.get();
+										
+										if (notificationDoc.exists && notificationDoc.data()?['read'] != true) {
+											await FirebaseFirestore.instance
+												.collection('notifications')
+												.doc(notificationId)
+												.update({
+													'read': true,
+													'autoMarkedAt': FieldValue.serverTimestamp(),
+												});
+											print('✅ Auto-marked $service notification as read: $notificationId');
+										}
 									} catch (e) {
 										print('❌ Failed to auto-mark $service notification as read: $e');
 									}
