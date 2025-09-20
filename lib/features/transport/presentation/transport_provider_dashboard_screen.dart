@@ -112,7 +112,10 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 		setState(() => _online = v);
 		final snap = await _db.collection('provider_profiles').where('userId', isEqualTo: uid).where('service', isEqualTo: 'transport').limit(1).get();
 		if (snap.docs.isNotEmpty) {
-			await snap.docs.first.reference.set({'availabilityOnline': v}, SetOptions(merge: true));
+			await snap.docs.first.reference.set({
+				'availabilityOnline': v,
+				'lastUpdated': FieldValue.serverTimestamp(), // Add timestamp to force cache refresh
+			}, SetOptions(merge: true));
 		}
 	}
 
@@ -426,8 +429,8 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 																backgroundColor: _getStatusColor(r.status),
 																child: Text(_getStatusIcon(r.status)),
 															),
-															title: Text('🚗 Ride ${r.id.substring(0,6)} • ${r.type.name.toUpperCase()}'),
-															subtitle: Text('Status: ${r.status.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : 'Unknown'}'),
+														title: Text('🚗 Ride ${r.id.substring(0,6)} • ${r.type.name.toUpperCase()}'),
+														subtitle: Text('Status: ${r.status.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : 'Unknown'}\nFare: ₦${r.fareEstimate.toStringAsFixed(2)}'),
 															trailing: _buildHistoryActions(r),
 															isThreeLine: true,
 															onTap: () => context.push('/track/ride?rideId=${r.id}'),

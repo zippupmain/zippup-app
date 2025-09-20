@@ -10,6 +10,7 @@ import 'package:zippup/services/notifications/reliable_sound_service.dart';
 import 'package:zippup/services/notifications/simple_beep_service.dart';
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 import 'package:zippup/features/notifications/widgets/incoming_call_notification.dart';
+import 'package:zippup/services/transport/profile_cache_service.dart';
 
 class GlobalIncomingListener extends StatefulWidget {
 	final Widget child;
@@ -121,6 +122,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						// For transport rides, show to ALL active online transport providers
 						// Check if user has active transport provider profile
 						try {
+							// Refresh profile cache to ensure we see latest changes
+							await ProfileCacheService.refreshTransportProfile(uid);
+							
 							final transportProviderSnap = await db.collection('provider_profiles')
 								.where('userId', isEqualTo: uid)
 								.where('service', isEqualTo: 'transport')
@@ -620,7 +624,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	bool _shouldShowHere() {
 		// Show popups globally regardless of current page
 		print('🌍 _shouldShowHere() called - returning true for global notifications');
-		return true;
+		return true; // Always show notifications globally
 	}
 
 	/// Create a notification record that will show in the bell icon

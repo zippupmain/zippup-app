@@ -418,7 +418,11 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 					 child: RadioListTile<String>(
 					  value: 'card',
 					  groupValue: paymentMethod,
-					  onChanged: (value) => setDialogState(() => paymentMethod = value!),
+					  onChanged: (value) {
+					   if (value != null) {
+						setDialogState(() => paymentMethod = value);
+					   }
+					  },
 					  title: const Text('💳 Card'),
 					  subtitle: const Text('Auto-processed'),
 					  dense: true,
@@ -430,7 +434,11 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 					 child: RadioListTile<String>(
 					  value: 'cash',
 					  groupValue: paymentMethod,
-					  onChanged: (value) => setDialogState(() => paymentMethod = value!),
+					  onChanged: (value) {
+					   if (value != null) {
+						setDialogState(() => paymentMethod = value);
+					   }
+					  },
 					  title: const Text('💵 Cash'),
 					  subtitle: const Text('Pay driver'),
 					  dense: true,
