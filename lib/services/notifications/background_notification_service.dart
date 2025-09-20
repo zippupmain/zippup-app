@@ -1,8 +1,10 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
+import 'dart:typed_data';
 
 /// Service to handle background notifications and wake up the app
 class BackgroundNotificationService {
@@ -107,7 +109,10 @@ class BackgroundNotificationService {
       await _playUrgentSound();
 
       // Show high-priority local notification
-      const androidDetails = AndroidNotificationDetails(
+      final vibrationPattern = Int64List.fromList([0, 1000, 500, 1000, 500, 1000]);
+      final ticker = 'New ride request from $customerName';
+      
+      final androidDetails = AndroidNotificationDetails(
         'ride_requests',
         'Ride Requests',
         channelDescription: 'Urgent ride request notifications',
@@ -120,14 +125,14 @@ class BackgroundNotificationService {
         usesChronometer: false,
         autoCancel: false, // Don't auto-dismiss
         ongoing: true, // Keep notification persistent
-        sound: RawResourceAndroidNotificationSound('notification_beep'),
+        sound: const RawResourceAndroidNotificationSound('notification_beep'),
         playSound: true,
         enableVibration: true,
-        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]),
-        ledColor: Color(0xFF2196F3),
+        vibrationPattern: vibrationPattern,
+        ledColor: const Color(0xFF2196F3),
         ledOnMs: 1000,
         ledOffMs: 500,
-        ticker: 'New ride request from $customerName',
+        ticker: ticker,
         visibility: NotificationVisibility.public,
         timeoutAfter: 30000, // Auto-dismiss after 30 seconds
       );
@@ -143,7 +148,7 @@ class BackgroundNotificationService {
         threadIdentifier: 'ride_requests',
       );
 
-      const notificationDetails = NotificationDetails(
+      final notificationDetails = NotificationDetails(
         android: androidDetails,
         iOS: iosDetails,
       );
