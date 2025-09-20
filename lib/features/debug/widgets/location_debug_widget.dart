@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zippup/services/location/location_config_service.dart';
 import 'package:zippup/services/currency/currency_service.dart';
+import 'package:zippup/services/location/manual_location_override.dart';
 
 /// Debug widget to show current location detection status
 class LocationDebugWidget extends StatefulWidget {
@@ -119,6 +120,87 @@ class _LocationDebugWidgetState extends State<LocationDebugWidget> {
                   _buildCountryChip('AU', '🇦🇺 Australia'),
                   _buildCountryChip('ZA', '🇿🇦 South Africa'),
                 ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Quick force buttons
+              const Text(
+                'Quick Location Fix:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        setState(() => _isLoading = true);
+                        await ManualLocationOverride.forceNigeria();
+                        await _loadConfig();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('🇳🇬 Forced to Nigeria - Currency: ₦, Addresses: Nigeria')),
+                          );
+                        }
+                      },
+                      icon: const Text('🇳🇬'),
+                      label: const Text('Force Nigeria'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        setState(() => _isLoading = true);
+                        await ManualLocationOverride.clearAndRedetect();
+                        await _loadConfig();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('🔄 Cleared data and re-detecting location')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Re-detect'),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Detection status
+              FutureBuilder<Map<String, dynamic>>(
+                future: ManualLocationOverride.getDetectionStatus(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final status = snapshot.data!;
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('🔍 Detection Status:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          ...status.entries.map((entry) => Text(
+                            '${entry.key}: ${entry.value}',
+                            style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                          )),
+                        ],
+                      ),
+                    );
+                  }
+                  return const Text('Loading status...');
+                },
               ),
             ] else ...[
               const Text('Loading location configuration...'),

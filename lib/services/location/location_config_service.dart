@@ -116,10 +116,20 @@ class LocationConfigService {
         return _currentConfig!;
       }
       
-      // Fallback to Nigeria (default)
+      // Fallback to Nigeria (default) - FORCE Nigeria as default, not US
       _currentConfig = _countryConfigs['NG']!;
       _detectedCountry = 'NG';
-      print('⚠️ Using fallback country config: NG');
+      print('⚠️ FORCING Nigeria as fallback country config (not US)');
+      
+      // Save Nigeria as default to user profile
+      if (uid != null) {
+        await _db.collection('users').doc(uid).update({
+          'country': 'NG',
+          'detectionMethod': 'fallback_nigeria',
+          'detectedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      
       return _currentConfig!;
       
     } catch (e) {

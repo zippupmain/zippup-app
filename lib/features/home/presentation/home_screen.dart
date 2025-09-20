@@ -14,6 +14,7 @@ import 'package:zippup/services/notifications/sound_service.dart';
 import 'package:zippup/services/localization/app_localizations.dart';
 import 'package:zippup/services/notifications/simple_beep_service.dart';
 import 'package:zippup/features/debug/widgets/location_debug_widget.dart';
+import 'package:zippup/services/location/manual_location_override.dart';
 
 // Enhanced implementations with colorful design
 Widget _PositionedUnreadDot() => const SizedBox.shrink();
@@ -322,6 +323,22 @@ class _HomeScreenState extends State<HomeScreen> {
 											),
 										),
 									);
+								},
+							),
+							PopupMenuItem(
+								child: const Text('🇳🇬 Force Nigeria'),
+								onTap: () async {
+									// Quick fix for users experiencing US currency/addresses
+									await ManualLocationOverride.forceNigeria();
+									if (context.mounted) {
+										ScaffoldMessenger.of(context).showSnackBar(
+											const SnackBar(
+												content: Text('🇳🇬 Location forced to Nigeria! Currency: ₦, Addresses: Nigeria'),
+												backgroundColor: Colors.green,
+												duration: Duration(seconds: 3),
+											),
+										);
+									}
 								},
 							),
 							if (_isPlatformAdmin) PopupMenuItem(child: const Text('Platform Admin'), onTap: () => context.push('/admin/platform')),
