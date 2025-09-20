@@ -184,6 +184,20 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 		return Scaffold(
 			appBar: AppBar(
 				title: const Text('Driver Navigation'),
+				actions: [
+					// Home button
+					IconButton(
+						onPressed: () => context.go('/'),
+						icon: const Icon(Icons.home),
+						tooltip: 'Home',
+					),
+					// Dashboard button
+					IconButton(
+						onPressed: () => context.go('/hub/transport'),
+						icon: const Icon(Icons.dashboard),
+						tooltip: 'Dashboard',
+					),
+				],
 			),
 			body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
 				stream: _db.collection('rides').doc(widget.rideId).snapshots(),

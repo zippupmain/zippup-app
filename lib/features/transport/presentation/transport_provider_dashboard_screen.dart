@@ -203,6 +203,16 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 					backgroundColor: Colors.blue.shade50,
 					iconTheme: const IconThemeData(color: Colors.black),
 					titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+					leading: IconButton(
+						icon: const Icon(Icons.arrow_back),
+						onPressed: () {
+							if (Navigator.canPop(context)) {
+								Navigator.pop(context);
+							} else {
+								context.go('/'); // Go to home if can't pop
+							}
+						},
+					),
 					actions: [
 						IconButton(
 							icon: const Icon(Icons.settings),
@@ -445,22 +455,123 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 													return Card(
 														margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
 														elevation: 2,
-														child: ListTile(
+														child: ExpansionTile(
 															leading: CircleAvatar(
 																backgroundColor: _getStatusColor(r.status),
 																child: Text(_getStatusIcon(r.status)),
 															),
-														title: Text('🚗 Ride ${r.id.substring(0,6)} • ${r.type.name.toUpperCase()}'),
-														subtitle: FutureBuilder<String>(
-															future: CurrencyService.formatAmount(r.fareEstimate),
-															builder: (context, snapshot) {
-																final fareText = snapshot.data ?? '${CurrencyService.getCachedSymbol()}${r.fareEstimate.toStringAsFixed(2)}';
-																return Text('Status: ${r.status.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : 'Unknown'}\nFare: $fareText');
-															},
-														),
+															title: Text('🚗 Ride ${r.id.substring(0,6)} • ${r.type.name.toUpperCase()}'),
+															subtitle: FutureBuilder<String>(
+																future: CurrencyService.formatAmount(r.fareEstimate),
+																builder: (context, snapshot) {
+																	final fareText = snapshot.data ?? '${CurrencyService.getCachedSymbol()}${r.fareEstimate.toStringAsFixed(2)}';
+																	return Text('Status: ${r.status.name.toUpperCase()}\nFare: $fareText');
+																},
+															),
 															trailing: _buildHistoryActions(r),
-															isThreeLine: true,
-															onTap: () => context.push('/track/ride?rideId=${r.id}'),
+															children: [
+																Padding(
+																	padding: const EdgeInsets.all(16),
+																	child: Column(
+																		crossAxisAlignment: CrossAxisAlignment.start,
+																		children: [
+																			// Route details
+																			Row(
+																				children: [
+																					const Icon(Icons.location_on, color: Colors.green, size: 20),
+																					const SizedBox(width: 8),
+																					Expanded(child: Text('From: ${r.pickupAddress}')),
+																				],
+																			),
+																			const SizedBox(height: 8),
+																			Row(
+																				children: [
+																					const Icon(Icons.place, color: Colors.red, size: 20),
+																					const SizedBox(width: 8),
+																					Expanded(child: Text('To: ${r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : 'Unknown'}')),
+																				],
+																			),
+																			const SizedBox(height: 16),
+																			
+																			// Payment details
+																			FutureBuilder<String>(
+																				future: CurrencyService.formatAmount(r.fareEstimate),
+																				builder: (context, snapshot) {
+																					final fareText = snapshot.data ?? '${CurrencyService.getCachedSymbol()}${r.fareEstimate.toStringAsFixed(2)}';
+																					final earnings = r.fareEstimate * 0.85; // 85% to driver
+																					final earningsText = snapshot.data != null 
+																						? '${snapshot.data!.replaceAll(r.fareEstimate.toStringAsFixed(2), earnings.toStringAsFixed(2))}'
+																						: '${CurrencyService.getCachedSymbol()}${earnings.toStringAsFixed(2)}';
+																					
+																					return Container(
+																						padding: const EdgeInsets.all(12),
+																						decoration: BoxDecoration(
+																							color: Colors.green.shade50,
+																							borderRadius: BorderRadius.circular(8),
+																						),
+																						child: Column(
+																							crossAxisAlignment: CrossAxisAlignment.start,
+																							children: [
+																								const Text('💰 Payment Summary', style: TextStyle(fontWeight: FontWeight.bold)),
+																								const SizedBox(height: 8),
+																								Row(
+																									mainAxisAlignment: MainAxisAlignment.spaceBetween,
+																									children: [
+																										const Text('Customer paid:'),
+																										Text(fareText, style: const TextStyle(fontWeight: FontWeight.bold)),
+																									],
+																								),
+																								Row(
+																									mainAxisAlignment: MainAxisAlignment.spaceBetween,
+																									children: [
+																										const Text('Your earnings:'),
+																										Text(earningsText, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+																									],
+																								),
+																								Row(
+																									mainAxisAlignment: MainAxisAlignment.spaceBetween,
+																									children: [
+																										const Text('Platform fee:'),
+																										Text('${snapshot.data != null ? snapshot.data!.replaceAll(r.fareEstimate.toStringAsFixed(2), (r.fareEstimate * 0.15).toStringAsFixed(2)) : "${CurrencyService.getCachedSymbol()}${(r.fareEstimate * 0.15).toStringAsFixed(2)}"}', 
+																											style: const TextStyle(color: Colors.grey)),
+																									],
+																								),
+																							],
+																						),
+																					);
+																				},
+																			),
+																			
+																			const SizedBox(height: 16),
+																			
+																			// Action buttons
+																			Row(
+																				children: [
+																					Expanded(
+																						child: OutlinedButton.icon(
+																							onPressed: () => context.push('/track/ride?rideId=${r.id}'),
+																							icon: const Icon(Icons.visibility),
+																							label: const Text('View Details'),
+																						),
+																					),
+																					const SizedBox(width: 8),
+																					Expanded(
+																						child: ElevatedButton.icon(
+																							onPressed: () => context.go('/'),
+																							icon: const Icon(Icons.home),
+																							label: const Text('Home'),
+																							style: ElevatedButton.styleFrom(
+																								backgroundColor: Colors.blue,
+																								foregroundColor: Colors.white,
+																							),
+																						),
+																					),
+																				],
+																			),
+																		],
+																	),
+																),
+															],
 														),
 													);
 												},

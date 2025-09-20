@@ -337,6 +337,12 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	 appBar: AppBar(
 		title: Text(_isDriver ? 'Manage Ride' : 'Track Ride'),
 		actions: [
+			// Home button for easy navigation
+			IconButton(
+				onPressed: () => context.go('/'),
+				icon: const Icon(Icons.home),
+				tooltip: 'Home',
+			),
 			// Add close button for completed rides
 			if (ride.status == RideStatus.completed || ride.status == RideStatus.cancelled)
 				IconButton(
@@ -353,6 +359,15 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		],
 	 ),
 	 body: _buildRideContent(context, ride, steps, idx, data),
+	 // Add floating action button for quick navigation
+	 floatingActionButton: _isDriver && (ride.status == RideStatus.completed || ride.status == RideStatus.cancelled)
+		? FloatingActionButton.extended(
+			onPressed: () => context.go('/hub/transport'),
+			icon: const Icon(Icons.dashboard),
+			label: const Text('Dashboard'),
+			backgroundColor: Colors.blue,
+		)
+		: null,
 	);
    },
   );
@@ -639,56 +654,88 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	  _buildPolyline(origin, dest);
 	 }
 
-	 // Update ETA when positions are available
-	 if (driverLat != null && driverLng != null) {
-	  // Before pickup: ETA to pickup; otherwise ETA to destination
-	  if (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving || ride.status == RideStatus.requested) {
-	   if (pickupLat != null && pickupLng != null) {
-		_updateEta(originLat: driverLat, originLng: driverLng, destLat: pickupLat, destLng: pickupLng);
-	   }
-	  } else if (destLat != null && destLng != null) {
-	   _updateEta(originLat: driverLat, originLng: driverLng, destLat: destLat, destLng: destLng);
-	  }
-	  // Keep simulation running but use real position when available
-	  _simulatedDriver = LatLng(driverLat, driverLng); // Update simulated position with real position
-	 } else {
-	  // Enhanced simulation: show realistic driver movement
+ // Update ETA when positions are available - ENHANCED for rider experience
+ if (driverLat != null && driverLng != null) {
+  // Before pickup: ETA to pickup; otherwise ETA to destination
+  if (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving || ride.status == RideStatus.requested) {
+   if (pickupLat != null && pickupLng != null) {
+	_updateEta(originLat: driverLat, originLng: driverLng, destLat: pickupLat, destLng: pickupLng);
+   }
+  } else if (destLat != null && destLng != null) {
+   _updateEta(originLat: driverLat, originLng: driverLng, destLat: destLat, destLng: destLng);
+  }
+  // Keep simulation running but use real position when available
+  _simulatedDriver = LatLng(driverLat, driverLng); // Update simulated position with real position
+  
+  // For riders: Show real-time driver tracking
+  if (!_isDriver) {
+   print('🚗 Real driver position for rider: $driverLat, $driverLng');
+   print('📍 Driver is ${_etaMinutes ?? "calculating"} minutes away');
+  }
+ } else {
+	   // Enhanced simulation: show realistic driver movement FOR RIDERS
 	  if (pickupLat != null && pickupLng != null && destLat != null && destLng != null) {
-	   _riderSimTimer ??= Timer.periodic(const Duration(seconds: 3), (t) {
-		// More realistic movement simulation
+	   _riderSimTimer ??= Timer.periodic(const Duration(seconds: 2), (t) {
+		// More realistic and faster movement simulation for better rider experience
 		double progress;
+		LatLng? newDriverPos;
+		
 		switch (ride.status) {
 		 case RideStatus.accepted:
 		 case RideStatus.arriving:
-		  // Driver moving towards pickup (0% to 100% of route to pickup)
-		  progress = ((t.tick % 20) / 20.0).clamp(0.0, 1.0);
+		  // Driver moving towards pickup (smoother animation)
+		  progress = ((t.tick % 15) / 15.0).clamp(0.0, 1.0);
+		  // Start driver at a realistic distance from pickup
+		  final startLat = pickupLat + (destLat - pickupLat) * 0.4; // Start 40% towards destination
+		  final startLng = pickupLng + (destLng - pickupLng) * 0.4;
+		  final lat = startLat + (pickupLat - startLat) * progress;
+		  final lng = startLng + (pickupLng - startLng) * progress;
+		  newDriverPos = LatLng(lat, lng);
+		  
+		  // Update ETA based on progress for riders
+		  if (!_isDriver) {
+		   final remainingProgress = 1.0 - progress;
+		   final estimatedMinutes = (remainingProgress * 10).ceil(); // Scale to realistic time
+		   setState(() { _etaMinutes = estimatedMinutes.clamp(1, 15); });
+		  }
 		  break;
+		  
 		 case RideStatus.arrived:
 		  // Driver at pickup location
-		  progress = 1.0;
+		  newDriverPos = LatLng(pickupLat, pickupLng);
+		  if (!_isDriver) {
+		   setState(() { _etaMinutes = 0; }); // Driver has arrived
+		  }
 		  break;
+		  
 		 case RideStatus.enroute:
-		  // Driver moving from pickup to destination (0% to 100% of main route)
-		  progress = ((t.tick % 30) / 30.0).clamp(0.0, 1.0);
+		  // Driver moving from pickup to destination
+		  progress = ((t.tick % 25) / 25.0).clamp(0.0, 1.0);
 		  final lat = pickupLat + (destLat - pickupLat) * progress;
 		  final lng = pickupLng + (destLng - pickupLng) * progress;
-		  setState(() { _simulatedDriver = LatLng(lat, lng); });
-		  return;
+		  newDriverPos = LatLng(lat, lng);
+		  
+		  // Update ETA to destination for riders
+		  if (!_isDriver) {
+		   final remainingProgress = 1.0 - progress;
+		   final estimatedMinutes = (remainingProgress * 15).ceil(); // Scale for destination time
+		   setState(() { _etaMinutes = estimatedMinutes.clamp(1, 20); });
+		  }
+		  break;
+		  
 		 default:
-		  progress = 0.0;
+		  // Default to pickup location
+		  newDriverPos = LatLng(pickupLat, pickupLng);
 		}
 		
-		// For arriving/accepted status, move towards pickup
-		if (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving) {
-		 // Start driver at a reasonable distance from pickup
-		 final startLat = pickupLat + (destLat - pickupLat) * 0.3; // 30% towards destination as starting point
-		 final startLng = pickupLng + (destLng - pickupLng) * 0.3;
-		 final lat = startLat + (pickupLat - startLat) * progress;
-		 final lng = startLng + (pickupLng - startLng) * progress;
-		 setState(() { _simulatedDriver = LatLng(lat, lng); });
-		} else if (ride.status == RideStatus.arrived) {
-		 // Keep driver at pickup location
-		 setState(() { _simulatedDriver = LatLng(pickupLat, pickupLng); });
+		if (newDriverPos != null) {
+		 setState(() { _simulatedDriver = newDriverPos; });
+		 
+		 // For riders: Show movement feedback
+		 if (!_isDriver && t.tick % 5 == 0) { // Every 10 seconds
+		  print('🚗 Driver position updated for rider: ${newDriverPos.latitude}, ${newDriverPos.longitude}');
+		  print('📍 ETA: ${_etaMinutes ?? "calculating"} minutes');
+		 }
 		}
 	   });
 	   
@@ -699,12 +746,20 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	   );
 	   
 	   if (_simulatedDriver != null) {
+		final driverSnippet = ride.status == RideStatus.arrived 
+			? '✅ Arrived at pickup' 
+			: ride.status == RideStatus.enroute 
+				? '🚗 Taking you to destination'
+				: _etaMinutes != null 
+					? '🚗 Arriving in $_etaMinutes min'
+					: '🚗 En route to you';
+		
 		markers.add(Marker(
 		 markerId: const MarkerId('driver'),
 		 position: _simulatedDriver!,
 		 infoWindow: InfoWindow(
 		  title: '🚗 Your Driver',
-		  snippet: ride.status == RideStatus.arrived ? '✅ Arrived at pickup' : '🚗 En route to you',
+		  snippet: driverSnippet,
 		 ),
 		 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
 		));
@@ -786,6 +841,77 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		 }
 	   }),
 	   ),
+	   // Enhanced status card for riders
+	   if (!_isDriver && ride.status != RideStatus.completed && ride.status != RideStatus.cancelled) 
+		Container(
+		 margin: const EdgeInsets.all(16),
+		 padding: const EdgeInsets.all(16),
+		 decoration: BoxDecoration(
+		  gradient: LinearGradient(
+		   colors: [Colors.blue.shade50, Colors.blue.shade100],
+		  ),
+		  borderRadius: BorderRadius.circular(12),
+		  border: Border.all(color: Colors.blue.shade200),
+		 ),
+		 child: Column(
+		  children: [
+		   Row(
+			children: [
+			 Icon(Icons.directions_car, color: Colors.blue.shade700, size: 28),
+			 const SizedBox(width: 12),
+			 Expanded(
+			  child: Column(
+			   crossAxisAlignment: CrossAxisAlignment.start,
+			   children: [
+				Text(
+				 _getStatusMessage(ride.status),
+				 style: TextStyle(
+				  fontSize: 18,
+				  fontWeight: FontWeight.bold,
+				  color: Colors.blue.shade800,
+				 ),
+				),
+				if (_etaMinutes != null && _etaMinutes! > 0)
+				 Text(
+				  'Arriving in $_etaMinutes minutes',
+				  style: TextStyle(
+				   fontSize: 14,
+				   color: Colors.blue.shade600,
+				  ),
+				 )
+				else if (ride.status == RideStatus.arrived)
+				 Text(
+				  'Driver has arrived!',
+				  style: TextStyle(
+				   fontSize: 14,
+				   color: Colors.green.shade600,
+				   fontWeight: FontWeight.bold,
+				  ),
+				 ),
+			   ],
+			  ),
+			 ),
+			 if (_etaMinutes != null && _etaMinutes! > 0)
+			  Container(
+			   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+			   decoration: BoxDecoration(
+				color: Colors.blue.shade700,
+				borderRadius: BorderRadius.circular(20),
+			   ),
+			   child: Text(
+				'${_etaMinutes}min',
+				style: const TextStyle(
+				 color: Colors.white,
+				 fontWeight: FontWeight.bold,
+				),
+			   ),
+			  ),
+			],
+		   ),
+		  ],
+		 ),
+		),
+	   
 	   Padding(
 		padding: const EdgeInsets.all(16),
 		child: Column(
@@ -934,7 +1060,28 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		   ),
 		  ),
 		  StatusTimeline(steps: steps, currentIndex: idx),
-		  if (_etaMinutes != null) Padding(
+		  
+		  // Enhanced ETA display for riders
+		  if (_etaMinutes != null && !_isDriver) Card(
+		   color: Colors.blue.shade50,
+		   child: Padding(
+			padding: const EdgeInsets.all(12),
+			child: Row(
+			 children: [
+			  Icon(Icons.access_time, color: Colors.blue.shade700),
+			  const SizedBox(width: 8),
+			  Text(
+			   'Driver arriving in $_etaMinutes minutes',
+			   style: TextStyle(
+				fontSize: 16,
+				fontWeight: FontWeight.bold,
+				color: Colors.blue.shade700,
+			   ),
+			  ),
+			 ],
+			),
+		   ),
+		  ) else if (_etaMinutes != null) Padding(
 		   padding: const EdgeInsets.only(top: 8.0),
 		   child: Text('ETA: $_etaMinutes min'),
 		  ),
@@ -992,6 +1139,27 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 
  	bool _rideCancelable(RideStatus s) {
 		return s == RideStatus.requested || s == RideStatus.accepted || s == RideStatus.arriving || s == RideStatus.arrived;
+	}
+
+	String _getStatusMessage(RideStatus status) {
+		switch (status) {
+			case RideStatus.requested:
+				return 'Finding your driver...';
+			case RideStatus.accepted:
+				return 'Driver is on the way';
+			case RideStatus.arriving:
+				return 'Driver is arriving';
+			case RideStatus.arrived:
+				return 'Driver has arrived';
+			case RideStatus.enroute:
+				return 'On the way to destination';
+			case RideStatus.completed:
+				return 'Ride completed';
+			case RideStatus.cancelled:
+				return 'Ride cancelled';
+			default:
+				return 'Processing...';
+		}
 	}
 
 	Future<void> _openGoogleNavigation(double originLat, double originLng, double destLat, double destLng) async {
