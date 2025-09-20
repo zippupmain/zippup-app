@@ -476,6 +476,63 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 					}
 
 					return Column(children: [
+						// Customer profile card for driver
+						if (ride.riderId != null) Container(
+							margin: const EdgeInsets.all(12),
+							child: Card(
+								child: FutureBuilder<List<dynamic>>(
+									future: Future.wait([
+										FirebaseFirestore.instance.collection('users').doc(ride.riderId!).get(),
+										FirebaseFirestore.instance.collection('public_profiles').doc(ride.riderId!).get(),
+									]).timeout(const Duration(seconds: 10)),
+									builder: (context, snapshot) {
+										if (snapshot.connectionState == ConnectionState.waiting) {
+											return const ListTile(
+												leading: CircularProgressIndicator(),
+												title: Text('Loading customer info...'),
+											);
+										}
+										
+										if (snapshot.hasError || !snapshot.hasData) {
+											return const ListTile(
+												leading: Icon(Icons.person, color: Colors.grey),
+												title: Text('Customer details unavailable'),
+											);
+										}
+										
+										final u = (snapshot.data?[0] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {};
+										final pu = (snapshot.data?[1] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {};
+										
+										// Get customer name
+										String customerName = 'Customer';
+										if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
+											customerName = pu['name'].toString().trim();
+										} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
+											customerName = u['name'].toString().trim();
+										}
+										
+										// Get customer photo
+										String customerPhoto = '';
+										if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
+											customerPhoto = pu['photoUrl'].toString().trim();
+										} else if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
+											customerPhoto = u['photoUrl'].toString().trim();
+										}
+										
+										return ListTile(
+											leading: CircleAvatar(
+												backgroundImage: customerPhoto.isNotEmpty ? NetworkImage(customerPhoto) : null,
+												child: customerPhoto.isEmpty ? const Icon(Icons.person) : null,
+											),
+											title: Text(customerName),
+											subtitle: Text('Customer • ${ride.type.name.toUpperCase()}'),
+											trailing: const Icon(Icons.star_border),
+										);
+									},
+								),
+							),
+						),
+						
 						Expanded(child: Builder(builder: (context) {
 							if (center == null) return const Center(child: Text('Loading map…'));
 							try {

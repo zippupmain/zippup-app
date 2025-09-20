@@ -692,34 +692,34 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		  final lng = startLng + (pickupLng - startLng) * progress;
 		  newDriverPos = LatLng(lat, lng);
 		  
-		  // Update ETA based on progress for riders
+		  // Update ETA based on progress for riders (to pickup)
 		  if (!_isDriver) {
 		   final remainingProgress = 1.0 - progress;
-		   final estimatedMinutes = (remainingProgress * 10).ceil(); // Scale to realistic time
-		   setState(() { _etaMinutes = estimatedMinutes.clamp(1, 15); });
+		   final estimatedMinutes = (remainingProgress * 8).ceil(); // Scale to realistic time
+		   setState(() { _etaMinutes = estimatedMinutes.clamp(1, 12); });
 		  }
 		  break;
 		  
 		 case RideStatus.arrived:
-		  // Driver at pickup location
+		  // Driver at pickup location - CLEAR ETA
 		  newDriverPos = LatLng(pickupLat, pickupLng);
 		  if (!_isDriver) {
-		   setState(() { _etaMinutes = 0; }); // Driver has arrived
+		   setState(() { _etaMinutes = null; }); // Clear ETA when arrived
 		  }
 		  break;
 		  
 		 case RideStatus.enroute:
 		  // Driver moving from pickup to destination
-		  progress = ((t.tick % 25) / 25.0).clamp(0.0, 1.0);
+		  progress = ((t.tick % 20) / 20.0).clamp(0.0, 1.0);
 		  final lat = pickupLat + (destLat - pickupLat) * progress;
 		  final lng = pickupLng + (destLng - pickupLng) * progress;
 		  newDriverPos = LatLng(lat, lng);
 		  
-		  // Update ETA to destination for riders
+		  // Update ETA to destination for riders (different calculation)
 		  if (!_isDriver) {
 		   final remainingProgress = 1.0 - progress;
-		   final estimatedMinutes = (remainingProgress * 15).ceil(); // Scale for destination time
-		   setState(() { _etaMinutes = estimatedMinutes.clamp(1, 20); });
+		   final estimatedMinutes = (remainingProgress * 12).ceil(); // Scale for destination time
+		   setState(() { _etaMinutes = estimatedMinutes.clamp(1, 15); });
 		  }
 		  break;
 		  
@@ -871,9 +871,11 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 				  color: Colors.blue.shade800,
 				 ),
 				),
-				if (_etaMinutes != null && _etaMinutes! > 0)
+				if (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving)
 				 Text(
-				  'Arriving in $_etaMinutes minutes',
+				  _etaMinutes != null && _etaMinutes! > 0 
+					? 'Arriving in $_etaMinutes minutes'
+					: 'Calculating arrival time...',
 				  style: TextStyle(
 				   fontSize: 14,
 				   color: Colors.blue.shade600,
@@ -881,10 +883,21 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 				 )
 				else if (ride.status == RideStatus.arrived)
 				 Text(
-				  'Driver has arrived!',
+				  'Driver has arrived at pickup!',
 				  style: TextStyle(
 				   fontSize: 14,
 				   color: Colors.green.shade600,
+				   fontWeight: FontWeight.bold,
+				  ),
+				 )
+				else if (ride.status == RideStatus.enroute)
+				 Text(
+				  _etaMinutes != null && _etaMinutes! > 0 
+					? 'Arriving at destination in $_etaMinutes minutes'
+					: 'On the way to destination',
+				  style: TextStyle(
+				   fontSize: 14,
+				   color: Colors.orange.shade600,
 				   fontWeight: FontWeight.bold,
 				  ),
 				 ),

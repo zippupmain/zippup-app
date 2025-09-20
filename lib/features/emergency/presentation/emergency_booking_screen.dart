@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/location/location_service.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 import 'package:zippup/common/widgets/address_field.dart';
 
 class EmergencyBookingScreen extends StatefulWidget {
@@ -102,7 +103,7 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 				'feeEstimate': feeAmount,
 				'etaMinutes': _selectedPriority == 'critical' ? 5 : 15,
 				'status': 'pending', // Changed to 'pending' for dispatch engine
-				'currency': 'NGN',
+				'currency': await CurrencyService.getCode(),
 				'paymentMethod': 'card',
 			});
 
@@ -207,28 +208,49 @@ class _EmergencyBookingScreenState extends State<EmergencyBookingScreen> {
 											value: 'low',
 											groupValue: _selectedPriority,
 											onChanged: (value) => setState(() => _selectedPriority = value!),
-											title: const Text('Low Priority • ₦3,000'),
+											title: FutureBuilder<String>(
+												future: CurrencyService.formatAmount(3000),
+												builder: (context, snapshot) {
+													return Text('Low Priority • ${snapshot.data ?? "${CurrencyService.getCachedSymbol()}3,000"}');
+												},
+											),
 											subtitle: const Text('Non-urgent, can wait 30+ minutes'),
 										),
 										RadioListTile<String>(
 											value: 'medium',
 											groupValue: _selectedPriority,
 											onChanged: (value) => setState(() => _selectedPriority = value!),
-											title: const Text('Medium Priority • ₦5,000'),
+											title: FutureBuilder<String>(
+												future: CurrencyService.formatAmount(5000),
+												builder: (context, snapshot) {
+													return Text('Medium Priority • ${snapshot.data ?? "${CurrencyService.getCachedSymbol()}5,000"}');
+												},
+											),
 											subtitle: const Text('Urgent, need help within 15-30 minutes'),
 										),
 										RadioListTile<String>(
 											value: 'high',
 											groupValue: _selectedPriority,
 											onChanged: (value) => setState(() => _selectedPriority = value!),
-											title: const Text('High Priority • ₦7,500'),
+											title: FutureBuilder<String>(
+												future: CurrencyService.formatAmount(7500),
+												builder: (context, snapshot) {
+													return Text('High Priority • ${snapshot.data ?? "${CurrencyService.getCachedSymbol()}7,500"}');
+												},
+											),
 											subtitle: const Text('Very urgent, need help within 10-15 minutes'),
 										),
 										RadioListTile<String>(
 											value: 'critical',
 											groupValue: _selectedPriority,
 											onChanged: (value) => setState(() => _selectedPriority = value!),
-											title: Text('CRITICAL • ₦10,000', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+											title: FutureBuilder<String>(
+												future: CurrencyService.formatAmount(10000),
+												builder: (context, snapshot) {
+													return Text('CRITICAL • ${snapshot.data ?? "${CurrencyService.getCachedSymbol()}10,000"}', 
+														style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold));
+												},
+											),
 											subtitle: Text('Life-threatening, immediate response needed', style: TextStyle(color: Colors.red.shade700)),
 										),
 									],

@@ -301,14 +301,15 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			print('❌ Error setting up transport notifications: $e');
 		}
 		
-		// Enhanced listeners for all service types
-		_setupServiceListener(db, uid, 'hire_bookings', 'hire');
-		_setupServiceListener(db, uid, 'emergency_bookings', 'emergency');
-		_setupServiceListener(db, uid, 'moving_bookings', 'moving');
-		_setupServiceListener(db, uid, 'personal_bookings', 'personal');
-		_setupServiceListener(db, uid, 'rental_bookings', 'rentals');
-		_setupServiceListener(db, uid, 'marketplace_orders', 'marketplace');
-		_setupServiceListener(db, uid, 'others_bookings', 'others');
+		// ONLY set up listeners for services the user actually provides
+		// Check each service individually instead of setting up all listeners
+		await _setupServiceListenerIfProviderExists(db, uid, 'hire_bookings', 'hire');
+		await _setupServiceListenerIfProviderExists(db, uid, 'emergency_bookings', 'emergency');
+		await _setupServiceListenerIfProviderExists(db, uid, 'moving_bookings', 'moving');
+		await _setupServiceListenerIfProviderExists(db, uid, 'personal_bookings', 'personal');
+		await _setupServiceListenerIfProviderExists(db, uid, 'rental_bookings', 'rentals');
+		await _setupServiceListenerIfProviderExists(db, uid, 'marketplace_orders', 'marketplace');
+		await _setupServiceListenerIfProviderExists(db, uid, 'others_bookings', 'others');
 		
 		_ordersSub = db.collection('orders')
 			.where('providerId', isEqualTo: uid)
@@ -594,6 +595,30 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				FilledButton(onPressed: () { Navigator.pop(ctx); _updateMoving(id, 'accepted'); _go('/hub/moving'); }, child: const Text('Accept')),
 			],
 		));
+	}
+
+	Future<void> _setupServiceListenerIfProviderExists(FirebaseFirestore db, String uid, String collection, String service) async {
+		try {
+			print('🔍 Checking if user provides $service before setting up listener');
+			
+			// First check if user has active provider profile for this service
+			final providerSnap = await db.collection('provider_profiles')
+				.where('userId', isEqualTo: uid)
+				.where('service', isEqualTo: service)
+				.where('status', isEqualTo: 'active')
+				.limit(1)
+				.get();
+				
+			if (providerSnap.docs.isEmpty) {
+				print('❌ User does not provide $service - skipping listener setup');
+				return;
+			}
+			
+			print('✅ User provides $service - setting up listener');
+			await _setupServiceListener(db, uid, collection, service);
+		} catch (e) {
+			print('❌ Error checking $service provider status: $e');
+		}
 	}
 
 	Future<void> _setupServiceListener(FirebaseFirestore db, String uid, String collection, String service) async {

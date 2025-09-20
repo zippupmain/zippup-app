@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/services/location/location_service.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 import 'package:zippup/common/widgets/address_field.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 
@@ -96,7 +97,7 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 				'feeEstimate': feeAmount,
 				'etaMinutes': 30,
 				'status': 'requested',
-				'currency': 'NGN',
+				'currency': await CurrencyService.getCode(),
 				'serviceClass': _selectedClass,
 				'paymentMethod': 'card',
 			});
@@ -261,21 +262,36 @@ class _HireBookingScreenState extends State<HireBookingScreen> {
 											value: 'Basic',
 											groupValue: _selectedClass,
 											onChanged: (value) => setState(() => _selectedClass = value!),
-											title: const Text('Basic • ₦2,000'),
+											title: FutureBuilder<String>(
+												future: CurrencyService.formatAmount(2000),
+												builder: (context, snapshot) {
+													return Text('Basic • ${snapshot.data ?? "${CurrencyService.getCachedSymbol()}2,000"}');
+												},
+											),
 											subtitle: const Text('Standard service quality'),
 										),
 										RadioListTile<String>(
 											value: 'Standard',
 											groupValue: _selectedClass,
 											onChanged: (value) => setState(() => _selectedClass = value!),
-											title: const Text('Standard • ₦3,500'),
+											title: FutureBuilder<String>(
+												future: CurrencyService.formatAmount(3500),
+												builder: (context, snapshot) {
+													return Text('Standard • ${snapshot.data ?? "${CurrencyService.getCachedSymbol()}3,500"}');
+												},
+											),
 											subtitle: const Text('Enhanced service with guarantees'),
 										),
 										RadioListTile<String>(
 											value: 'Pro',
 											groupValue: _selectedClass,
 											onChanged: (value) => setState(() => _selectedClass = value!),
-											title: const Text('Pro • ₦5,000'),
+											title: FutureBuilder<String>(
+												future: CurrencyService.formatAmount(5000),
+												builder: (context, snapshot) {
+													return Text('Pro • ${snapshot.data ?? "${CurrencyService.getCachedSymbol()}5,000"}');
+												},
+											),
 											subtitle: const Text('Premium service with full support'),
 										),
 									],
