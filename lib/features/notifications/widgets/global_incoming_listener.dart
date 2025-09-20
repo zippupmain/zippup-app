@@ -169,6 +169,41 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						print('📍 From: ${data['pickupAddress']}');
 						_shown.add('ride:${d.id}');
 						
+						// Play URGENT notification sound IMMEDIATELY
+						try { 
+							print('🔊 Playing URGENT RIDE REQUEST notification sound...');
+							
+							// Play multiple sound attempts for better reliability
+							final soundResults = await Future.wait([
+								SimpleBeepService.instance.playUrgentBeep(),
+								SimpleBeepService.instance.playSimpleBeep(),
+							]);
+							
+							final anySuccess = soundResults.any((result) => result);
+							print(anySuccess ? '🎉 URGENT ride request sound SUCCESS' : '💥 ALL ride request sounds FAILED');
+							
+							// Trigger appropriate notification based on platform
+							if (kIsWeb) {
+								// Use PWA notifications for web
+								PWANotificationService.showRideRequestPWA(
+									rideId: d.id,
+									customerName: 'Customer', // Will be resolved in dialog
+									pickupAddress: data['pickupAddress']?.toString() ?? 'Unknown location',
+									rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
+								);
+							} else {
+								// Use background notifications for mobile
+								BackgroundNotificationService.instance.showRideRequestNotification(
+									rideId: d.id,
+									customerName: 'Customer', // Will be resolved in dialog
+									pickupAddress: data['pickupAddress']?.toString() ?? 'Unknown location',
+									rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
+								);
+							}
+						} catch (e) {
+							print('❌ Critical error playing audible ride notification: $e');
+						}
+						
 						// Create notification record for bell icon (will be auto-marked as read after shown)
 						final notificationId = await _createNotificationRecord(
 							'🚗 New Ride Request',
@@ -396,40 +431,6 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
-		// Play AUDIBLE notification sound IMMEDIATELY for ride requests
-		try { 
-			print('🔊 Playing URGENT RIDE REQUEST notification sound...');
-			
-			// Play multiple sound attempts for better reliability
-			final soundResults = await Future.wait([
-				SimpleBeepService.instance.playUrgentBeep(),
-				SimpleBeepService.instance.playSimpleBeep(),
-			]);
-			
-			final anySuccess = soundResults.any((result) => result);
-			print(anySuccess ? '🎉 URGENT ride request sound SUCCESS' : '💥 ALL ride request sounds FAILED');
-			
-			// Trigger appropriate notification based on platform
-			if (kIsWeb) {
-				// Use PWA notifications for web
-				PWANotificationService.showRideRequestPWA(
-					rideId: d.id,
-					customerName: riderName,
-					pickupAddress: data['pickupAddress']?.toString() ?? 'Unknown location',
-					rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
-				);
-			} else {
-				// Use background notifications for mobile
-				BackgroundNotificationService.instance.showRideRequestNotification(
-					rideId: d.id,
-					customerName: riderName,
-					pickupAddress: data['pickupAddress']?.toString() ?? 'Unknown location',
-					rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
-				);
-			}
-		} catch (e) {
-			print('❌ Critical error playing audible ride notification: $e');
-		}
 		
 		// Show phone-call style notification
 		await Navigator.of(ctx).push(
