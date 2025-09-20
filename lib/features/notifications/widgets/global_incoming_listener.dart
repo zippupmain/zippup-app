@@ -14,6 +14,7 @@ import 'package:zippup/features/notifications/widgets/incoming_call_notification
 import 'package:zippup/services/transport/profile_cache_service.dart';
 import 'package:zippup/services/currency/currency_service.dart';
 import 'package:zippup/services/notifications/pwa_notification_service.dart';
+import 'package:zippup/services/notifications/global_overlay_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class GlobalIncomingListener extends StatefulWidget {
@@ -133,29 +134,35 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						print('✅ Ride ${d.id} assigned to this driver');
 					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && hasActiveProvider && isOnline) {
 						// For transport rides, show to ALL active online transport providers
-						// Check if user has active transport provider profile
-						try {
-							// Refresh profile cache to ensure we see latest changes
-							await ProfileCacheService.refreshTransportProfile(uid);
-							
-							final transportProviderSnap = await db.collection('provider_profiles')
-								.where('userId', isEqualTo: uid)
-								.where('service', isEqualTo: 'transport')
-								.where('status', isEqualTo: 'active')
-								.where('availabilityOnline', isEqualTo: true)
-								.limit(1)
-								.get();
-							
-							if (transportProviderSnap.docs.isNotEmpty) {
-								shouldShow = true;
-								print('✅ Ride ${d.id} available for transport provider');
-								final providerData = transportProviderSnap.docs.first.data();
-								print('📋 Transport Provider Details: service=${providerData['service']}, subcategory=${providerData['subcategory']}, online=${providerData['availabilityOnline']}');
-							} else {
-								print('🚫 No active online transport provider found for user $uid');
+						// But only if the ride status is still 'requested' (not accepted by someone else)
+						final rideStatus = data['status']?.toString();
+						if (rideStatus == 'requested') {
+							// Check if user has active transport provider profile
+							try {
+								// Refresh profile cache to ensure we see latest changes
+								await ProfileCacheService.refreshTransportProfile(uid);
+								
+								final transportProviderSnap = await db.collection('provider_profiles')
+									.where('userId', isEqualTo: uid)
+									.where('service', isEqualTo: 'transport')
+									.where('status', isEqualTo: 'active')
+									.where('availabilityOnline', isEqualTo: true)
+									.limit(1)
+									.get();
+								
+								if (transportProviderSnap.docs.isNotEmpty) {
+									shouldShow = true;
+									print('✅ Ride ${d.id} available for transport provider (status: $rideStatus)');
+									final providerData = transportProviderSnap.docs.first.data();
+									print('📋 Transport Provider Details: service=${providerData['service']}, subcategory=${providerData['subcategory']}, online=${providerData['availabilityOnline']}');
+								} else {
+									print('🚫 No active online transport provider found for user $uid');
+								}
+							} catch (e) {
+								print('❌ Error checking transport provider: $e');
 							}
-						} catch (e) {
-							print('❌ Error checking transport provider: $e');
+						} else {
+							print('🚫 Ride ${d.id} not available - status is $rideStatus (not requested)');
 						}
 					} else {
 						print('🚫 Ride ${d.id} not for this user - HasActiveProvider: $hasActiveProvider, Online: $isOnline, Assigned: $assignedDriverId');
@@ -169,18 +176,33 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						print('📍 From: ${data['pickupAddress']}');
 						_shown.add('ride:${d.id}');
 						
-						// Play URGENT notification sound IMMEDIATELY
+						// Play URGENT notification sound IMMEDIATELY and LOUDLY
 						try { 
 							print('🔊 Playing URGENT RIDE REQUEST notification sound...');
 							
-							// Play multiple sound attempts for better reliability
+							// Play multiple sound attempts for better reliability and volume
 							final soundResults = await Future.wait([
 								SimpleBeepService.instance.playUrgentBeep(),
 								SimpleBeepService.instance.playSimpleBeep(),
+								SystemSound.play(SystemSoundType.alert),
+								HapticFeedback.heavyImpact(),
 							]);
 							
-							final anySuccess = soundResults.any((result) => result);
-							print(anySuccess ? '🎉 URGENT ride request sound SUCCESS' : '💥 ALL ride request sounds FAILED');
+							// Also play system sound for maximum audibility
+							try {
+								await SystemSound.play(SystemSoundType.click);
+								await HapticFeedback.mediumImpact();
+							} catch (_) {}
+							
+							print('🎉 URGENT ride request sound and haptics triggered');
+							
+							// For PWA, also use browser notification sound
+							if (kIsWeb) {
+								try {
+									await SystemSound.play(SystemSoundType.alert);
+									print('🌐 PWA system alert sound played');
+								} catch (_) {}
+							}
 							
 							// Trigger appropriate notification based on platform
 							if (kIsWeb) {
@@ -221,7 +243,23 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 							onTap: () => _showRideDialog(d.id, data),
 						);
 						
-						// Also show dialog
+						// Show global overlay that appears on ANY screen
+						GlobalOverlayService.showRideRequestOverlay(
+							context: ctx,
+							rideId: d.id,
+							customerName: 'Customer', // Will be resolved
+							pickupAddress: data['pickupAddress']?.toString() ?? 'Unknown location',
+							rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
+							onAccept: () {
+								_acceptRide(d.id);
+								ctx.go('/driver/navigate?rideId=${d.id}');
+							},
+							onDecline: () {
+								_declineRide(d.id);
+							},
+						);
+						
+						// Also show traditional dialog as backup
 						_showRideDialog(d.id, data);
 						
 						// Auto-mark notification as read after 10 seconds to prevent re-showing on refresh
@@ -455,7 +493,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					onAccept: () {
 						Navigator.pop(context);
 						_acceptRide(id);
-						context.go('/track/ride?rideId=$id');
+						context.go('/driver/navigate?rideId=$id');
 					},
 					onDecline: () {
 						Navigator.pop(context);

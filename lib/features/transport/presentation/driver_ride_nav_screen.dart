@@ -181,7 +181,24 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text('Driver Navigation')),
+			appBar: AppBar(
+				title: const Text('Driver Navigation'),
+				actions: [
+					// Add close button for completed rides
+					if (ride.status == RideStatus.completed || ride.status == RideStatus.cancelled)
+						IconButton(
+							onPressed: () {
+								if (Navigator.canPop(context)) {
+									Navigator.pop(context);
+								} else {
+									context.go('/hub/transport'); // Go to transport dashboard
+								}
+							},
+							icon: const Icon(Icons.close),
+							tooltip: 'Close',
+						),
+				],
+			),
 			body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
 				stream: _db.collection('rides').doc(widget.rideId).snapshots(),
 				builder: (context, snap) {

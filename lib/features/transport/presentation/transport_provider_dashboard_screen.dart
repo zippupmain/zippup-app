@@ -40,13 +40,16 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 			await _db.collection('provider_profiles').doc(snap.docs.first.id).update({'availabilityOnline': true});
 			if (mounted) setState(() {});
 		}
-		// incoming assigned ride requests (requested and addressed to me)
+		// incoming assigned ride requests (only truly requested rides, not accepted ones)
 		_incomingStream = _db
 			.collection('rides')
 			.where('driverId', isEqualTo: uid)
 			.where('status', isEqualTo: RideStatus.requested.name)
 			.snapshots()
-			.map((s) => s.docs.map((d) => Ride.fromJson(d.id, d.data())).toList());
+			.map((s) => s.docs
+				.map((d) => Ride.fromJson(d.id, d.data()))
+				.where((ride) => ride.status == RideStatus.requested) // Double-check status
+				.toList());
 	}
 
 	Future<void> _autoMigrateProfile() async {
@@ -122,11 +125,28 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 
 	Future<void> _updateRide(String id, RideStatus status) async {
 		final uid = _auth.currentUser?.uid;
-		await _db.collection('rides').doc(id).set({'status': status.name, if (status == RideStatus.accepted && uid != null) 'driverId': uid}, SetOptions(merge: true));
 		
-		// Navigate to tracking screen when ride is accepted
-		if (status == RideStatus.accepted && mounted) {
-			context.go('/track/ride?rideId=$id');
+		try {
+			await _db.collection('rides').doc(id).set({
+				'status': status.name, 
+				if (status == RideStatus.accepted && uid != null) 'driverId': uid,
+				'updatedAt': FieldValue.serverTimestamp(),
+				if (status == RideStatus.accepted) 'acceptedAt': FieldValue.serverTimestamp(),
+			}, SetOptions(merge: true));
+			
+			print('✅ Updated ride $id to status: ${status.name}');
+			
+			// Navigate to driver navigation screen when ride is accepted
+			if (status == RideStatus.accepted && mounted) {
+				context.go('/driver/navigate?rideId=$id');
+			}
+		} catch (e) {
+			print('❌ Error updating ride status: $e');
+			if (mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					SnackBar(content: Text('Error updating ride: $e')),
+				);
+			}
 		}
 	}
 

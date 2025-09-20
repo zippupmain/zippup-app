@@ -334,7 +334,24 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	_isDriver = currentUserId != null && currentUserId == ride.driverId;
 	
 	return Scaffold(
-	 appBar: AppBar(title: Text(_isDriver ? 'Manage Ride' : 'Track Ride')),
+	 appBar: AppBar(
+		title: Text(_isDriver ? 'Manage Ride' : 'Track Ride'),
+		actions: [
+			// Add close button for completed rides
+			if (ride.status == RideStatus.completed || ride.status == RideStatus.cancelled)
+				IconButton(
+					onPressed: () {
+						if (Navigator.canPop(context)) {
+							Navigator.pop(context);
+						} else {
+							context.go('/'); // Go to home if can't pop
+						}
+					},
+					icon: const Icon(Icons.close),
+					tooltip: 'Close',
+				),
+		],
+	 ),
 	 body: _buildRideContent(context, ride, steps, idx, data),
 	);
    },

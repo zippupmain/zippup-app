@@ -373,6 +373,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 					builder: (context, state) => RideTrackScreen(rideId: state.uri.queryParameters['rideId'] ?? ''),
 				),
 				GoRoute(
+					path: '/driver/navigate',
+					name: 'driverNavigate',
+					builder: (context, state) => DriverRideNavScreen(rideId: state.uri.queryParameters['rideId'] ?? ''),
+				),
+				GoRoute(
 					path: '/hire/track',
 					name: 'hireTrack',
 					builder: (context, state) => HireTrackScreen(bookingId: state.uri.queryParameters['bookingId'] ?? ''),
