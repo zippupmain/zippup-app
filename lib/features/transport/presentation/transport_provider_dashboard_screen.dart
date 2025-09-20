@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/common/models/ride.dart';
 import 'package:zippup/features/providers/widgets/provider_header.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 
 class TransportProviderDashboardScreen extends StatefulWidget {
 	const TransportProviderDashboardScreen({super.key});
@@ -430,7 +431,13 @@ class _TransportProviderDashboardScreenState extends State<TransportProviderDash
 																child: Text(_getStatusIcon(r.status)),
 															),
 														title: Text('🚗 Ride ${r.id.substring(0,6)} • ${r.type.name.toUpperCase()}'),
-														subtitle: Text('Status: ${r.status.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : 'Unknown'}\nFare: ₦${r.fareEstimate.toStringAsFixed(2)}'),
+														subtitle: FutureBuilder<String>(
+															future: CurrencyService.formatAmount(r.fareEstimate),
+															builder: (context, snapshot) {
+																final fareText = snapshot.data ?? '${CurrencyService.getCachedSymbol()}${r.fareEstimate.toStringAsFixed(2)}';
+																return Text('Status: ${r.status.name.toUpperCase()}\nFrom: ${r.pickupAddress}\nTo: ${r.destinationAddresses.isNotEmpty ? r.destinationAddresses.first : 'Unknown'}\nFare: $fareText');
+															},
+														),
 															trailing: _buildHistoryActions(r),
 															isThreeLine: true,
 															onTap: () => context.push('/track/ride?rideId=${r.id}'),

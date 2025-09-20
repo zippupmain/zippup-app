@@ -9,6 +9,8 @@ import 'package:zippup/core/theme/app_theme.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:zippup/services/notifications/notifications_service.dart';
 import 'package:zippup/services/notifications/notification_cleanup_service.dart';
+import 'package:zippup/services/location/location_config_service.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 import 'package:zippup/services/localization/app_localizations.dart';
 import 'package:zippup/providers/locale_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -113,11 +115,20 @@ class _BootstrapAppState extends State<_BootstrapApp> {
 				await NotificationsService.instance.init();
 			}
 			
-			// Set up auth state listener for notification cleanup
+			// Set up auth state listener for notification cleanup and location config
 			FirebaseAuth.instance.authStateChanges().listen((user) async {
 				if (user != null) {
-					// User logged in - perform notification cleanup
-					await NotificationCleanupService.performStartupCleanup();
+					// User logged in - perform notification cleanup and location setup
+					await Future.wait([
+						NotificationCleanupService.performStartupCleanup(),
+						LocationConfigService.getCurrentConfig(), // Initialize location config
+					]);
+					
+					// Initialize currency cache
+					await CurrencyService.getSymbol();
+					await CurrencyService.getCode();
+					
+					print('✅ App initialization completed for user: ${user.uid}');
 				}
 			});
 		} catch (e, s) {

@@ -14,6 +14,7 @@ import 'package:zippup/features/orders/widgets/status_timeline.dart';
 import 'package:zippup/features/transport/providers/ride_service.dart';
 import 'package:zippup/services/location/distance_service.dart';
 import 'package:zippup/services/notifications/sound_service.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 import 'package:go_router/go_router.dart';
 
 class RideTrackScreen extends StatefulWidget {
@@ -159,9 +160,34 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
     break;
   }
   
-  // Add navigation button if available
+  // Add navigation button if available - make it prominent
   if (navButton != null) {
-    actions.add(navButton);
+    actions.insert(0, navButton); // Put navigation first for visibility
+  }
+  
+  // Always add a fallback navigation option for drivers
+  if (_isDriver && (pickupLat != null && pickupLng != null || destLat != null && destLng != null)) {
+    final fallbackLat = (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving) 
+        ? pickupLat : destLat;
+    final fallbackLng = (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving) 
+        ? pickupLng : destLng;
+    
+    if (fallbackLat != null && fallbackLng != null) {
+      final fallbackLabel = (ride.status == RideStatus.accepted || ride.status == RideStatus.arriving) 
+          ? 'Navigate to Pickup' : 'Navigate to Destination';
+      
+      actions.add(
+        OutlinedButton.icon(
+          onPressed: () => _openPhoneNavigation(fallbackLat, fallbackLng, fallbackLabel),
+          icon: const Icon(Icons.map),
+          label: Text('📱 $fallbackLabel'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.green,
+            side: const BorderSide(color: Colors.green),
+          ),
+        ),
+      );
+    }
   }
   
   return actions;
@@ -184,14 +210,25 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
  }
 
  Future<void> _buildPolyline(String origin, String destination) async {
-  final poly = await _distance.getDirectionsPolyline(origin: origin, destination: destination);
-  if (poly == null) return;
-  final points = _decodePolyline(poly);
-  setState(() {
-   _polylines = {
-	Polyline(polylineId: const PolylineId('route'), points: points, color: Colors.blue, width: 5),
-   };
-  });
+  try {
+   print('🗺️ Building polyline from $origin to $destination');
+   final poly = await _distance.getDirectionsPolyline(origin: origin, destination: destination);
+   if (poly == null) {
+    print('❌ No polyline data received from directions service');
+    return;
+   }
+   print('✅ Polyline data received, decoding...');
+   final points = _decodePolyline(poly);
+   print('✅ Polyline decoded with ${points.length} points');
+   setState(() {
+    _polylines = {
+     Polyline(polylineId: const PolylineId('route'), points: points, color: Colors.blue, width: 5),
+    };
+   });
+   print('✅ Polyline added to map');
+  } catch (e) {
+   print('❌ Error building polyline: $e');
+  }
  }
 
  Future<void> _updateEta({required double originLat, required double originLng, required double destLat, required double destLng}) async {
@@ -348,9 +385,10 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		}
 	   } catch (_) {}
 	   
-	   await showDialog(context: context, builder: (_) {
+	   await showDialog(context: context, builder: (_) async {
 		final fare = ride.fareEstimate;
-		final currency = data['currency'] ?? 'NGN';
+		final currencySymbol = await CurrencyService.getSymbol();
+		final currencyCode = await CurrencyService.getCode();
 		int? stars;
 		final ctl = TextEditingController();
 		String paymentMethod = 'card'; // Move outside StatefulBuilder
@@ -405,7 +443,7 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 				children: [
 				 const Text('💳 Payment', style: TextStyle(fontWeight: FontWeight.bold)),
 				 const SizedBox(height: 8),
-				 Text('Amount to pay: $currency ${fare.toStringAsFixed(2)}', 
+				 Text('Amount to pay: $currencySymbol${fare.toStringAsFixed(2)}', 
 				  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
 				 const SizedBox(height: 12),
 				 
@@ -452,7 +490,7 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 				 Text(
 				  paymentMethod == 'card' 
 				   ? 'Card payments are processed automatically.' 
-				   : 'Please pay the driver $currency ${fare.toStringAsFixed(2)} in cash.',
+				   : 'Please pay the driver $currencySymbol${fare.toStringAsFixed(2)} in cash.',
 				  style: TextStyle(
 				   color: paymentMethod == 'cash' ? Colors.orange[700] : Colors.grey[600], 
 				   fontSize: 12,
@@ -946,6 +984,71 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 				ScaffoldMessenger.of(context).showSnackBar(
 					SnackBar(content: Text('Navigation error: $e')),
 				);
+			}
+		}
+	}
+
+	Future<void> _openPhoneNavigation(double destLat, double destLng, String label) async {
+		// Show navigation options dialog
+		if (!mounted) return;
+		
+		final selected = await showDialog<String>(
+			context: context,
+			builder: (context) => AlertDialog(
+				title: Text('📱 $label'),
+				content: const Text('Choose your preferred navigation app:'),
+				actions: [
+					TextButton.icon(
+						onPressed: () => Navigator.pop(context, 'google'),
+						icon: const Icon(Icons.map, color: Colors.blue),
+						label: const Text('Google Maps'),
+					),
+					TextButton.icon(
+						onPressed: () => Navigator.pop(context, 'apple'),
+						icon: const Icon(Icons.navigation, color: Colors.green),
+						label: const Text('Apple Maps'),
+					),
+					TextButton.icon(
+						onPressed: () => Navigator.pop(context, 'waze'),
+						icon: const Icon(Icons.traffic, color: Colors.orange),
+						label: const Text('Waze'),
+					),
+				],
+			),
+		);
+
+		if (selected == null) return;
+
+		Uri? uri;
+		switch (selected) {
+			case 'google':
+				uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$destLat,$destLng&travelmode=driving');
+				break;
+			case 'apple':
+				uri = Uri.parse('http://maps.apple.com/?daddr=$destLat,$destLng&dirflg=d');
+				break;
+			case 'waze':
+				uri = Uri.parse('https://waze.com/ul?ll=$destLat,$destLng&navigate=yes');
+				break;
+		}
+
+		if (uri != null) {
+			try {
+				if (await canLaunchUrl(uri)) {
+					await launchUrl(uri, mode: LaunchMode.externalApplication);
+				} else {
+					if (mounted) {
+						ScaffoldMessenger.of(context).showSnackBar(
+							SnackBar(content: Text('Could not open ${selected.toUpperCase()}')),
+						);
+					}
+				}
+			} catch (e) {
+				if (mounted) {
+					ScaffoldMessenger.of(context).showSnackBar(
+						SnackBar(content: Text('Navigation error: $e')),
+					);
+				}
 			}
 		}
 	}

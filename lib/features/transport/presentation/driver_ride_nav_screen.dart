@@ -13,6 +13,7 @@ import 'package:zippup/features/transport/providers/ride_service.dart';
 import 'package:zippup/services/location/distance_service.dart';
 import 'package:zippup/services/location/location_service.dart';
 import 'package:zippup/services/notifications/sound_service.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 
 class DriverRideNavScreen extends StatefulWidget {
 	const DriverRideNavScreen({super.key, required this.rideId});
@@ -266,9 +267,9 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 								}
 							} catch (_) {}
 							
-							await showDialog(context: context, builder: (_) {
+							await showDialog(context: context, builder: (_) async {
 								final fare = ride.fareEstimate;
-								final currency = data['currency'] ?? 'NGN';
+								final currencySymbol = await CurrencyService.getSymbol();
 								
 								return AlertDialog(
 									title: const Text('🎉 Ride Completed!'),
@@ -319,10 +320,10 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 															children: [
 																const Text('💰 Earnings', style: TextStyle(fontWeight: FontWeight.bold)),
 																const SizedBox(height: 8),
-																Text('Customer pays: $currency ${fare.toStringAsFixed(2)}', 
+																Text('Customer pays: $currencySymbol${fare.toStringAsFixed(2)}', 
 																	style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
 																const SizedBox(height: 4),
-																Text('Your earnings: $currency ${(fare * 0.85).toStringAsFixed(2)}', 
+																Text('Your earnings: $currencySymbol${(fare * 0.85).toStringAsFixed(2)}', 
 																	style: const TextStyle(fontSize: 16, color: Colors.green)),
 																const SizedBox(height: 8),
 																
@@ -343,7 +344,7 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 																			Expanded(
 																				child: Text(
 																					(data['paymentMethod'] == 'cash') 
-																						? 'Customer will pay you $currency ${fare.toStringAsFixed(2)} in cash'
+																						? 'Customer will pay you $currencySymbol${fare.toStringAsFixed(2)} in cash'
 																						: 'Payment processed automatically via card',
 																					style: TextStyle(
 																						color: (data['paymentMethod'] == 'cash') ? Colors.orange.shade700 : Colors.blue.shade700,

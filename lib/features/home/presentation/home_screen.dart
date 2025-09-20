@@ -224,14 +224,60 @@ class _HomeScreenState extends State<HomeScreen> {
 				actions: [
 					IconButton(onPressed: () => context.push('/cart'), icon: const Icon(Icons.shopping_cart_outlined)),
 					StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-						stream: FirebaseFirestore.instance.collection('notifications').where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '').where('read', isEqualTo: false).snapshots(),
+						stream: FirebaseFirestore.instance
+							.collection('notifications')
+							.where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '')
+							.where('read', isEqualTo: false)
+							.snapshots(),
 						builder: (context, snap) {
-							final unread = (snap.data?.docs.length ?? 0) > 0;
+							final unreadCount = snap.data?.docs.length ?? 0;
+							final hasUnread = unreadCount > 0;
+							
 							return IconButton(
-								onPressed: () => context.push('/notifications'),
+								onPressed: () async {
+									// Mark notifications as read when bell is tapped
+									if (hasUnread) {
+										final uid = FirebaseAuth.instance.currentUser?.uid;
+										if (uid != null) {
+											final batch = FirebaseFirestore.instance.batch();
+											for (final doc in snap.data!.docs) {
+												batch.update(doc.reference, {
+													'read': true,
+													'readAt': FieldValue.serverTimestamp(),
+												});
+											}
+											await batch.commit();
+											print('✅ Marked $unreadCount notifications as read from bell tap');
+										}
+									}
+									if (context.mounted) context.push('/notifications');
+								},
 								icon: Stack(children: [
 									const Icon(Icons.notifications_none),
-									if (unread) const Positioned(right: 0, top: 0, child: Icon(Icons.brightness_1, color: Colors.red, size: 10)),
+									if (hasUnread) Positioned(
+										right: 0, 
+										top: 0, 
+										child: Container(
+											padding: const EdgeInsets.all(2),
+											decoration: const BoxDecoration(
+												color: Colors.red,
+												shape: BoxShape.circle,
+											),
+											constraints: const BoxConstraints(
+												minWidth: 16,
+												minHeight: 16,
+											),
+											child: Text(
+												unreadCount > 99 ? '99+' : unreadCount.toString(),
+												style: const TextStyle(
+													color: Colors.white,
+													fontSize: 10,
+													fontWeight: FontWeight.bold,
+												),
+												textAlign: TextAlign.center,
+											),
+										),
+									),
 								]),
 							);
 						},
