@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zippup/services/location/address_suggestion_service.dart';
+import 'package:zippup/services/location/global_location_bias_service.dart';
 import 'dart:async';
 
 /// Smart address input field with location-biased suggestions and place name search
@@ -80,7 +81,8 @@ class _SmartAddressFieldState extends State<SmartAddressField> {
     setState(() => _isLoading = true);
     
     try {
-      final results = await AddressSuggestionService.universalSearch(query);
+      // Use global location bias for ALL address searches
+      final results = await GlobalLocationBiasService.getBiasedAddressSuggestions(query);
       
       setState(() {
         _suggestions = results;
@@ -93,9 +95,24 @@ class _SmartAddressFieldState extends State<SmartAddressField> {
         _removeOverlay();
       }
     } catch (e) {
-      print('❌ Error searching addresses: $e');
-      setState(() => _isLoading = false);
-      _removeOverlay();
+      print('❌ Error searching addresses with global bias: $e');
+      // Fallback to original service
+      try {
+        final results = await AddressSuggestionService.universalSearch(query);
+        setState(() {
+          _suggestions = results;
+          _isLoading = false;
+        });
+        
+        if (results.isNotEmpty) {
+          _showOverlay();
+        } else {
+          _removeOverlay();
+        }
+      } catch (fallbackError) {
+        setState(() => _isLoading = false);
+        _removeOverlay();
+      }
     }
   }
 

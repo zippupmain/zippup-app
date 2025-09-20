@@ -133,40 +133,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					if (assignedDriverId == uid) {
 						shouldShow = true; // Directly assigned to this driver
 						print('✅ Ride ${d.id} assigned to this driver');
-					} else if ((assignedDriverId == null || assignedDriverId.isEmpty) && hasActiveProvider && isOnline) {
-						// For transport rides, show to ALL active online transport providers
-						// But only if the ride status is still 'requested' (not accepted by someone else)
-						final rideStatus = data['status']?.toString();
-						if (rideStatus == 'requested') {
-							// Check if user has active transport provider profile
-							try {
-								// Refresh profile cache to ensure we see latest changes
-								await ProfileCacheService.refreshTransportProfile(uid);
-								
-								final transportProviderSnap = await db.collection('provider_profiles')
-									.where('userId', isEqualTo: uid)
-									.where('service', isEqualTo: 'transport')
-									.where('status', isEqualTo: 'active')
-									.where('availabilityOnline', isEqualTo: true)
-									.limit(1)
-									.get();
-								
-								if (transportProviderSnap.docs.isNotEmpty) {
-									shouldShow = true;
-									print('✅ Ride ${d.id} available for transport provider (status: $rideStatus)');
-									final providerData = transportProviderSnap.docs.first.data();
-									print('📋 Transport Provider Details: service=${providerData['service']}, subcategory=${providerData['subcategory']}, online=${providerData['availabilityOnline']}');
-								} else {
-									print('🚫 No active online transport provider found for user $uid');
-								}
-							} catch (e) {
-								print('❌ Error checking transport provider: $e');
-							}
-						} else {
-							print('🚫 Ride ${d.id} not available - status is $rideStatus (not requested)');
-						}
 					} else {
-						print('🚫 Ride ${d.id} not for this user - HasActiveProvider: $hasActiveProvider, Online: $isOnline, Assigned: $assignedDriverId');
+						// ONLY show requests that are specifically assigned to this provider
+						// No more broadcasting to all providers - only assigned requests
+						print('🚫 Ride ${d.id} not assigned to this provider (assignedDriverId: $assignedDriverId, currentUser: $uid)');
 					}
 					
 					if (shouldShow && !_shown.contains('ride:${d.id}')) {
@@ -468,6 +438,18 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						.count()
 						.get();
 					riderRides = agg.count ?? 0;
+					
+					// Also check account creation date to determine if new user
+					final userCreatedAt = u['createdAt']?.toString() ?? pu['createdAt']?.toString();
+					if (userCreatedAt != null) {
+						final createdDate = DateTime.tryParse(userCreatedAt);
+						if (createdDate != null) {
+							final daysSinceCreation = DateTime.now().difference(createdDate).inDays;
+							if (daysSinceCreation <= 7) {
+								riderRides = -1; // Use -1 to indicate new user
+							}
+						}
+					}
 				} catch (_) {}
 			}
 		} catch (_) {}
@@ -481,7 +463,9 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					requestId: id,
 					requestType: 'RIDE',
 					title: '🚗 ${(m['type'] ?? 'ride').toString().toUpperCase()} REQUEST',
-					subtitle: 'Rides completed: ${riderRides ?? 0}',
+					subtitle: riderRides == -1 
+						? '🆕 NEW USER - First time on platform'
+						: 'Rides completed: ${riderRides ?? 0}',
 					customerName: riderName,
 					pickupAddress: (m['pickupAddress'] ?? 'Unknown location').toString(),
 					destinationAddress: (m['destinationAddresses'] is List && (m['destinationAddresses'] as List).isNotEmpty) 
@@ -668,17 +652,14 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						final data = d.data();
 						final assignedProviderId = data['providerId']?.toString();
 						
-						// Proper targeting: Only show to online providers in this service
+						// ONLY show requests that are specifically assigned to this provider
 						bool shouldShow = false;
 						if (assignedProviderId == uid) {
 							shouldShow = true; // Directly assigned
 							print('✅ $service request ${d.id} assigned to this provider');
-						} else if ((assignedProviderId == null || assignedProviderId.isEmpty) && currentlyOnline) {
-							// Simple targeting: just check if provider is active and online
-							shouldShow = true;
-							print('✅ $service request ${d.id} available for active online $service provider');
 						} else {
-							print('🚫 $service request ${d.id} not for this user - Online: $currentlyOnline, Assigned: $assignedProviderId');
+							// NO MORE broadcasting to all providers - only assigned requests
+							print('🚫 $service request ${d.id} not assigned to this provider (assignedProviderId: $assignedProviderId, currentUser: $uid)');
 						}
 						
 						if (shouldShow && !_shown.contains('$service:${d.id}')) {

@@ -10,6 +10,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:zippup/services/notifications/notifications_service.dart';
 import 'package:zippup/services/notifications/notification_cleanup_service.dart';
 import 'package:zippup/services/location/location_config_service.dart';
+import 'package:zippup/services/location/global_location_bias_service.dart';
 import 'package:zippup/services/currency/currency_service.dart';
 import 'package:zippup/services/localization/app_localizations.dart';
 import 'package:zippup/providers/locale_provider.dart';
@@ -118,15 +119,11 @@ class _BootstrapAppState extends State<_BootstrapApp> {
 			// Set up auth state listener for notification cleanup and location config
 			FirebaseAuth.instance.authStateChanges().listen((user) async {
 				if (user != null) {
-					// User logged in - perform notification cleanup and location setup
+					// User logged in - perform comprehensive initialization
 					await Future.wait([
 						NotificationCleanupService.performStartupCleanup(),
-						LocationConfigService.getCurrentConfig(), // Initialize location config
+						GlobalLocationBiasService.initialize(), // Initialize global location bias
 					]);
-					
-					// Initialize currency cache
-					await CurrencyService.getSymbol();
-					await CurrencyService.getCode();
 					
 					print('✅ App initialization completed for user: ${user.uid}');
 				}

@@ -47,17 +47,38 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 
  Future<void> _updateRideStatus(String rideId, RideStatus status) async {
   try {
-   await FirebaseFirestore.instance.collection('rides').doc(rideId).update({
+   final updateData = {
 	'status': status.name,
 	'updatedAt': FieldValue.serverTimestamp(),
-   });
+   };
    
-   // Play completion sound for completed rides
+   // Add completion timestamp and cleanup for completed rides
    if (status == RideStatus.completed) {
+	updateData['completedAt'] = FieldValue.serverTimestamp();
+	updateData['isActive'] = false; // Mark as inactive
+	updateData['finalStatus'] = 'completed';
+	
+	// Clear any simulation timers
+	_riderSimTimer?.cancel();
+	_riderSimTimer = null;
+	
+	// Play completion sound
 	SoundService.instance.playTrill();
+   } else if (status == RideStatus.cancelled) {
+	updateData['cancelledAt'] = FieldValue.serverTimestamp();
+	updateData['isActive'] = false; // Mark as inactive
+	updateData['finalStatus'] = 'cancelled';
+	
+	// Clear any simulation timers
+	_riderSimTimer?.cancel();
+	_riderSimTimer = null;
+   } else {
+	updateData['isActive'] = true; // Keep as active for ongoing rides
    }
    
-   print('✅ Updated ride $rideId to status: ${status.name}');
+   await FirebaseFirestore.instance.collection('rides').doc(rideId).update(updateData);
+   
+   print('✅ Updated ride $rideId to status: ${status.name} (isActive: ${updateData['isActive']})');
   } catch (e) {
    print('❌ Failed to update ride status: $e');
    if (mounted) {
