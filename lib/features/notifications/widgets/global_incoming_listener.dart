@@ -386,26 +386,37 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					});
 				}
 				
-				// Better name resolution with multiple fallbacks
-				print('🔍 Starting name resolution for rider: $riderId');
+				// PRIORITIZE PERSONAL USER PROFILE over public/business profiles
+				print('🔍 Starting PERSONAL profile resolution for rider: $riderId');
 				print('📄 Public profile data keys: ${pu.keys.toList()}');
 				print('👤 User profile data keys: ${u.keys.toList()}');
 				
-				if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
-					riderName = pu['name'].toString().trim();
-					print('✅ Found name in public profile: $riderName');
-				} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
+				// ALWAYS prioritize personal user profile data first
+				if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
 					riderName = u['name'].toString().trim();
-					print('✅ Found name in user profile: $riderName');
+					print('✅ Found name in PERSONAL user profile: $riderName');
 				} else if (u['displayName'] != null && u['displayName'].toString().trim().isNotEmpty) {
 					riderName = u['displayName'].toString().trim();
-					print('✅ Found displayName: $riderName');
+					print('✅ Found displayName in PERSONAL profile: $riderName');
 				} else if (u['firstName'] != null || u['lastName'] != null) {
 					final firstName = (u['firstName'] ?? '').toString().trim();
 					final lastName = (u['lastName'] ?? '').toString().trim();
 					if (firstName.isNotEmpty || lastName.isNotEmpty) {
 						riderName = '$firstName $lastName'.trim();
 						print('✅ Found firstName/lastName: $riderName');
+					}
+				} else if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
+					// ONLY use public profile as LAST resort and verify it's personal, not business
+					final publicName = pu['name'].toString().trim();
+					// Check if this looks like a business name (contains business keywords)
+					final businessKeywords = ['ltd', 'inc', 'corp', 'company', 'business', 'services', 'enterprise'];
+					final isBusinessName = businessKeywords.any((keyword) => publicName.toLowerCase().contains(keyword));
+					
+					if (!isBusinessName) {
+						riderName = publicName;
+						print('✅ Found PERSONAL name in public profile: $riderName');
+					} else {
+						print('⚠️ Skipping business-like name in public profile: $publicName');
 					}
 				} else if (u['email'] != null) {
 					// Extract name from email as last resort
@@ -423,13 +434,17 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					print('⚠️ WARNING: Still showing default "Customer" name - check user profile data');
 				}
 				
-				// Better photo resolution
-				if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
-					riderPhoto = pu['photoUrl'].toString().trim();
-				} else if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
+				// PRIORITIZE PERSONAL PROFILE photo over public/business photo
+				if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
 					riderPhoto = u['photoUrl'].toString().trim();
+					print('✅ Found photo in PERSONAL user profile');
 				} else if (u['profilePicture'] != null && u['profilePicture'].toString().trim().isNotEmpty) {
 					riderPhoto = u['profilePicture'].toString().trim();
+					print('✅ Found profilePicture in PERSONAL user profile');
+				} else if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
+					// Only use public profile photo as last resort
+					riderPhoto = pu['photoUrl'].toString().trim();
+					print('⚠️ Using public profile photo as fallback');
 				}
 				try {
 					final agg = await FirebaseFirestore.instance
@@ -439,20 +454,46 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						.get();
 					riderRides = agg.count ?? 0;
 					
-					// Also check account creation date to determine if new user
-					final userCreatedAt = u['createdAt']?.toString() ?? pu['createdAt']?.toString();
+					// Enhanced user status calculation
+					final userCreatedAt = u['createdAt']?.toString() ?? u['metadata']?.toString();
+					String userStatus = 'Unknown';
+					
 					if (userCreatedAt != null) {
 						final createdDate = DateTime.tryParse(userCreatedAt);
 						if (createdDate != null) {
 							final daysSinceCreation = DateTime.now().difference(createdDate).inDays;
 							if (daysSinceCreation <= 7) {
+								userStatus = 'NEW USER';
 								riderRides = -1; // Use -1 to indicate new user
+							} else if (daysSinceCreation <= 30) {
+								userStatus = 'RECENT USER';
+							} else if (riderRides >= 10) {
+								userStatus = 'FREQUENT USER';
+							} else if (riderRides >= 3) {
+								userStatus = 'REGULAR USER';
+							} else {
+								userStatus = 'OCCASIONAL USER';
 							}
 						}
 					}
+					
+					print('👤 User status: $userStatus (${riderRides} rides, created ${userCreatedAt})');
 				} catch (_) {}
 			}
 		} catch (_) {}
+		
+		// Ensure we have user status for display
+		final finalUserStatus = riderRides == -1 
+			? 'NEW USER'
+			: riderRides >= 10
+				? 'FREQUENT USER'
+				: riderRides >= 3
+					? 'REGULAR USER'
+					: riderRides > 0
+						? 'OCCASIONAL USER'
+						: 'UNKNOWN STATUS';
+		
+		print('👤 Final user status for notification: $finalUserStatus');
 		
 		// Show phone-call style notification
 		await Navigator.of(ctx).push(
@@ -465,7 +506,13 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					title: '🚗 ${(m['type'] ?? 'ride').toString().toUpperCase()} REQUEST',
 					subtitle: riderRides == -1 
 						? '🆕 NEW USER - First time on platform'
-						: 'Rides completed: ${riderRides ?? 0}',
+						: riderRides >= 10
+							? '⭐ FREQUENT USER - ${riderRides} rides completed'
+							: riderRides >= 3
+								? '✅ REGULAR USER - ${riderRides} rides completed'
+								: riderRides > 0
+									? '📝 OCCASIONAL USER - ${riderRides} rides completed'
+									: '❓ User status unknown',
 					customerName: riderName,
 					pickupAddress: (m['pickupAddress'] ?? 'Unknown location').toString(),
 					destinationAddress: (m['destinationAddresses'] is List && (m['destinationAddresses'] as List).isNotEmpty) 
@@ -796,18 +843,40 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					});
 				}
 				
-				// Get client name
-				if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
-					clientName = pu['name'].toString().trim();
-				} else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
+				// PRIORITIZE PERSONAL CLIENT PROFILE over business profiles
+				print('🔍 Starting PERSONAL client profile resolution for: $clientId');
+				
+				// Get client name - PERSONAL profile first
+				if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
 					clientName = u['name'].toString().trim();
+					print('✅ Found client name in PERSONAL user profile: $clientName');
+				} else if (u['displayName'] != null && u['displayName'].toString().trim().isNotEmpty) {
+					clientName = u['displayName'].toString().trim();
+					print('✅ Found client displayName in PERSONAL profile: $clientName');
+				} else if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
+					// Only use public profile as last resort and check if it's personal
+					final publicName = pu['name'].toString().trim();
+					final businessKeywords = ['ltd', 'inc', 'corp', 'company', 'business', 'services'];
+					final isBusinessName = businessKeywords.any((keyword) => publicName.toLowerCase().contains(keyword));
+					
+					if (!isBusinessName) {
+						clientName = publicName;
+						print('✅ Found PERSONAL client name in public profile: $clientName');
+					} else {
+						print('⚠️ Skipping business-like client name: $publicName');
+					}
 				}
 				
-				// Get client photo
-				if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
-					clientPhoto = pu['photoUrl'].toString().trim();
-				} else if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
+				// Get client photo - PERSONAL profile first
+				if (u['photoUrl'] != null && u['photoUrl'].toString().trim().isNotEmpty) {
 					clientPhoto = u['photoUrl'].toString().trim();
+					print('✅ Found client photo in PERSONAL user profile');
+				} else if (u['profilePicture'] != null && u['profilePicture'].toString().trim().isNotEmpty) {
+					clientPhoto = u['profilePicture'].toString().trim();
+					print('✅ Found client profilePicture in PERSONAL user profile');
+				} else if (pu['photoUrl'] != null && pu['photoUrl'].toString().trim().isNotEmpty) {
+					clientPhoto = pu['photoUrl'].toString().trim();
+					print('⚠️ Using public profile photo as fallback');
 				}
 			}
 		} catch (_) {}
