@@ -11,20 +11,31 @@ class NotificationCleanupService {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
       
-      // Delete read notifications older than 7 days
-      final cutoffDate = DateTime.now().subtract(const Duration(days: 7));
-      
-      final oldNotifications = await _db.collection('notifications')
+      // Use simpler query to avoid composite index requirement
+      // Get all user notifications and filter in-memory
+      final userNotifications = await _db.collection('notifications')
           .where('userId', isEqualTo: uid)
-          .where('read', isEqualTo: true)
-          .where('createdAt', isLessThan: Timestamp.fromDate(cutoffDate))
           .get();
+      
+      // Filter for old read notifications in-memory
+      final cutoffDate = DateTime.now().subtract(const Duration(days: 7));
+      final toDelete = <DocumentSnapshot>[];
+      
+      for (final doc in userNotifications.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final isRead = data['read'] == true;
+        final createdAt = data['createdAt'] as Timestamp?;
+        
+        if (isRead && createdAt != null && createdAt.toDate().isBefore(cutoffDate)) {
+          toDelete.add(doc);
+        }
+      }
       
       // Delete in batches to avoid hitting Firestore limits
       final batch = _db.batch();
       int count = 0;
       
-      for (final doc in oldNotifications.docs) {
+      for (final doc in toDelete) {
         batch.delete(doc.reference);
         count++;
         
@@ -55,14 +66,22 @@ class NotificationCleanupService {
       await cleanupOldNotifications();
       
       // Then, limit total notifications to 50 per user (keep most recent)
-      final allNotifications = await _db.collection('notifications')
+      // Use simpler query and sort in-memory to avoid composite index
+      final userNotifications = await _db.collection('notifications')
           .where('userId', isEqualTo: uid)
-          .orderBy('createdAt', descending: true)
           .get();
       
-      if (allNotifications.docs.length > 50) {
+      if (userNotifications.docs.length > 50) {
+        // Sort by creation date in-memory (newest first)
+        final sortedDocs = userNotifications.docs.toList();
+        sortedDocs.sort((a, b) {
+          final aCreated = (a.data()['createdAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final bCreated = (b.data()['createdAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return bCreated.compareTo(aCreated); // Descending (newest first)
+        });
+        
         // Delete notifications beyond the 50 most recent
-        final toDelete = allNotifications.docs.skip(50);
+        final toDelete = sortedDocs.skip(50);
         final batch = _db.batch();
         int count = 0;
         
@@ -94,24 +113,29 @@ class NotificationCleanupService {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
       
-      final unreadNotifications = await _db.collection('notifications')
+      // Use simpler query and filter in-memory to avoid composite index
+      final userNotifications = await _db.collection('notifications')
           .where('userId', isEqualTo: uid)
-          .where('read', isEqualTo: false)
           .get();
       
       final batch = _db.batch();
       int count = 0;
       
-      for (final doc in unreadNotifications.docs) {
-        batch.update(doc.reference, {
-          'read': true,
-          'readAt': FieldValue.serverTimestamp(),
-        });
-        count++;
+      for (final doc in userNotifications.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final isUnread = data['read'] != true;
         
-        // Execute batch every 500 operations
-        if (count % 500 == 0) {
-          await batch.commit();
+        if (isUnread) {
+          batch.update(doc.reference, {
+            'read': true,
+            'readAt': FieldValue.serverTimestamp(),
+          });
+          count++;
+          
+          // Execute batch every 500 operations
+          if (count % 500 == 0) {
+            await batch.commit();
+          }
         }
       }
       
@@ -156,6 +180,7 @@ class NotificationCleanupService {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
       
+      // This query only uses userId which has a simple index
       final userNotifications = await _db.collection('notifications')
           .where('userId', isEqualTo: uid)
           .get();

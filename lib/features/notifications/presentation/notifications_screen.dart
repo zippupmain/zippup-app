@@ -16,17 +16,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _stream() {
     final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    Query<Map<String, dynamic>> query = FirebaseFirestore.instance
+    
+    // Use simple query to avoid composite index requirement
+    // We'll filter and sort in-memory
+    return FirebaseFirestore.instance
         .collection('notifications')
-        .where('userId', isEqualTo: uid);
-    
-    if (_showUnreadOnly) {
-      query = query.where('read', isEqualTo: false);
-    }
-    
-    return query
-        .orderBy('createdAt', descending: true)
-        .limit(50)
+        .where('userId', isEqualTo: uid)
+        .limit(100) // Get more to allow for filtering
         .snapshots();
   }
 
@@ -147,7 +143,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               builder: (context, snap) {
                 if (snap.hasError) return Center(child: Text('Error: ${snap.error}'));
                 if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-                final docs = snap.data!.docs;
+                
+                // Filter and sort in-memory to avoid composite index requirements
+                var docs = snap.data!.docs;
+                
+                // Filter by read status if needed
+                if (_showUnreadOnly) {
+                  docs = docs.where((doc) => doc.data()['read'] != true).toList();
+                }
+                
+                // Sort by creation date (newest first)
+                docs.sort((a, b) {
+                  final aCreated = (a.data()['createdAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+                  final bCreated = (b.data()['createdAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+                  return bCreated.compareTo(aCreated);
+                });
+                
+                // Limit to 50 most recent
+                if (docs.length > 50) {
+                  docs = docs.take(50).toList();
+                }
                 if (docs.isEmpty) {
                   return Center(
                     child: Column(
