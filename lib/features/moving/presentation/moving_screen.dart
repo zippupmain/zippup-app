@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zippup/common/widgets/address_field.dart';
 import 'package:zippup/services/location/location_service.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math' as Math;
@@ -151,7 +152,7 @@ class _MovingScreenState extends State<MovingScreen> {
 												child: FutureBuilder<String>(
 													future: CountryConfigService.instance.getCurrencySymbol(),
 													builder: (context, snap) => Text(
-														'${snap.data ?? '₦'}${price.toStringAsFixed(0)}',
+														'${snap.data ?? CurrencyService.getCachedSymbol()}${price.toStringAsFixed(0)}',
 														style: const TextStyle(
 															fontWeight: FontWeight.bold,
 															color: Colors.white,
@@ -251,7 +252,7 @@ class _MovingScreenState extends State<MovingScreen> {
 				'feeEstimate': price,
 				'etaMinutes': 30,
 				'status': 'requested',
-				'currency': 'NGN',
+				'currency': await CurrencyService.getCode(),
 				'serviceClass': chosenClass,
 				'paymentMethod': 'card',
 				'status': 'requested',

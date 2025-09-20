@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 
 /// Dynamic Pricing Calculation Engine
 /// Handles admin-controlled vs vendor-autonomous pricing with real-time factors
@@ -62,7 +63,7 @@ class PricingEngine {
           break;
       }
 
-      print('💵 Base price calculated: ₦$basePrice');
+      print('💵 Base price calculated: ${await CurrencyService.getSymbol()}$basePrice');
 
       // Step 3: Apply dynamic factors (if enabled)
       Map<String, double> dynamicFactors = {};
@@ -89,7 +90,7 @@ class PricingEngine {
       final result = PricingResult(
         success: true,
         finalPrice: finalPrice,
-        currency: 'NGN',
+        currency: await CurrencyService.getCode(),
         pricingSource: authority.source,
         breakdown: PricingBreakdown(
           basePricing: basePricingDetails,
@@ -110,7 +111,7 @@ class PricingEngine {
         'duration': duration,
       });
 
-      print('✅ Final price: ₦${finalPrice.toStringAsFixed(2)}');
+      print('✅ Final price: ${await CurrencyService.getSymbol()}${finalPrice.toStringAsFixed(2)}');
       return result;
 
     } catch (e) {
@@ -121,7 +122,7 @@ class PricingEngine {
       return PricingResult(
         success: false,
         finalPrice: fallbackPrice,
-        currency: 'NGN',
+        currency: await CurrencyService.getCode(),
         pricingSource: PricingSource.fallback,
         error: e.toString(),
         calculatedAt: DateTime.now(),
@@ -580,7 +581,7 @@ class PricingEngine {
       }
 
       // Ultimate fallback
-      return 500.0; // ₦500 minimum
+      return 500.0; // Minimum amount (currency-agnostic)
 
     } catch (e) {
       print('❌ Error getting fallback price: $e');

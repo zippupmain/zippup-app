@@ -12,6 +12,7 @@ import 'package:zippup/services/notifications/notification_cleanup_service.dart'
 import 'package:zippup/services/location/location_config_service.dart';
 import 'package:zippup/services/location/global_location_bias_service.dart';
 import 'package:zippup/services/currency/currency_service.dart';
+import 'package:zippup/services/currency/global_currency_service.dart';
 import 'package:zippup/services/localization/app_localizations.dart';
 import 'package:zippup/providers/locale_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -123,6 +124,7 @@ class _BootstrapAppState extends State<_BootstrapApp> {
 					await Future.wait([
 						NotificationCleanupService.performStartupCleanup(),
 						GlobalLocationBiasService.initialize(), // Initialize global location bias
+						GlobalCurrencyService.initializeGlobalCurrency(), // Initialize global currency
 					]);
 					
 					print('✅ App initialization completed for user: ${user.uid}');

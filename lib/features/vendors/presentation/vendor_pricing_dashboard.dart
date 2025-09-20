@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 
 /// Vendor Pricing Management Dashboard
 /// Allows vendors to set and manage their own pricing (when authorized)
@@ -729,7 +730,7 @@ class _VendorItemPricingCardState extends State<VendorItemPricingCard> {
                 IconButton(
                   onPressed: () => _quickAdjustPrice(-100),
                   icon: Icon(Icons.remove_circle, color: Colors.red),
-                  tooltip: 'Decrease ₦100',
+                  tooltip: 'Decrease ${CurrencyService.getCachedSymbol()}100',
                 ),
                 
                 Expanded(
@@ -747,7 +748,7 @@ class _VendorItemPricingCardState extends State<VendorItemPricingCard> {
                 IconButton(
                   onPressed: () => _quickAdjustPrice(100),
                   icon: Icon(Icons.add_circle, color: Colors.green),
-                  tooltip: 'Increase ₦100',
+                  tooltip: 'Increase ${CurrencyService.getCachedSymbol()}100',
                 ),
                 
                 // Edit button
@@ -827,7 +828,7 @@ class _VendorItemPricingCardState extends State<VendorItemPricingCard> {
 
   void _quickAdjustPrice(double adjustment) {
     final currentPrice = (widget.itemData['pricing']?['currentPrice'] as num?)?.toDouble() ?? 0.0;
-    final newPrice = math.max(100, currentPrice + adjustment); // Minimum ₦100
+    final newPrice = math.max(100, currentPrice + adjustment); // Minimum 100 units
     
     _showPriceUpdateDialog(newPrice, 'Quick price adjustment');
   }
@@ -864,7 +865,13 @@ class _VendorItemPricingCardState extends State<VendorItemPricingCard> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Update price to ₦${newPrice.toStringAsFixed(0)}?'),
+            FutureBuilder<String>(
+              future: CurrencyService.formatAmount(newPrice),
+              builder: (context, snapshot) {
+                final priceText = snapshot.data ?? '${CurrencyService.getCachedSymbol()}${newPrice.toStringAsFixed(0)}';
+                return Text('Update price to $priceText?');
+              },
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: reasonController,

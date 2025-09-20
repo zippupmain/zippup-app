@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:zippup/services/currency/currency_service.dart';
 
 class OthersProvidersScreen extends StatefulWidget {
 	const OthersProvidersScreen({super.key, required this.serviceType, this.appointmentId});
@@ -350,13 +351,19 @@ class _OthersProvidersScreenState extends State<OthersProvidersScreen> {
 																	Column(
 																		crossAxisAlignment: CrossAxisAlignment.start,
 																		children: [
-																			Text(
-																				'₦${hourlyRate.toStringAsFixed(0)}/hour',
-																				style: TextStyle(
-																					fontSize: 18,
-																					fontWeight: FontWeight.bold,
-																					color: darkColor,
-																				),
+																			FutureBuilder<String>(
+																				future: CurrencyService.formatAmount(hourlyRate),
+																				builder: (context, snapshot) {
+																					final rateText = snapshot.data ?? '${CurrencyService.getCachedSymbol()}${hourlyRate.toStringAsFixed(0)}';
+																					return Text(
+																						'$rateText/hour',
+																						style: TextStyle(
+																							fontSize: 18,
+																							fontWeight: FontWeight.bold,
+																							color: darkColor,
+																						),
+																					);
+																				},
 																			),
 																			const Text(
 																				'Starting rate',
