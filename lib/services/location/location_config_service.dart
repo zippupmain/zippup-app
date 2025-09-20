@@ -2,6 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Service to manage location-based configuration (currency, address suggestions, etc.)
 class LocationConfigService {
@@ -49,6 +53,14 @@ class LocationConfigService {
       'geocodingBias': 'country:au',
       'addressFormat': 'street, city, state, australia',
     },
+    'ZA': {
+      'currency': 'ZAR',
+      'currencySymbol': 'R',
+      'countryCode': 'ZA',
+      'countryName': 'South Africa',
+      'geocodingBias': 'country:za',
+      'addressFormat': 'street, city, province, south africa',
+    },
   };
   
   static Map<String, dynamic>? _currentConfig;
@@ -75,7 +87,18 @@ class LocationConfigService {
       }
       
       // Try to detect from current location
-      final country = await _detectCountryFromLocation();
+      String? country = await _detectCountryFromLocation();
+      
+      // If GPS detection fails, try IP-based detection
+      if (country == null) {
+        country = await _detectCountryFromIP();
+      }
+      
+      // If still no country, try to detect from timezone
+      if (country == null) {
+        country = _detectCountryFromTimezone();
+      }
+      
       if (country != null && _countryConfigs.containsKey(country)) {
         _currentConfig = _countryConfigs[country]!;
         _detectedCountry = country;
@@ -85,6 +108,7 @@ class LocationConfigService {
           await _db.collection('users').doc(uid).update({
             'country': country,
             'detectedAt': FieldValue.serverTimestamp(),
+            'detectionMethod': 'auto',
           });
         }
         
@@ -110,9 +134,33 @@ class LocationConfigService {
   /// Detect country from current location
   static Future<String?> _detectCountryFromLocation() async {
     try {
+      print('🌍 Starting location detection...');
+      
+      // Check location permissions first
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      
+      if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
+        print('❌ Location permission denied');
+        return null;
+      }
+      
+      // Check if location services are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print('❌ Location services disabled');
+        return null;
+      }
+      
+      print('✅ Location permissions granted, getting position...');
+      
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.medium,
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 15));
+      
+      print('✅ Position obtained: ${position.latitude}, ${position.longitude}');
       
       final placemarks = await placemarkFromCoordinates(
         position.latitude, 
@@ -120,8 +168,22 @@ class LocationConfigService {
       );
       
       if (placemarks.isNotEmpty) {
-        final country = placemarks.first.isoCountryCode?.toUpperCase();
+        final placemark = placemarks.first;
+        final country = placemark.isoCountryCode?.toUpperCase();
         print('🌍 Detected country from location: $country');
+        print('📍 Full location: ${placemark.country}, ${placemark.administrativeArea}, ${placemark.locality}');
+        
+        // Also try to detect from country name if ISO code fails
+        if (country == null && placemark.country != null) {
+          final countryName = placemark.country!.toLowerCase();
+          if (countryName.contains('nigeria')) return 'NG';
+          if (countryName.contains('united states') || countryName.contains('america')) return 'US';
+          if (countryName.contains('united kingdom') || countryName.contains('britain')) return 'GB';
+          if (countryName.contains('canada')) return 'CA';
+          if (countryName.contains('australia')) return 'AU';
+          if (countryName.contains('south africa')) return 'ZA';
+        }
+        
         return country;
       }
     } catch (e) {
@@ -287,5 +349,116 @@ class LocationConfigService {
     final config = await getCurrentConfig();
     final countryCode = config['countryCode']?.toString();
     return countryCode != null && _countryConfigs.containsKey(countryCode);
+  }
+
+  /// Detect country from IP address (fallback method)
+  static Future<String?> _detectCountryFromIP() async {
+    try {
+      print('🌐 Attempting IP-based country detection...');
+      
+      // Use a free IP geolocation service
+      final response = await http.get(
+        Uri.parse('https://ipapi.co/json/'),
+        headers: {'User-Agent': 'ZippUp/1.0'},
+      ).timeout(const Duration(seconds: 10));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final countryCode = data['country_code']?.toString().toUpperCase();
+        final countryName = data['country_name']?.toString();
+        
+        print('🌐 IP-based detection: $countryCode ($countryName)');
+        
+        if (countryCode != null && _countryConfigs.containsKey(countryCode)) {
+          return countryCode;
+        }
+      }
+    } catch (e) {
+      print('❌ Error with IP-based detection: $e');
+    }
+    
+    return null;
+  }
+
+  /// Detect country from timezone (last resort)
+  static String? _detectCountryFromTimezone() {
+    try {
+      print('🕐 Attempting timezone-based country detection...');
+      
+      final timezone = DateTime.now().timeZoneName;
+      print('🕐 Detected timezone: $timezone');
+      
+      // Map common timezones to countries
+      final timezoneMap = {
+        'WAT': 'NG', // West Africa Time (Nigeria)
+        'CAT': 'ZA', // Central Africa Time (South Africa)
+        'EST': 'US', // Eastern Standard Time (US)
+        'PST': 'US', // Pacific Standard Time (US)
+        'CST': 'US', // Central Standard Time (US)
+        'MST': 'US', // Mountain Standard Time (US)
+        'GMT': 'GB', // Greenwich Mean Time (UK)
+        'BST': 'GB', // British Summer Time (UK)
+        'AST': 'CA', // Atlantic Standard Time (Canada)
+        'AEST': 'AU', // Australian Eastern Standard Time
+      };
+      
+      final detectedCountry = timezoneMap[timezone];
+      if (detectedCountry != null) {
+        print('🕐 Timezone-based detection: $detectedCountry');
+        return detectedCountry;
+      }
+      
+      // Try partial matches
+      if (timezone.contains('Africa')) return 'NG';
+      if (timezone.contains('America')) return 'US';
+      if (timezone.contains('Europe/London')) return 'GB';
+      if (timezone.contains('Australia')) return 'AU';
+      
+    } catch (e) {
+      print('❌ Error with timezone detection: $e');
+    }
+    
+    return null;
+  }
+
+  /// Force detect and update user's country (for testing/debugging)
+  static Future<void> forceDetectCountry() async {
+    print('🔄 Force detecting user country...');
+    
+    _currentConfig = null;
+    _detectedCountry = null;
+    
+    final config = await getCurrentConfig();
+    print('🎯 Force detection result: ${config['countryCode']} (${config['countryName']})');
+  }
+
+  /// Manually set user's country (for user preference)
+  static Future<void> setUserCountry(String countryCode) async {
+    try {
+      if (!_countryConfigs.containsKey(countryCode)) {
+        print('❌ Unsupported country code: $countryCode');
+        return;
+      }
+      
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await _db.collection('users').doc(uid).update({
+          'country': countryCode,
+          'detectionMethod': 'manual',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      
+      // Update cache
+      _currentConfig = _countryConfigs[countryCode]!;
+      _detectedCountry = countryCode;
+      
+      // Clear currency cache to force refresh
+      // Note: This would need to be called from CurrencyService
+      
+      print('✅ Manually set country to: $countryCode');
+    } catch (e) {
+      print('❌ Error setting user country: $e');
+    }
   }
 }

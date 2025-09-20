@@ -12,6 +12,9 @@ import 'package:zippup/services/notifications/background_notification_service.da
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 import 'package:zippup/features/notifications/widgets/incoming_call_notification.dart';
 import 'package:zippup/services/transport/profile_cache_service.dart';
+import 'package:zippup/services/currency/currency_service.dart';
+import 'package:zippup/services/notifications/pwa_notification_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class GlobalIncomingListener extends StatefulWidget {
 	final Widget child;
@@ -32,8 +35,13 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 		super.initState();
 		print('🚀 GlobalIncomingListener initialized');
 		
-		// Initialize background notification service
+		// Initialize notification services
 		BackgroundNotificationService.instance.initialize();
+		
+		// Initialize PWA notifications for web
+		if (kIsWeb) {
+			PWANotificationService.initialize();
+		}
 		
 		_bind();
 		// Listen for auth state changes to re-bind listeners
@@ -160,14 +168,6 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						print('🚗 Ride type: ${data['type']}');
 						print('📍 From: ${data['pickupAddress']}');
 						_shown.add('ride:${d.id}');
-						
-						// Show critical background notification that can wake up the phone
-						BackgroundNotificationService.instance.showRideRequestNotification(
-							rideId: d.id,
-							customerName: 'Customer', // Will be resolved in _showRideDialog
-							pickupAddress: data['pickupAddress']?.toString() ?? 'Unknown location',
-							rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
-						);
 						
 						// Create notification record for bell icon (will be auto-marked as read after shown)
 						final notificationId = await _createNotificationRecord(
@@ -396,11 +396,37 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 				} catch (_) {}
 			}
 		} catch (_) {}
-		// Play AUDIBLE notification sound
+		// Play AUDIBLE notification sound IMMEDIATELY for ride requests
 		try { 
-			print('🔊 Playing AUDIBLE RIDE REQUEST notification...');
-			final success = await SimpleBeepService.instance.playUrgentBeep();
-			print(success ? '🎉 AUDIBLE ride request sound SUCCESS' : '💥 AUDIBLE ride request sound FAILED');
+			print('🔊 Playing URGENT RIDE REQUEST notification sound...');
+			
+			// Play multiple sound attempts for better reliability
+			final soundResults = await Future.wait([
+				SimpleBeepService.instance.playUrgentBeep(),
+				SimpleBeepService.instance.playSimpleBeep(),
+			]);
+			
+			final anySuccess = soundResults.any((result) => result);
+			print(anySuccess ? '🎉 URGENT ride request sound SUCCESS' : '💥 ALL ride request sounds FAILED');
+			
+			// Trigger appropriate notification based on platform
+			if (kIsWeb) {
+				// Use PWA notifications for web
+				PWANotificationService.showRideRequestPWA(
+					rideId: d.id,
+					customerName: riderName,
+					pickupAddress: data['pickupAddress']?.toString() ?? 'Unknown location',
+					rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
+				);
+			} else {
+				// Use background notifications for mobile
+				BackgroundNotificationService.instance.showRideRequestNotification(
+					rideId: d.id,
+					customerName: riderName,
+					pickupAddress: data['pickupAddress']?.toString() ?? 'Unknown location',
+					rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
+				);
+			}
 		} catch (e) {
 			print('❌ Critical error playing audible ride notification: $e');
 		}
@@ -423,7 +449,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 							? (m['destinationAddress'] ?? '').toString()
 							: null,
 					fare: (m['fare'] ?? 0) > 0 
-						? '₦${(m['fare'] ?? 0).toString()}' 
+						? '${CurrencyService.getCachedSymbol()}${(m['fare'] ?? 0).toString()}' 
 						: null,
 					onAccept: () {
 						Navigator.pop(context);
@@ -784,7 +810,13 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 					if (data['emergencyAddress'] != null && data['emergencyAddress'].toString().isNotEmpty) 
 						Text('Emergency at: ${data['emergencyAddress'].toString()}'),
 					if (data['feeEstimate'] != null) 
-						Text('Fee: ${data['currency']?.toString() ?? 'NGN'} ${_safeNumberFormat(data['feeEstimate'])}'),
+						FutureBuilder<String>(
+							future: CurrencyService.formatAmount((data['feeEstimate'] as num?)?.toDouble() ?? 0.0),
+							builder: (context, snapshot) {
+								final feeText = snapshot.data ?? '${CurrencyService.getCachedSymbol()}${_safeNumberFormat(data['feeEstimate'])}';
+								return Text('Fee: $feeText');
+							},
+						),
 				],
 			),
 			actions: [

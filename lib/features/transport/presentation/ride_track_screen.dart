@@ -385,11 +385,12 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		}
 	   } catch (_) {}
 	   
+	   int? stars;
+	   String paymentMethod = 'card';
+	   final ctl = TextEditingController();
+	   
 	   await showDialog(context: context, builder: (_) {
 		final fare = ride.fareEstimate;
-		int? stars;
-		final ctl = TextEditingController();
-		String paymentMethod = 'card'; // Move outside StatefulBuilder
 		
 		return FutureBuilder<List<String>>(
 			future: Future.wait([
@@ -516,7 +517,7 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 			 Row(
 			  mainAxisAlignment: MainAxisAlignment.center,
 			  children: List.generate(5, (i) => IconButton(
-			   onPressed: () => setState(() => stars = i + 1),
+			   onPressed: () => setDialogState(() => stars = i + 1),
 			   icon: Icon(
 				stars != null && stars! > i ? Icons.star : Icons.star_border,
 				color: Colors.amber,

@@ -37,6 +37,15 @@ class CurrencyService {
   static void clearCache() {
     _cachedSymbol = null;
     _cachedCode = null;
+    print('🔄 Currency cache cleared');
+  }
+
+  /// Refresh currency based on current location
+  static Future<void> refreshFromLocation() async {
+    clearCache();
+    await getSymbol();
+    await getCode();
+    print('✅ Currency refreshed from location');
   }
 
   /// Get cached symbol (synchronous, returns default if not cached)
