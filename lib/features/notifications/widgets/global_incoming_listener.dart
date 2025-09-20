@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:zippup/services/notifications/reliable_sound_service.dart';
 import 'package:zippup/services/notifications/simple_beep_service.dart';
+import 'package:zippup/services/notifications/background_notification_service.dart';
 import 'package:zippup/features/notifications/widgets/floating_notification.dart';
 import 'package:zippup/features/notifications/widgets/incoming_call_notification.dart';
 import 'package:zippup/services/transport/profile_cache_service.dart';
@@ -30,6 +31,10 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 	void initState() {
 		super.initState();
 		print('🚀 GlobalIncomingListener initialized');
+		
+		// Initialize background notification service
+		BackgroundNotificationService.instance.initialize();
+		
 		_bind();
 		// Listen for auth state changes to re-bind listeners
 		FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -155,6 +160,14 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 						print('🚗 Ride type: ${data['type']}');
 						print('📍 From: ${data['pickupAddress']}');
 						_shown.add('ride:${d.id}');
+						
+						// Show critical background notification that can wake up the phone
+						BackgroundNotificationService.instance.showRideRequestNotification(
+							rideId: d.id,
+							customerName: 'Customer', // Will be resolved in _showRideDialog
+							pickupAddress: data['pickupAddress']?.toString() ?? 'Unknown location',
+							rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
+						);
 						
 						// Create notification record for bell icon (will be auto-marked as read after shown)
 						final notificationId = await _createNotificationRecord(

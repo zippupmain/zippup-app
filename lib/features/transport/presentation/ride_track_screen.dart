@@ -321,14 +321,15 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		await SoundService.instance.playTrill();
 	   } catch (_) {}
 	   
-	   // Fetch driver info for summary
-	   String driverName = 'Driver';
+	   // Fetch appropriate profile info for summary
+	   final profileUserId = _isDriver ? ride.riderId : ride.driverId;
+	   String driverName = _isDriver ? 'Customer' : 'Driver';
 	   String driverPhoto = '';
 	   try {
-		if (ride.driverId != null) {
+		if (profileUserId != null) {
 		 final results = await Future.wait([
-		  FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).get(),
-		  FirebaseFirestore.instance.collection('users').doc(ride.driverId!).get(),
+		  FirebaseFirestore.instance.collection('public_profiles').doc(profileUserId).get(),
+		  FirebaseFirestore.instance.collection('users').doc(profileUserId).get(),
 		 ]);
 		 final pu = results[0].data() ?? const {};
 		 final u = results[1].data() ?? const {};
@@ -352,9 +353,9 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		final currency = data['currency'] ?? 'NGN';
 		int? stars;
 		final ctl = TextEditingController();
+		String paymentMethod = 'card'; // Move outside StatefulBuilder
 		
 		return StatefulBuilder(builder: (context, setDialogState) {
-		 String paymentMethod = 'card';
 		 return AlertDialog(
 		  title: const Text('🎉 Ride Completed!'),
 		  content: SingleChildScrollView(
@@ -362,15 +363,15 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 			mainAxisSize: MainAxisSize.min,
 			crossAxisAlignment: CrossAxisAlignment.start,
 			children: [
-			 // Driver info
-			 if (ride.driverId != null) Card(
+			 // Show appropriate profile based on who is viewing
+			 if ((_isDriver && ride.riderId != null) || (!_isDriver && ride.driverId != null)) Card(
 			  child: ListTile(
 			   leading: CircleAvatar(
 				backgroundImage: driverPhoto.isNotEmpty ? NetworkImage(driverPhoto) : null,
 				child: driverPhoto.isEmpty ? const Icon(Icons.person) : null,
 			   ),
 			   title: Text(driverName),
-			   subtitle: Text('Driver • ${ride.type.name.toUpperCase()}'),
+			   subtitle: Text('${_isDriver ? "Customer" : "Driver"} • ${ride.type.name.toUpperCase()}'),
 			  ),
 			 ),
 			 const SizedBox(height: 16),
@@ -651,7 +652,25 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 	  children: [
 	   Expanded(
 		child: Builder(builder: (context) {
-		 if (center == null) return const Center(child: Text('Waiting for provider...'));
+		 if (center == null) {
+		  print('❌ Map center is null - no location data available');
+		  return const Center(
+		   child: Column(
+			mainAxisAlignment: MainAxisAlignment.center,
+			children: [
+			 Icon(Icons.location_off, size: 64, color: Colors.grey),
+			 SizedBox(height: 16),
+			 Text('Waiting for location...', style: TextStyle(fontSize: 18)),
+			 SizedBox(height: 8),
+			 Text('Map will appear when location is available', style: TextStyle(color: Colors.grey)),
+			],
+		   ),
+		  );
+		 }
+		 
+		 print('✅ Map center available: ${center!.latitude}, ${center!.longitude}');
+		 print('📍 Markers count: ${markers.length}');
+		 
 		 try {
 		  if (kIsWeb) {
 		   final fmMarkers = markers.map<lm.Marker>((m) {
@@ -706,44 +725,54 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 		padding: const EdgeInsets.all(16),
 		child: Column(
 		 children: [
-		  if (ride.driverId != null) Card(
+		  Card(
 		   child: FutureBuilder<List<dynamic>>(
-			future: Future.wait([
-			 FirebaseFirestore.instance.collection('users').doc(ride.driverId!).get(),
-			 FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).get(),
-			 FirebaseFirestore.instance
-			  .collection('provider_profiles')
-			  .where('userId', isEqualTo: ride.driverId!)
-			  .where('service', isEqualTo: 'transport')
-			  .limit(1)
-			  .get(),
-			 FirebaseFirestore.instance.collection('applications').doc(ride.driverId!).get(),
-			]).timeout(const Duration(seconds: 10), onTimeout: () {
-			 print('⏰ Driver info fetch timed out after 10 seconds');
-			 throw TimeoutException('Driver info fetch timed out', const Duration(seconds: 10));
-			}),
+			future: () {
+			 // Show appropriate profile based on who is viewing
+			 final profileUserId = _isDriver ? ride.riderId : ride.driverId;
+			 if (profileUserId == null) return Future.value([]);
+			 
+			 return Future.wait([
+			  FirebaseFirestore.instance.collection('users').doc(profileUserId).get(),
+			  FirebaseFirestore.instance.collection('public_profiles').doc(profileUserId).get(),
+			  _isDriver 
+			   ? FirebaseFirestore.instance.collection('users').doc(profileUserId).get() // For rider, just get user info
+			   : FirebaseFirestore.instance
+				 .collection('provider_profiles')
+				 .where('userId', isEqualTo: profileUserId)
+				 .where('service', isEqualTo: 'transport')
+				 .limit(1)
+				 .get(),
+			  _isDriver 
+			   ? FirebaseFirestore.instance.collection('users').doc(profileUserId).get() // For rider, no application needed
+			   : FirebaseFirestore.instance.collection('applications').doc(profileUserId).get(),
+			 ]).timeout(const Duration(seconds: 10), onTimeout: () {
+			  print('⏰ ${_isDriver ? "Rider" : "Driver"} info fetch timed out after 10 seconds');
+			  throw TimeoutException('${_isDriver ? "Rider" : "Driver"} info fetch timed out', const Duration(seconds: 10));
+			 });
+			}(),
 			builder: (context, s) {
 			 if (s.connectionState == ConnectionState.waiting) {
-			  return const ListTile(
-			   leading: CircularProgressIndicator(),
-			   title: Text('Loading driver info...'),
+			  return ListTile(
+			   leading: const CircularProgressIndicator(),
+			   title: Text('Loading ${_isDriver ? "rider" : "driver"} info...'),
 			  );
 			 }
 			 
 			 if (s.hasError) {
-			  print('❌ Error loading driver info: ${s.error}');
-			  return const ListTile(
-			   leading: Icon(Icons.error, color: Colors.red),
-			   title: Text('Driver info unavailable'),
-			   subtitle: Text('Please check connection'),
+			  print('❌ Error loading ${_isDriver ? "rider" : "driver"} info: ${s.error}');
+			  return ListTile(
+			   leading: const Icon(Icons.error, color: Colors.red),
+			   title: Text('${_isDriver ? "Rider" : "Driver"} info unavailable'),
+			   subtitle: const Text('Please check connection'),
 			  );
 			 }
 			 
-			 if (!s.hasData || s.data == null) {
-			  print('⚠️ No data received for driver info');
-			  return const ListTile(
-			   leading: Icon(Icons.person, color: Colors.grey),
-			   title: Text('Driver details pending...'),
+			 if (!s.hasData || s.data == null || s.data!.isEmpty) {
+			  print('⚠️ No data received for ${_isDriver ? "rider" : "driver"} info');
+			  return ListTile(
+			   leading: const Icon(Icons.person, color: Colors.grey),
+			   title: Text('${_isDriver ? "Rider" : "Driver"} details pending...'),
 			  );
 			 }
 			 
@@ -751,34 +780,36 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 			 final pu = (s.data?[1] as DocumentSnapshot<Map<String, dynamic>>?)?.data() ?? const {};
 			 
 			 // Debug: Print profile data
-			 print('🔍 Driver Profile Debug:');
+			 final profileType = _isDriver ? "Rider" : "Driver";
+			 print('🔍 $profileType Profile Debug:');
 			 print('User profile exists: ${(s.data?[0] as DocumentSnapshot?)?.exists ?? false}');
 			 print('Public profile exists: ${(s.data?[1] as DocumentSnapshot?)?.exists ?? false}');
 			 print('User profile data: $u');
 			 print('Public profile data: $pu');
 			 
 			 // Create public profile if missing but user profile exists
-			 if (!(s.data?[1] as DocumentSnapshot?)!.exists && (s.data?[0] as DocumentSnapshot?)!.exists && u['name'] != null) {
+			 final profileUserId = _isDriver ? ride.riderId : ride.driverId;
+			 if (!(s.data?[1] as DocumentSnapshot?)!.exists && (s.data?[0] as DocumentSnapshot?)!.exists && u['name'] != null && profileUserId != null) {
 			  // Fire and forget - don't await in builder
-			  FirebaseFirestore.instance.collection('public_profiles').doc(ride.driverId!).set({
+			  FirebaseFirestore.instance.collection('public_profiles').doc(profileUserId).set({
 			   'name': u['name'],
 			   'photoUrl': u['photoUrl'] ?? '',
 			   'createdAt': DateTime.now().toIso8601String(),
 			  }).then((_) {
-			   print('✅ Created missing public profile for driver: ${u['name']}');
+			   print('✅ Created missing public profile for $profileType: ${u['name']}');
 			  }).catchError((e) {
-			   print('❌ Failed to create driver public profile: $e');
+			   print('❌ Failed to create $profileType public profile: $e');
 			  });
 			 }
 			 
 			 // Better name resolution with fallbacks
-			 String name = 'Driver';
+			 String name = _isDriver ? 'Rider' : 'Driver';
 			 if (pu['name'] != null && pu['name'].toString().trim().isNotEmpty) {
 			  name = pu['name'].toString().trim();
-			  print('✅ Found driver name in public profile: $name');
+			  print('✅ Found $profileType name in public profile: $name');
 			 } else if (u['name'] != null && u['name'].toString().trim().isNotEmpty) {
 			  name = u['name'].toString().trim();
-			  print('✅ Found driver name in user profile: $name');
+			  print('✅ Found $profileType name in user profile: $name');
 			 } else if (u['displayName'] != null && u['displayName'].toString().trim().isNotEmpty) {
 			  name = u['displayName'].toString().trim();
 			 } else if (u['email'] != null) {
@@ -800,27 +831,38 @@ class _RideTrackScreenState extends State<RideTrackScreen> {
 			 } else if (u['profilePicture'] != null && u['profilePicture'].toString().trim().isNotEmpty) {
 			  photo = u['profilePicture'].toString().trim();
 			 }
-			 String plate = '';
-			 String car = '';
-			 try {
-			  final prof = (s.data?[2] as QuerySnapshot<Map<String, dynamic>>?);
-			  final app = (s.data?[3] as DocumentSnapshot<Map<String, dynamic>>?);
-			  final meta = prof != null && prof.docs.isNotEmpty ? (prof.docs.first.data()['metadata'] as Map<String, dynamic>? ?? const {}) : const {};
-			  final public = (meta['publicDetails'] as Map<String, dynamic>? ?? const {});
-			  plate = (public['plateNumber'] ?? '').toString();
-			  final a = app?.data() ?? const {};
-			  final color = (a['vehicleColor'] ?? '').toString();
-			  final brand = (a['vehicleBrand'] ?? '').toString();
-			  final model = (a['vehicleModel'] ?? '').toString();
-			  final parts = [color, brand, model].where((e) => e.trim().isNotEmpty).toList();
-			  car = parts.isEmpty ? '' : parts.join(' ');
-			 } catch (_) {}
-			 final vehicleLine = 'Vehicle: ' + (car.isNotEmpty ? car : 'details pending');
-			 final plateLine = 'Plate: ' + (plate.isNotEmpty ? plate : '—');
+			 
+			 // Vehicle details only for drivers (when viewed by riders)
+			 String vehicleLine = '';
+			 String plateLine = '';
+			 if (!_isDriver) {
+			  String plate = '';
+			  String car = '';
+			  try {
+			   final prof = (s.data?[2] as QuerySnapshot<Map<String, dynamic>>?);
+			   final app = (s.data?[3] as DocumentSnapshot<Map<String, dynamic>>?);
+			   final meta = prof != null && prof.docs.isNotEmpty ? (prof.docs.first.data()['metadata'] as Map<String, dynamic>? ?? const {}) : const {};
+			   final public = (meta['publicDetails'] as Map<String, dynamic>? ?? const {});
+			   plate = (public['plateNumber'] ?? '').toString();
+			   final a = app?.data() ?? const {};
+			   final color = (a['vehicleColor'] ?? '').toString();
+			   final brand = (a['vehicleBrand'] ?? '').toString();
+			   final model = (a['vehicleModel'] ?? '').toString();
+			   final parts = [color, brand, model].where((e) => e.trim().isNotEmpty).toList();
+			   car = parts.isEmpty ? '' : parts.join(' ');
+			  } catch (_) {}
+			  vehicleLine = 'Vehicle: ' + (car.isNotEmpty ? car : 'details pending');
+			  plateLine = 'Plate: ' + (plate.isNotEmpty ? plate : '—');
+			 }
+			 final displayUserId = _isDriver ? ride.riderId : ride.driverId;
+			 final subtitleText = _isDriver 
+			  ? 'Customer • ${ride.type.name.toUpperCase()}'
+			  : 'ID: ${ride.driverId!.substring(0, 6)} • ${ride.type.name.toUpperCase()}\n$vehicleLine\n$plateLine';
+			 
 			 return ListTile(
 			  leading: CircleAvatar(backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null, child: photo.isEmpty ? const Icon(Icons.person) : null),
 			  title: Text(name),
-			  subtitle: Text('ID: ${ride.driverId!.substring(0, 6)} • ${ride.type.name.toUpperCase()}\n$vehicleLine\n$plateLine'),
+			  subtitle: Text(subtitleText),
 			  trailing: const Icon(Icons.star_border),
 			 );
 			},
