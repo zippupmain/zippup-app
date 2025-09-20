@@ -66,6 +66,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 			return;
 		}
 		final db = FirebaseFirestore.instance;
+		final ctx = context; // Store context for use in callbacks
 		
 		// CRITICAL FIX: Set up ride listener for ALL providers with business profiles
 		try {
@@ -252,7 +253,7 @@ class _GlobalIncomingListenerState extends State<GlobalIncomingListener> {
 							rideType: data['type']?.toString().toUpperCase() ?? 'RIDE',
 							onAccept: () {
 								_acceptRide(d.id);
-								ctx.go('/driver/navigate?rideId=${d.id}');
+								if (mounted) ctx.go('/driver/navigate?rideId=${d.id}');
 							},
 							onDecline: () {
 								_declineRide(d.id);

@@ -8,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart' as lm;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 import 'package:zippup/common/models/ride.dart';
 import 'package:zippup/features/transport/providers/ride_service.dart';
 import 'package:zippup/services/location/distance_service.dart';
@@ -183,21 +184,6 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 		return Scaffold(
 			appBar: AppBar(
 				title: const Text('Driver Navigation'),
-				actions: [
-					// Add close button for completed rides
-					if (ride.status == RideStatus.completed || ride.status == RideStatus.cancelled)
-						IconButton(
-							onPressed: () {
-								if (Navigator.canPop(context)) {
-									Navigator.pop(context);
-								} else {
-									context.go('/hub/transport'); // Go to transport dashboard
-								}
-							},
-							icon: const Icon(Icons.close),
-							tooltip: 'Close',
-						),
-				],
 			),
 			body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
 				stream: _db.collection('rides').doc(widget.rideId).snapshots(),
@@ -211,6 +197,59 @@ class _DriverRideNavScreenState extends State<DriverRideNavScreen> {
 					final destLng = (data['destLng'] as num?)?.toDouble();
 					final driverLat = (data['driverLat'] as num?)?.toDouble();
 					final driverLng = (data['driverLng'] as num?)?.toDouble();
+
+					// Show close button for completed rides
+					if (ride.status == RideStatus.completed || ride.status == RideStatus.cancelled) {
+						return Scaffold(
+							appBar: AppBar(
+								title: const Text('Ride Completed'),
+								actions: [
+									IconButton(
+										onPressed: () {
+											if (Navigator.canPop(context)) {
+												Navigator.pop(context);
+											} else {
+												context.go('/hub/transport');
+											}
+										},
+										icon: const Icon(Icons.close),
+										tooltip: 'Close',
+									),
+								],
+							),
+							body: Center(
+								child: Column(
+									mainAxisAlignment: MainAxisAlignment.center,
+									children: [
+										Icon(
+											ride.status == RideStatus.completed ? Icons.check_circle : Icons.cancel,
+											size: 64,
+											color: ride.status == RideStatus.completed ? Colors.green : Colors.red,
+										),
+										const SizedBox(height: 16),
+										Text(
+											ride.status == RideStatus.completed ? 'Ride Completed!' : 'Ride Cancelled',
+											style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+										),
+										const SizedBox(height: 8),
+										const Text('You can close this screen now.'),
+										const SizedBox(height: 24),
+										ElevatedButton.icon(
+											onPressed: () {
+												if (Navigator.canPop(context)) {
+													Navigator.pop(context);
+												} else {
+													context.go('/hub/transport');
+												}
+											},
+											icon: const Icon(Icons.dashboard),
+											label: const Text('Back to Dashboard'),
+										),
+									],
+								),
+							),
+						);
+					}
 
 					// Handle cancelled rides
 					if (ride.status == RideStatus.cancelled) {
