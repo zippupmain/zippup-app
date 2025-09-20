@@ -326,19 +326,37 @@ class _HomeScreenState extends State<HomeScreen> {
 								},
 							),
 							PopupMenuItem(
-								child: const Text('🇳🇬 Force Nigeria'),
+								child: const Text('🌍 Fix Location'),
 								onTap: () async {
-									// Quick fix for users experiencing US currency/addresses
-									await ManualLocationOverride.forceNigeria();
-									if (context.mounted) {
-										ScaffoldMessenger.of(context).showSnackBar(
-											const SnackBar(
-												content: Text('🇳🇬 Location forced to Nigeria! Currency: ₦, Addresses: Nigeria'),
-												backgroundColor: Colors.green,
-												duration: Duration(seconds: 3),
-											),
-										);
-									}
+									// Show location detection and manual override options
+									showDialog(
+										context: context,
+										builder: (context) => AlertDialog(
+											title: const Text('🌍 Location Detection'),
+											content: const Text('Having issues with currency or address suggestions? Use the location debug tool to fix your location settings.'),
+											actions: [
+												TextButton(
+													onPressed: () => Navigator.pop(context),
+													child: const Text('Cancel'),
+												),
+												ElevatedButton(
+													onPressed: () {
+														Navigator.pop(context);
+														showDialog(
+															context: context,
+															builder: (context) => Dialog(
+																child: Container(
+																	constraints: const BoxConstraints(maxWidth: 600),
+																	child: const LocationDebugWidget(),
+																),
+															),
+														);
+													},
+													child: const Text('Open Location Debug'),
+												),
+											],
+										),
+									);
 								},
 							),
 							if (_isPlatformAdmin) PopupMenuItem(child: const Text('Platform Admin'), onTap: () => context.push('/admin/platform')),

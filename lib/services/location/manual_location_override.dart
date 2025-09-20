@@ -7,24 +7,44 @@ import 'package:zippup/services/currency/global_currency_service.dart';
 /// Manual location override service to force specific countries for testing and fixing
 class ManualLocationOverride {
   
-  /// Force set user to Nigeria (NGN currency, Nigerian addresses)
+  /// Force set user to Nigeria (NGN ₦ currency, Nigerian addresses)
   static Future<void> forceNigeria() async {
     await _forceCountry('NG', 'Nigeria');
   }
   
-  /// Force set user to United States (USD currency, US addresses)
+  /// Force set user to United States (USD $ currency, US addresses)
   static Future<void> forceUS() async {
     await _forceCountry('US', 'United States');
   }
   
-  /// Force set user to United Kingdom (GBP currency, UK addresses)
+  /// Force set user to United Kingdom (GBP £ currency, UK addresses)
   static Future<void> forceUK() async {
     await _forceCountry('GB', 'United Kingdom');
   }
   
-  /// Force set user to South Africa (ZAR currency, SA addresses)
+  /// Force set user to South Africa (ZAR R currency, SA addresses)
   static Future<void> forceSouthAfrica() async {
     await _forceCountry('ZA', 'South Africa');
+  }
+  
+  /// Force set user to India (INR ₹ currency, Indian addresses)
+  static Future<void> forceIndia() async {
+    await _forceCountry('IN', 'India');
+  }
+  
+  /// Force set user to Germany (EUR € currency, German addresses)
+  static Future<void> forceGermany() async {
+    await _forceCountry('DE', 'Germany');
+  }
+  
+  /// Force set user to Australia (AUD A$ currency, Australian addresses)
+  static Future<void> forceAustralia() async {
+    await _forceCountry('AU', 'Australia');
+  }
+  
+  /// Force set user to Singapore (SGD S$ currency, Singapore addresses)
+  static Future<void> forceSingapore() async {
+    await _forceCountry('SG', 'Singapore');
   }
   
   /// Force set user to specific country

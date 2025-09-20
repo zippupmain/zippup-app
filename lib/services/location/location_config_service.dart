@@ -11,56 +11,47 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 class LocationConfigService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
   
-  // Country configurations
+  // Global country configurations - supports all major countries worldwide
   static const Map<String, Map<String, dynamic>> _countryConfigs = {
-    'NG': {
-      'currency': 'NGN',
-      'currencySymbol': '₦',
-      'countryCode': 'NG',
-      'countryName': 'Nigeria',
-      'geocodingBias': 'country:ng',
-      'addressFormat': 'street, city, state, nigeria',
-    },
-    'US': {
-      'currency': 'USD',
-      'currencySymbol': '\$',
-      'countryCode': 'US',
-      'countryName': 'United States',
-      'geocodingBias': 'country:us',
-      'addressFormat': 'street, city, state, usa',
-    },
-    'GB': {
-      'currency': 'GBP',
-      'currencySymbol': '£',
-      'countryCode': 'GB',
-      'countryName': 'United Kingdom',
-      'geocodingBias': 'country:gb',
-      'addressFormat': 'street, city, country',
-    },
-    'CA': {
-      'currency': 'CAD',
-      'currencySymbol': 'C\$',
-      'countryCode': 'CA',
-      'countryName': 'Canada',
-      'geocodingBias': 'country:ca',
-      'addressFormat': 'street, city, province, canada',
-    },
-    'AU': {
-      'currency': 'AUD',
-      'currencySymbol': 'A\$',
-      'countryCode': 'AU',
-      'countryName': 'Australia',
-      'geocodingBias': 'country:au',
-      'addressFormat': 'street, city, state, australia',
-    },
-    'ZA': {
-      'currency': 'ZAR',
-      'currencySymbol': 'R',
-      'countryCode': 'ZA',
-      'countryName': 'South Africa',
-      'geocodingBias': 'country:za',
-      'addressFormat': 'street, city, province, south africa',
-    },
+    // Africa
+    'NG': {'currency': 'NGN', 'currencySymbol': '₦', 'countryCode': 'NG', 'countryName': 'Nigeria', 'geocodingBias': 'country:ng'},
+    'ZA': {'currency': 'ZAR', 'currencySymbol': 'R', 'countryCode': 'ZA', 'countryName': 'South Africa', 'geocodingBias': 'country:za'},
+    'KE': {'currency': 'KES', 'currencySymbol': 'KSh', 'countryCode': 'KE', 'countryName': 'Kenya', 'geocodingBias': 'country:ke'},
+    'GH': {'currency': 'GHS', 'currencySymbol': '₵', 'countryCode': 'GH', 'countryName': 'Ghana', 'geocodingBias': 'country:gh'},
+    'EG': {'currency': 'EGP', 'currencySymbol': '£', 'countryCode': 'EG', 'countryName': 'Egypt', 'geocodingBias': 'country:eg'},
+    
+    // North America
+    'US': {'currency': 'USD', 'currencySymbol': '\$', 'countryCode': 'US', 'countryName': 'United States', 'geocodingBias': 'country:us'},
+    'CA': {'currency': 'CAD', 'currencySymbol': 'C\$', 'countryCode': 'CA', 'countryName': 'Canada', 'geocodingBias': 'country:ca'},
+    'MX': {'currency': 'MXN', 'currencySymbol': '\$', 'countryCode': 'MX', 'countryName': 'Mexico', 'geocodingBias': 'country:mx'},
+    
+    // Europe
+    'GB': {'currency': 'GBP', 'currencySymbol': '£', 'countryCode': 'GB', 'countryName': 'United Kingdom', 'geocodingBias': 'country:gb'},
+    'DE': {'currency': 'EUR', 'currencySymbol': '€', 'countryCode': 'DE', 'countryName': 'Germany', 'geocodingBias': 'country:de'},
+    'FR': {'currency': 'EUR', 'currencySymbol': '€', 'countryCode': 'FR', 'countryName': 'France', 'geocodingBias': 'country:fr'},
+    'IT': {'currency': 'EUR', 'currencySymbol': '€', 'countryCode': 'IT', 'countryName': 'Italy', 'geocodingBias': 'country:it'},
+    'ES': {'currency': 'EUR', 'currencySymbol': '€', 'countryCode': 'ES', 'countryName': 'Spain', 'geocodingBias': 'country:es'},
+    
+    // Asia
+    'IN': {'currency': 'INR', 'currencySymbol': '₹', 'countryCode': 'IN', 'countryName': 'India', 'geocodingBias': 'country:in'},
+    'CN': {'currency': 'CNY', 'currencySymbol': '¥', 'countryCode': 'CN', 'countryName': 'China', 'geocodingBias': 'country:cn'},
+    'JP': {'currency': 'JPY', 'currencySymbol': '¥', 'countryCode': 'JP', 'countryName': 'Japan', 'geocodingBias': 'country:jp'},
+    'SG': {'currency': 'SGD', 'currencySymbol': 'S\$', 'countryCode': 'SG', 'countryName': 'Singapore', 'geocodingBias': 'country:sg'},
+    'MY': {'currency': 'MYR', 'currencySymbol': 'RM', 'countryCode': 'MY', 'countryName': 'Malaysia', 'geocodingBias': 'country:my'},
+    'TH': {'currency': 'THB', 'currencySymbol': '฿', 'countryCode': 'TH', 'countryName': 'Thailand', 'geocodingBias': 'country:th'},
+    'PH': {'currency': 'PHP', 'currencySymbol': '₱', 'countryCode': 'PH', 'countryName': 'Philippines', 'geocodingBias': 'country:ph'},
+    
+    // Oceania
+    'AU': {'currency': 'AUD', 'currencySymbol': 'A\$', 'countryCode': 'AU', 'countryName': 'Australia', 'geocodingBias': 'country:au'},
+    'NZ': {'currency': 'NZD', 'currencySymbol': 'NZ\$', 'countryCode': 'NZ', 'countryName': 'New Zealand', 'geocodingBias': 'country:nz'},
+    
+    // Middle East
+    'AE': {'currency': 'AED', 'currencySymbol': 'د.إ', 'countryCode': 'AE', 'countryName': 'UAE', 'geocodingBias': 'country:ae'},
+    'SA': {'currency': 'SAR', 'currencySymbol': '﷼', 'countryCode': 'SA', 'countryName': 'Saudi Arabia', 'geocodingBias': 'country:sa'},
+    
+    // South America
+    'BR': {'currency': 'BRL', 'currencySymbol': 'R\$', 'countryCode': 'BR', 'countryName': 'Brazil', 'geocodingBias': 'country:br'},
+    'AR': {'currency': 'ARS', 'currencySymbol': '\$', 'countryCode': 'AR', 'countryName': 'Argentina', 'geocodingBias': 'country:ar'},
   };
   
   static Map<String, dynamic>? _currentConfig;
@@ -116,27 +107,36 @@ class LocationConfigService {
         return _currentConfig!;
       }
       
-      // Fallback to Nigeria (default) - FORCE Nigeria as default, not US
-      _currentConfig = _countryConfigs['NG']!;
-      _detectedCountry = 'NG';
-      print('⚠️ FORCING Nigeria as fallback country config (not US)');
+      // If no country detected, try to get a reasonable default based on other indicators
+      final fallbackCountry = await _getIntelligentFallback();
       
-      // Save Nigeria as default to user profile
-      if (uid != null) {
-        await _db.collection('users').doc(uid).update({
-          'country': 'NG',
-          'detectionMethod': 'fallback_nigeria',
-          'detectedAt': FieldValue.serverTimestamp(),
-        });
+      if (fallbackCountry != null && _countryConfigs.containsKey(fallbackCountry)) {
+        _currentConfig = _countryConfigs[fallbackCountry]!;
+        _detectedCountry = fallbackCountry;
+        
+        if (uid != null) {
+          await _db.collection('users').doc(uid).update({
+            'country': fallbackCountry,
+            'detectionMethod': 'intelligent_fallback',
+            'detectedAt': FieldValue.serverTimestamp(),
+          });
+        }
+        
+        print('⚠️ Using intelligent fallback: $fallbackCountry');
+        return _currentConfig!;
       }
       
+      // Ultimate fallback - use USD as it's most widely accepted
+      _currentConfig = _countryConfigs['US']!;
+      _detectedCountry = 'US';
+      print('⚠️ Using ultimate fallback: US (most universal currency)');
       return _currentConfig!;
       
     } catch (e) {
       print('❌ Error getting location config: $e');
-      // Fallback to Nigeria
-      _currentConfig = _countryConfigs['NG']!;
-      _detectedCountry = 'NG';
+      // Use US as universal fallback in error cases
+      _currentConfig = _countryConfigs['US']!;
+      _detectedCountry = 'US';
       return _currentConfig!;
     }
   }
@@ -183,15 +183,49 @@ class LocationConfigService {
         print('🌍 Detected country from location: $country');
         print('📍 Full location: ${placemark.country}, ${placemark.administrativeArea}, ${placemark.locality}');
         
-        // Also try to detect from country name if ISO code fails
+        // Enhanced country name detection for all supported countries
         if (country == null && placemark.country != null) {
           final countryName = placemark.country!.toLowerCase();
+          
+          // Africa
           if (countryName.contains('nigeria')) return 'NG';
-          if (countryName.contains('united states') || countryName.contains('america')) return 'US';
-          if (countryName.contains('united kingdom') || countryName.contains('britain')) return 'GB';
-          if (countryName.contains('canada')) return 'CA';
-          if (countryName.contains('australia')) return 'AU';
           if (countryName.contains('south africa')) return 'ZA';
+          if (countryName.contains('kenya')) return 'KE';
+          if (countryName.contains('ghana')) return 'GH';
+          if (countryName.contains('egypt')) return 'EG';
+          
+          // North America
+          if (countryName.contains('united states') || countryName.contains('america')) return 'US';
+          if (countryName.contains('canada')) return 'CA';
+          if (countryName.contains('mexico')) return 'MX';
+          
+          // Europe
+          if (countryName.contains('united kingdom') || countryName.contains('britain')) return 'GB';
+          if (countryName.contains('germany')) return 'DE';
+          if (countryName.contains('france')) return 'FR';
+          if (countryName.contains('italy')) return 'IT';
+          if (countryName.contains('spain')) return 'ES';
+          
+          // Asia
+          if (countryName.contains('india')) return 'IN';
+          if (countryName.contains('china')) return 'CN';
+          if (countryName.contains('japan')) return 'JP';
+          if (countryName.contains('singapore')) return 'SG';
+          if (countryName.contains('malaysia')) return 'MY';
+          if (countryName.contains('thailand')) return 'TH';
+          if (countryName.contains('philippines')) return 'PH';
+          
+          // Oceania
+          if (countryName.contains('australia')) return 'AU';
+          if (countryName.contains('new zealand')) return 'NZ';
+          
+          // Middle East
+          if (countryName.contains('emirates') || countryName.contains('uae')) return 'AE';
+          if (countryName.contains('saudi arabia')) return 'SA';
+          
+          // South America
+          if (countryName.contains('brazil')) return 'BR';
+          if (countryName.contains('argentina')) return 'AR';
         }
         
         return country;
@@ -361,6 +395,115 @@ class LocationConfigService {
     return countryCode != null && _countryConfigs.containsKey(countryCode);
   }
 
+  /// Get intelligent fallback country based on various indicators
+  static Future<String?> _getIntelligentFallback() async {
+    try {
+      print('🧠 Attempting intelligent fallback detection...');
+      
+      // Try to get browser language/locale hints
+      final locale = _getBrowserLocale();
+      if (locale != null) {
+        print('🌐 Browser locale hint: $locale');
+        final country = _countryFromLocale(locale);
+        if (country != null) return country;
+      }
+      
+      // Try to detect from user's previous activity or profile hints
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final userDoc = await _db.collection('users').doc(uid).get();
+        final userData = userDoc.data() ?? {};
+        
+        // Check if user has any location hints in their profile
+        final profileCountry = userData['profileCountry']?.toString();
+        final phoneCountry = _detectCountryFromPhone(userData['phone']?.toString());
+        
+        if (profileCountry != null && _countryConfigs.containsKey(profileCountry)) {
+          print('🧠 Found country from user profile: $profileCountry');
+          return profileCountry;
+        }
+        
+        if (phoneCountry != null && _countryConfigs.containsKey(phoneCountry)) {
+          print('🧠 Detected country from phone number: $phoneCountry');
+          return phoneCountry;
+        }
+      }
+      
+      print('🧠 No intelligent fallback found');
+      return null;
+    } catch (e) {
+      print('❌ Error in intelligent fallback: $e');
+      return null;
+    }
+  }
+
+  /// Get browser locale for location hints
+  static String? _getBrowserLocale() {
+    try {
+      // This would typically use dart:html on web
+      // For now, return null as we can't access browser locale directly
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Map locale to country code
+  static String? _countryFromLocale(String locale) {
+    final localeMap = {
+      'en-NG': 'NG', 'en-ng': 'NG',
+      'en-US': 'US', 'en-us': 'US',
+      'en-GB': 'GB', 'en-gb': 'GB',
+      'en-CA': 'CA', 'en-ca': 'CA',
+      'en-AU': 'AU', 'en-au': 'AU',
+      'en-ZA': 'ZA', 'en-za': 'ZA',
+      'en-IN': 'IN', 'en-in': 'IN',
+      'en-SG': 'SG', 'en-sg': 'SG',
+      'fr-FR': 'FR', 'fr-fr': 'FR',
+      'de-DE': 'DE', 'de-de': 'DE',
+      'es-ES': 'ES', 'es-es': 'ES',
+      'it-IT': 'IT', 'it-it': 'IT',
+      'pt-BR': 'BR', 'pt-br': 'BR',
+      'ja-JP': 'JP', 'ja-jp': 'JP',
+      'zh-CN': 'CN', 'zh-cn': 'CN',
+    };
+    
+    return localeMap[locale];
+  }
+
+  /// Detect country from phone number format
+  static String? _detectCountryFromPhone(String? phone) {
+    if (phone == null || phone.isEmpty) return null;
+    
+    final phoneMap = {
+      '+234': 'NG', // Nigeria
+      '+1': 'US',   // US/Canada (ambiguous)
+      '+44': 'GB',  // UK
+      '+27': 'ZA',  // South Africa
+      '+91': 'IN',  // India
+      '+86': 'CN',  // China
+      '+81': 'JP',  // Japan
+      '+65': 'SG',  // Singapore
+      '+60': 'MY',  // Malaysia
+      '+66': 'TH',  // Thailand
+      '+63': 'PH',  // Philippines
+      '+61': 'AU',  // Australia
+      '+64': 'NZ',  // New Zealand
+      '+971': 'AE', // UAE
+      '+966': 'SA', // Saudi Arabia
+      '+55': 'BR',  // Brazil
+      '+54': 'AR',  // Argentina
+    };
+    
+    for (final prefix in phoneMap.keys) {
+      if (phone.startsWith(prefix)) {
+        return phoneMap[prefix];
+      }
+    }
+    
+    return null;
+  }
+
   /// Detect country from IP address (fallback method)
   static Future<String?> _detectCountryFromIP() async {
     try {
@@ -398,18 +541,43 @@ class LocationConfigService {
       final timezone = DateTime.now().timeZoneName;
       print('🕐 Detected timezone: $timezone');
       
-      // Map common timezones to countries
+      // Enhanced timezone mapping for global coverage
       final timezoneMap = {
+        // Africa
         'WAT': 'NG', // West Africa Time (Nigeria)
         'CAT': 'ZA', // Central Africa Time (South Africa)
-        'EST': 'US', // Eastern Standard Time (US)
-        'PST': 'US', // Pacific Standard Time (US)
-        'CST': 'US', // Central Standard Time (US)
-        'MST': 'US', // Mountain Standard Time (US)
-        'GMT': 'GB', // Greenwich Mean Time (UK)
-        'BST': 'GB', // British Summer Time (UK)
-        'AST': 'CA', // Atlantic Standard Time (Canada)
-        'AEST': 'AU', // Australian Eastern Standard Time
+        'EAT': 'KE', // East Africa Time (Kenya)
+        'SAST': 'ZA', // South Africa Standard Time
+        
+        // North America
+        'EST': 'US', 'EDT': 'US', // Eastern Time (US)
+        'CST': 'US', 'CDT': 'US', // Central Time (US)
+        'MST': 'US', 'MDT': 'US', // Mountain Time (US)
+        'PST': 'US', 'PDT': 'US', // Pacific Time (US)
+        'AST': 'CA', 'ADT': 'CA', // Atlantic Time (Canada)
+        
+        // Europe
+        'GMT': 'GB', 'BST': 'GB', // UK Time
+        'CET': 'DE', 'CEST': 'DE', // Central European Time
+        'WET': 'GB', 'WEST': 'GB', // Western European Time
+        
+        // Asia
+        'IST': 'IN', // India Standard Time
+        'JST': 'JP', // Japan Standard Time
+        'CST': 'CN', // China Standard Time
+        'SGT': 'SG', // Singapore Time
+        'MYT': 'MY', // Malaysia Time
+        'ICT': 'TH', // Indochina Time (Thailand)
+        'PHT': 'PH', // Philippines Time
+        
+        // Oceania
+        'AEST': 'AU', 'AEDT': 'AU', // Australian Eastern Time
+        'AWST': 'AU', // Australian Western Time
+        'NZST': 'NZ', 'NZDT': 'NZ', // New Zealand Time
+        
+        // Middle East
+        'GST': 'AE', // Gulf Standard Time (UAE)
+        'AST': 'SA', // Arabia Standard Time
       };
       
       final detectedCountry = timezoneMap[timezone];

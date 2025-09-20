@@ -111,14 +111,31 @@ class _LocationDebugWidgetState extends State<LocationDebugWidget> {
               ),
               const SizedBox(height: 8),
               Wrap(
-                spacing: 8,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
-                  _buildCountryChip('NG', '🇳🇬 Nigeria'),
-                  _buildCountryChip('US', '🇺🇸 USA'),
-                  _buildCountryChip('GB', '🇬🇧 UK'),
-                  _buildCountryChip('CA', '🇨🇦 Canada'),
-                  _buildCountryChip('AU', '🇦🇺 Australia'),
-                  _buildCountryChip('ZA', '🇿🇦 South Africa'),
+                  // Africa
+                  _buildCountryChip('NG', '🇳🇬 Nigeria (₦)'),
+                  _buildCountryChip('ZA', '🇿🇦 South Africa (R)'),
+                  _buildCountryChip('KE', '🇰🇪 Kenya (KSh)'),
+                  _buildCountryChip('GH', '🇬🇭 Ghana (₵)'),
+                  
+                  // North America
+                  _buildCountryChip('US', '🇺🇸 USA (\$)'),
+                  _buildCountryChip('CA', '🇨🇦 Canada (C\$)'),
+                  
+                  // Europe
+                  _buildCountryChip('GB', '🇬🇧 UK (£)'),
+                  _buildCountryChip('DE', '🇩🇪 Germany (€)'),
+                  _buildCountryChip('FR', '🇫🇷 France (€)'),
+                  
+                  // Asia
+                  _buildCountryChip('IN', '🇮🇳 India (₹)'),
+                  _buildCountryChip('SG', '🇸🇬 Singapore (S\$)'),
+                  _buildCountryChip('JP', '🇯🇵 Japan (¥)'),
+                  
+                  // Oceania
+                  _buildCountryChip('AU', '🇦🇺 Australia (A\$)'),
                 ],
               ),
               
